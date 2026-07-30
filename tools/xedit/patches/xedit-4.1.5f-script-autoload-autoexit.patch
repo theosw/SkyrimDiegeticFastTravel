@@ -1,0 +1,36 @@
+diff --git a/xEdit/xeInit.pas b/xEdit/xeInit.pas
+index b741f96..3c6f75e 100644
+--- a/xEdit/xeInit.pas
++++ b/xEdit/xeInit.pas
+@@ -1060,6 +1060,18 @@ begin
+     end;
+   end;
+ 
++  // Script mode already has an automated post-load runner and honors
++  // xeAutoExit in TfrmMain.tmrGeneratorTimer. Accept the same lifecycle
++  // switches as edit mode so a supplied plugins file can bypass the modal
++  // module selector and a completed script can shut the process down.
++  if wbToolMode in [tmEdit, tmScript] then begin
++    if FindCmdLineSwitch('autoload') then
++      xeAutoLoad := True;
++
++    if FindCmdLineSwitch('autoexit') then
++      xeAutoExit := True;
++  end;
++
+   if wbToolMode = tmEdit then begin
+     if   FindCmdLineSwitch('quickshowconflicts') or FindCmdLineSwitch('qsc')
+       or ExeName.Contains('quickshowconflicts') or ExeName.Contains('qsc') then
+@@ -1072,12 +1084,6 @@ begin
+       xeAutoLoad := True;
+     end;
+ 
+-    if FindCmdLineSwitch('autoload') then
+-      xeAutoLoad := True;
+-
+-    if FindCmdLineSwitch('autoexit') then
+-      xeAutoExit := True;
+-
+     if   FindCmdLineSwitch('autogamelink') or FindCmdLineSwitch('agl')
+       or ExeName.Contains('autogamelink') or ExeName.Contains('agl') then begin
+       xeAutoLoad := True;

@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+
+# Generated build products
+build/
+dist/
+
+# Locally downloaded authoring tools are never redistributed.
+.tools/
+
