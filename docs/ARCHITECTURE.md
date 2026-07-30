@@ -81,9 +81,13 @@ xEdit's `-script` switch forces Script mode. In xEdit 4.1.x, the command-line
 parser only honors `-autoload` and `-autoexit` in Edit mode, and Quick Edit is
 explicitly incompatible with other tool modes. The release launcher therefore
 uses `-P` to preselect only CFTO and its dependencies, invokes that dialog's OK
-button through Windows UI Automation, and closes the hidden xEdit window only
-after the Pascal generator writes `xedit_generator.status`. This is scoped GUI
-automation around a CLI limitation; the plugin work remains in the xEdit script.
+button through Windows UI Automation when Windows exposes the control, and
+closes xEdit only after the Pascal generator writes
+`xedit_generator.status`. Stock xEdit is briefly visible because a deliberately
+hidden modal selector is not present in the UI Automation tree. The current
+LoreRim executable has still required one manual OK click in practice. This is
+scoped GUI automation around a CLI limitation; the plugin work remains in the
+xEdit script.
 
 The behavior is visible in xEdit's own source:
 [`CheckForcedMode`](https://github.com/TES5Edit/TES5Edit/blob/fd1e36020b2b5b6217e553dc0038983146a2e2dd/xEdit/xeInit.pas#L708-L727),

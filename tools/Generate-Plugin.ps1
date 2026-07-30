@@ -143,13 +143,15 @@ $xeditArguments = @(
 # Official xEdit 4.1.5f parses -autoload/-autoexit only in Edit mode even
 # though Script mode already contains the corresponding load and shutdown
 # behavior. Keep a managed UI Automation fallback for the stock executable.
-# A patched xEdit accepts the switches and will need no UI interaction.
+# The stock modal selector must be visible for UI Automation to expose it;
+# launching it hidden leaves no accessible top-level window. A patched xEdit
+# accepts the switches and will pass through without UI interaction.
 Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName UIAutomationTypes
 $xeditProcess = Start-Process `
     -FilePath $XEdit `
     -ArgumentList $xeditArguments `
-    -WindowStyle Hidden `
+    -WindowStyle Normal `
     -PassThru
 $confirmedModules = $false
 $terminalStatusSeen = $false
@@ -226,14 +228,17 @@ if (-not $xeditProcess.HasExited) {
 if ($xeditProcess.ExitCode -ne 0) {
     throw "xEdit plugin generation failed with exit code $($xeditProcess.ExitCode)"
 }
-if (-not $confirmedModules) {
-    throw "xEdit exited before its preselected module list could be confirmed."
-}
 if (-not $terminalStatusSeen) {
     throw "xEdit exited without reporting generator completion. See: $xeditLogPath"
 }
 if ($generatorStatus -ne "success") {
     throw "xEdit generator reported failure. See: $xeditLogPath"
+}
+if (-not $confirmedModules) {
+    Write-Verbose (
+        "xEdit completed without the managed module-selector fallback; " +
+        "module selection was handled manually or by native/patched autoload."
+    )
 }
 
 if (Test-Path -LiteralPath $xeditLogPath -PathType Leaf) {

@@ -74,11 +74,14 @@ SKSE64, JContainers SE, and CFTO, and the generated plugin must load after
 
 xEdit 4.1.x does not offer a truly headless `-script` mode: `-script` selects
 Script mode, while `-autoload` and `-autoexit` are parsed only in Edit mode.
-`Generate-Plugin.ps1` works around that limitation narrowly and unattended: it
-supplies a private plugins list, invokes the preselected Module Selection OK
+`Generate-Plugin.ps1` works around that limitation narrowly: it supplies a
+private plugins list, attempts to invoke the preselected Module Selection OK
 button through Windows UI Automation, waits for the generator status file, and
-closes xEdit through its normal `WM_CLOSE` path. On timeout it leaves xEdit open
-for inspection.
+closes xEdit through its normal window-close path. Stock xEdit is briefly
+visible because its modal selector is not exposed to UI Automation while
+hidden. On the current LoreRim setup the managed invocation has not activated
+the button reliably, so one manual OK click may still be required. On timeout
+the launcher leaves xEdit open for inspection.
 
 The current alpha is not compatible with the **Better Carriage Destinations -
 CFTO** patch: that patch opens its map picker before CFTO's destination topics,
