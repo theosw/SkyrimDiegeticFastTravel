@@ -57,6 +57,27 @@ Cancellation closes the map without payment or travel. A per-quest active flag
 prevents overlapping picker sessions. An unknown marker is rejected and leaves
 the map open.
 
+## Dialogue branch contract
+
+The map prompt must be the Starting Topic of its own top-level dialogue branch.
+Skyrim does not expose every topic assigned to a top-level branch; it exposes
+that branch's designated Starting Topic. The first live adapter build reused the
+core faculty branch, whose Starting Topic remained the proven destination-list
+prompt. The adapter quest loaded and ran, but the map prompt never appeared and
+no `WIZARD_MAP_*` trace was emitted.
+
+The corrected adapter therefore owns a dedicated `DLBR` with only the
+`Top-Level` flag, points its `SNAM` Starting Topic at `DNT_WG_OpenMap`, and owns
+both records with the start-game-enabled `DNT_WizardMapPickerQuest`. The map
+topic points back to that branch. The existing core branch is neither overridden
+nor reused. A `DLVW` editor-layout record is not required by the live-proven core
+runtime and is deliberately not added.
+
+The independent xEdit audit rejects the adapter unless all of those links and
+flags match and the map branch differs from the core faculty branch. This
+contract follows the Creation Kit's documented
+[Dialogue Branch behavior](https://skyrimck.uesp.net/wiki/Dialogue_Branch).
+
 ## Marker inventory
 
 The headless xEdit inventory read BCD's installed `BCD_AutoUnlockMarkers` list
@@ -84,3 +105,13 @@ The adapter remains Candidate until one monitored test confirms:
    core `WIZARD_TRAVEL_START` / `WIZARD_TRAVEL_COMPLETE` pair.
 6. Fare denial still comes from the core service and does not move the player.
 7. The original dialogue list still completes a regression trip.
+
+Use the map-aware monitored harness for this matrix:
+
+```powershell
+.\tools\Run-WizardGuidesTest.ps1 -RequireMapAdapter
+```
+
+That mode requires the core ESP, adapter ESP, BCD ESP, adapter SEQ, and both
+adapter PEX files before launch, then streams both `WIZARD_MAP_*` and
+`WIZARD_TRAVEL_*` traces.

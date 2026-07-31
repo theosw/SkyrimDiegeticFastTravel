@@ -339,10 +339,18 @@ end;
 
 procedure AuditDialogue;
 var
-  MapTopic, InfoGroup, MapInfo, Conditions, VMAD, Scripts, ScriptEntry,
-    Properties, PickerQuest, TopicQuest, HubInfo, HubTopic, ExpectedBranch,
-    ActualBranch: IInterface;
+  MapTopic, MapBranch, InfoGroup, MapInfo, Conditions, VMAD,
+    Scripts, ScriptEntry, Properties, PickerQuest, TopicQuest, BranchQuest,
+    StartingTopic, HubInfo, HubTopic, CoreBranch, ActualBranch: IInterface;
 begin
+  PickerQuest := RequireAdapterRecord(
+    'QUST',
+    'DNT_WizardMapPickerQuest'
+  );
+  MapBranch := RequireAdapterRecord(
+    'DLBR',
+    'DNT_WG_OpenMapBranch'
+  );
   MapTopic := RequireAdapterRecord(
     'DIAL',
     'DNT_WG_OpenMap'
@@ -351,12 +359,26 @@ begin
     raise Exception.Create('Wizard map DIAL prompt does not match');
   TopicQuest := LinksTo(ElementByPath(MapTopic, 'QNAM'));
   if not Assigned(TopicQuest) or
-    (GetElementEditValues(TopicQuest, 'EDID') <>
-      'DNT_WizardTravelQuest') then
+    (FormID(TopicQuest) <> FormID(PickerQuest)) then
     raise Exception.Create(
-      'Wizard map DIAL is not owned by core quest; QNAM=' +
+      'Wizard map DIAL is not owned by the map quest; QNAM=' +
       GetElementEditValues(MapTopic, 'QNAM')
     );
+  BranchQuest := LinksTo(ElementByPath(MapBranch, 'QNAM'));
+  if not Assigned(BranchQuest) or
+    (FormID(BranchQuest) <> FormID(PickerQuest)) then
+    raise Exception.Create('Wizard map branch is not owned by the map quest');
+  if GetElementNativeValues(MapBranch, 'TNAM') <> 0 then
+    raise Exception.Create('Wizard map branch category is not Player');
+  if GetElementNativeValues(MapBranch, 'DNAM') <> 1 then
+    raise Exception.Create(
+      'Wizard map branch is not a non-blocking, non-exclusive top-level branch'
+    );
+  StartingTopic := LinksTo(ElementByPath(MapBranch, 'SNAM'));
+  if not Assigned(StartingTopic) or
+    (FormID(StartingTopic) <> FormID(MapTopic)) then
+    raise Exception.Create('Wizard map topic is not its branch starting topic');
+
   HubInfo := RequireRecord(
     WizardFile,
     $000808,
@@ -366,11 +388,14 @@ begin
   HubTopic := TopicContainingInfo(WizardFile, HubInfo);
   if not Assigned(HubTopic) then
     raise Exception.Create('Could not resolve faculty hub topic');
-  ExpectedBranch := LinksTo(ElementByPath(HubTopic, 'BNAM'));
+  CoreBranch := LinksTo(ElementByPath(HubTopic, 'BNAM'));
   ActualBranch := LinksTo(ElementByPath(MapTopic, 'BNAM'));
-  if not Assigned(ExpectedBranch) or not Assigned(ActualBranch) or
-    (FormID(ActualBranch) <> FormID(ExpectedBranch)) then
-    raise Exception.Create('Wizard map DIAL branch does not match faculty hub');
+  if not Assigned(CoreBranch) or not Assigned(ActualBranch) then
+    raise Exception.Create('Could not resolve core or map dialogue branch');
+  if FormID(ActualBranch) <> FormID(MapBranch) then
+    raise Exception.Create('Wizard map DIAL does not point to its map branch');
+  if FormID(ActualBranch) = FormID(CoreBranch) then
+    raise Exception.Create('Wizard map DIAL incorrectly reuses the core branch');
   InfoGroup := ChildGroup(MapTopic);
   if not Assigned(InfoGroup) or (ElementCount(InfoGroup) <> 1) then
     raise Exception.Create('Wizard map DIAL does not contain one INFO');
@@ -436,12 +461,10 @@ begin
   Properties := ElementByPath(ScriptEntry, 'Properties');
   if not Assigned(Properties) or (ElementCount(Properties) <> 1) then
     raise Exception.Create('Wizard map fragment does not have one property');
-  PickerQuest := RequireAdapterRecord(
-    'QUST',
-    'DNT_WizardMapPickerQuest'
-  );
   AssertProperty(ScriptEntry, 'Picker', PickerQuest);
-  ReportLines.Add('PASS faculty map dialogue -> BCD picker fragment');
+  ReportLines.Add(
+    'PASS dedicated top-level branch -> starting topic -> BCD picker fragment'
+  );
 end;
 
 function Initialize: Integer;

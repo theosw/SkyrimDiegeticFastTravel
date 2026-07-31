@@ -8,6 +8,9 @@ param(
     [string]$Shortcut = "moshortcut://:LoreRim",
     [string]$WizardModName = "houseCARL - DiegeticTravelWizardGuides",
     [string]$WizardPluginName = "DiegeticTravelWizardGuides.esp",
+    [switch]$RequireMapAdapter,
+    [string]$WizardMapPluginName = "DiegeticTravelWizardMap.esp",
+    [string]$BCDPluginName = "Better Carriage Destinations.esp",
     [string]$OriginalModName = "DiegeticTravel",
     [string]$OriginalPluginName = "DiegeticTravel.esp",
     [string]$AuditModName = "houseCARL - houseCARL_PapyrusAudit",
@@ -53,6 +56,14 @@ function Assert-TestReady {
     if ($plugins -notcontains "*$WizardPluginName") {
         throw "Enable '$WizardPluginName' in the MO2 right pane."
     }
+    if ($RequireMapAdapter) {
+        if ($plugins -notcontains "*$WizardMapPluginName") {
+            throw "Enable '$WizardMapPluginName' in the MO2 right pane."
+        }
+        if ($plugins -notcontains "*$BCDPluginName") {
+            throw "Enable '$BCDPluginName'; the wizard map adapter requires BCD."
+        }
+    }
     if ($modlist -contains "+$AuditModName") {
         throw "Disable '$AuditModName'; it is audit output, not a runtime dependency."
     }
@@ -73,6 +84,14 @@ function Assert-TestReady {
         (Join-Path $wizardRoot "Scripts\DNT_WizardTravelService.pex"),
         (Join-Path $wizardRoot "Scripts\DNT_WizardTravelFragment.pex")
     )
+    if ($RequireMapAdapter) {
+        $requiredWizardFiles += @(
+            (Join-Path $wizardRoot $WizardMapPluginName),
+            (Join-Path $wizardRoot "SEQ\DiegeticTravelWizardMap.seq"),
+            (Join-Path $wizardRoot "Scripts\DNT_WizardMapPicker.pex"),
+            (Join-Path $wizardRoot "Scripts\DNT_WizardMapFragment.pex")
+        )
+    }
     foreach ($requiredWizardFile in $requiredWizardFiles) {
         if (-not (Test-Path -LiteralPath $requiredWizardFile -PathType Leaf)) {
             throw "Wizard-guide runtime file was not found: $requiredWizardFile"
@@ -105,6 +124,7 @@ function Assert-TestReady {
 Assert-TestReady
 Write-Output "Wizard-guide preflight passed for profile '$ProfileName'."
 Write-Output "Runtime module: $WizardPluginName"
+Write-Output "Map adapter: $(if ($RequireMapAdapter) { "$WizardMapPluginName with $BCDPluginName" } else { 'not required' })"
 Write-Output "Original carriage module: $(if ($AllowOriginalCarriageModule) { 'allowed' } else { 'disabled' })"
 
 if ($ValidateOnly) {
@@ -163,15 +183,15 @@ while ((Get-Date) -lt $deadline) {
             if ($lines.Count -gt $lineCount) {
                 $newLines = @($lines[$lineCount..($lines.Count - 1)])
                 foreach ($line in $newLines) {
-                    if ($line -match "\[DNT\].*WIZARD_TRAVEL") {
+                    if ($line -match "\[DNT\].*WIZARD_(TRAVEL|MAP)") {
                         Write-Output "WIZARD LOG: $line"
                         if ($line -match "WIZARD_TRAVEL_COMPLETE") {
                             $completionCount += 1
                             Write-Output "WIZARD TRIP SUCCESS #${completionCount}"
                         }
                     } elseif (
-                        $line -match "(?i)(error|warning).*(DNT_WizardTravel|WIZARD_TRAVEL)" -or
-                        $line -match "(?i)(DNT_WizardTravel|WIZARD_TRAVEL).*(error|warning)"
+                        $line -match "(?i)(error|warning).*(DNT_Wizard(Map|Travel)|WIZARD_(MAP|TRAVEL))" -or
+                        $line -match "(?i)(DNT_Wizard(Map|Travel)|WIZARD_(MAP|TRAVEL)).*(error|warning)"
                     ) {
                         Write-Warning "WIZARD SCRIPT ISSUE: $line"
                     }

@@ -247,10 +247,12 @@ end;
 
 procedure ConfigureMapDialogue(MapQuest: IInterface);
 var
-  HubInfo, SourceTopic, MapTopic, InfoGroup, MapInfo, TemplateInfo,
+  HubInfo, SourceTopic, SourceBranch, MapTopic, MapBranch, InfoGroup,
+    MapInfo, TemplateInfo,
     MapScript, Responses, SourceResponses, Conditions, SourceConditions:
     IInterface;
-  WizardQuest, QuestElement, SourceBranch, BranchElement: IInterface;
+  QuestElement, BranchElement, BranchQuestElement, StartingTopicElement,
+    ReadBack: IInterface;
   i: Integer;
 begin
   HubInfo := RequireRecord(
@@ -262,18 +264,21 @@ begin
   SourceTopic := TopicContainingInfo(WizardFile, HubInfo);
   if not Assigned(SourceTopic) or (Signature(SourceTopic) <> 'DIAL') then
     raise Exception.Create('Could not resolve faculty hub DIAL from its INFO');
+  SourceBranch := LinksTo(ElementByPath(SourceTopic, 'BNAM'));
+  if not Assigned(SourceBranch) then
+    raise Exception.Create('Faculty hub DIAL has no branch link');
 
   MapTopic := wbCopyElementToFile(SourceTopic, OutputFile, True, False);
   if not Assigned(MapTopic) then
     raise Exception.Create('Could not clone faculty hub DIAL');
   SetElementEditValues(MapTopic, 'EDID', 'DNT_WG_OpenMap');
   SetElementEditValues(MapTopic, 'FULL', MapPrompt);
-  WizardQuest := RequireRecord(
-    WizardFile,
-    $000800,
-    'QUST',
-    'DNT_WizardTravelQuest'
-  );
+
+  MapBranch := wbCopyElementToFile(SourceBranch, OutputFile, True, False);
+  if not Assigned(MapBranch) then
+    raise Exception.Create('Could not clone faculty hub dialogue branch');
+  SetElementEditValues(MapBranch, 'EDID', 'DNT_WG_OpenMapBranch');
+
   QuestElement := ElementByPath(MapTopic, 'QNAM');
   if not Assigned(QuestElement) then begin
     Add(MapTopic, 'QNAM', True);
@@ -281,10 +286,8 @@ begin
   end;
   if not Assigned(QuestElement) then
     raise Exception.Create('Could not create map DIAL quest link');
-  SetEditValue(QuestElement, Name(WizardQuest));
-  SourceBranch := LinksTo(ElementByPath(SourceTopic, 'BNAM'));
-  if not Assigned(SourceBranch) then
-    raise Exception.Create('Faculty hub DIAL has no branch link');
+  SetEditValue(QuestElement, Name(MapQuest));
+
   BranchElement := ElementByPath(MapTopic, 'BNAM');
   if not Assigned(BranchElement) then begin
     Add(MapTopic, 'BNAM', True);
@@ -292,7 +295,34 @@ begin
   end;
   if not Assigned(BranchElement) then
     raise Exception.Create('Could not create map DIAL branch link');
-  SetEditValue(BranchElement, Name(SourceBranch));
+  SetEditValue(BranchElement, Name(MapBranch));
+
+  BranchQuestElement := ElementByPath(MapBranch, 'QNAM');
+  if not Assigned(BranchQuestElement) then begin
+    Add(MapBranch, 'QNAM', True);
+    BranchQuestElement := ElementByPath(MapBranch, 'QNAM');
+  end;
+  if not Assigned(BranchQuestElement) then
+    raise Exception.Create('Could not create map branch quest link');
+  SetEditValue(BranchQuestElement, Name(MapQuest));
+  SetElementNativeValues(MapBranch, 'TNAM', 0);
+  SetElementNativeValues(MapBranch, 'DNAM', 1);
+
+  StartingTopicElement := ElementByPath(MapBranch, 'SNAM');
+  if not Assigned(StartingTopicElement) then begin
+    Add(MapBranch, 'SNAM', True);
+    StartingTopicElement := ElementByPath(MapBranch, 'SNAM');
+  end;
+  if not Assigned(StartingTopicElement) then
+    raise Exception.Create('Could not create map branch starting-topic link');
+  SetEditValue(StartingTopicElement, Name(MapTopic));
+
+  ReadBack := LinksTo(ElementByPath(MapBranch, 'SNAM'));
+  if not Assigned(ReadBack) or (FormID(ReadBack) <> FormID(MapTopic)) then
+    raise Exception.Create('Map topic is not the map branch starting topic');
+  ReadBack := LinksTo(ElementByPath(MapTopic, 'BNAM'));
+  if not Assigned(ReadBack) or (FormID(ReadBack) <> FormID(MapBranch)) then
+    raise Exception.Create('Map topic does not point to its dedicated branch');
 
   InfoGroup := ChildGroup(MapTopic);
   if Assigned(InfoGroup) and (ElementCount(InfoGroup) <> 0) then

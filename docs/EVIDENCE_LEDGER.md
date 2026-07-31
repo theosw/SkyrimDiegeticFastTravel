@@ -281,6 +281,29 @@ not runtime eligibility conditions.
 one subject `GetIsID == 1` condition. The generator and audit now enforce this
 for all direct court-wizard roots and Mirabelle fallbacks.
 
+### DLG-012 — Top-level branches expose their Starting Topic
+
+**Status:** Supported
+
+**Claim:** A new initial-menu prompt must be the `SNAM` Starting Topic of its
+own top-level `DLBR`; merely assigning another topic to an existing top-level
+branch does not add another initial-menu option.
+
+**Evidence:** The first monitored map-adapter pass loaded the adapter at runtime:
+`sqv DNT_WizardMapPickerQuest` showed running quest `AE000801`, the bound
+`DNT_WizardMapPicker` script, the five exact world-map markers, the whitelist,
+and the live core service property. Eligible faculty still displayed only the
+proven list prompt, and Papyrus contained no `WIZARD_MAP_*` trace or adapter
+binding error. The rejected build had linked `DNT_WG_OpenMap` to the core
+faculty branch without making it that branch's Starting Topic. The Creation Kit
+documentation states that a top-level branch contributes its Starting Topic to
+the initial topic list.
+
+**Decision:** The map adapter owns a separate non-blocking, non-exclusive
+top-level branch whose Starting Topic is `DNT_WG_OpenMap`. The topic and branch
+are both owned by the running adapter quest. The independent audit must reject
+reuse of the core branch and require the two-way branch/topic links.
+
 ## Runtime claims
 
 ### RUN-001 — Travel fragment timing
@@ -395,6 +418,11 @@ topic, and require that topic to be Misc dialogue with subtype name
 **Limit:** Static validation cannot prove runtime choice eligibility, audio
 playback, lip movement, or fragment execution; those remain live gates.
 
+The map-adapter audit additionally requires a dedicated top-level branch, the
+map prompt as that branch's Starting Topic, matching adapter-quest ownership,
+and a topic backlink to the same branch. This closes the static hole exposed by
+the first monitored map-adapter pass.
+
 ### UI-001 — BCD as a wizard selection-only map adapter
 
 **Status:** Candidate
@@ -410,16 +438,22 @@ that its carriage quest registers for `BCD_SetDestination` only inside its own
 `OpenMap`; the adapter instead calls the lower-level native
 `BCD_Utils.OpenTheMap`. A headless xEdit inventory resolved the exact Whiterun,
 Riften, Solitude, Windhelm, and Markarth map-marker references. Both adapter
-scripts compile with zero errors and warnings. The adapter ESP is byte-
-idempotent at SHA-256
-`85AE4DEF45B94894D92499654499347CD0C0B380A8969B14113F40CFC324A9EA`, while the
-core ESP remains unchanged at
+scripts compile with zero errors and warnings.
+
+The first monitored build, ESP SHA-256
+`85AE4DEF45B94894D92499654499347CD0C0B380A8969B14113F40CFC324A9EA`, is rejected
+for reusing the core top-level branch without becoming its Starting Topic. The
+adapter quest loaded at runtime but no map prompt appeared and no map trace ran.
+The corrected candidate owns a dedicated top-level branch and is byte-idempotent
+at ESP SHA-256
+`74D1EF6F6268BFAF5CCC12FA3D6CF4B074790ECC655A233E0AA4481132A08FE4`; the core
+ESP remains unchanged at
 `F81562179374815AEF3D57015BC0EBC7AD40B7235A730CB727E7994F7EF68B4F`. The
-independent audit passes both integration masters, the five-entry whitelist, seven quest
-properties, faculty eligibility, dialogue branch and quest ownership, and
-OnBegin picker fragment. The exact candidate package is
-`dist\DiegeticTravelWizardMapAdapter-alpha.zip`, SHA-256
-`22E60A42E9CB0432EF2936848BF21A94C019A958D223816DC9EAB6D7D971D5C5`.
+independent audit passes both integration masters, the five-entry whitelist,
+seven quest properties, faculty eligibility, dedicated branch ownership and
+Starting Topic, and the OnBegin picker fragment. The corrected candidate package
+is `dist\DiegeticTravelWizardMapAdapter-alpha.zip`, SHA-256
+`F55A9B42C6DF05F90A612DEC25168D43CC748C5CD36B3E1F80920B84E6BA3D95`.
 
 **Required test:** Confirm 32:9 rendering and five-marker selection, cancellation
 without payment, one selected trip with map/core trace pairs, core fare denial,

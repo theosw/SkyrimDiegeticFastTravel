@@ -198,20 +198,32 @@ five-choice dialogue submenu remains available.
 Research is pinned to current BCD HEAD
 `136dc7b3ad9754877c485fd5cea29550af108888`; LoreRim has BCD 1.0.10 enabled in
 `UltraDiegeticTravel`. Both adapter scripts compile with 0 errors and 0
-warnings. Generation is byte-idempotent, and the independent audit passes both
-integration masters, the whitelist, seven quest properties, faculty conditions, branch,
-quest ownership, and OnBegin fragment. The adapter ESP is SHA-256
-`85AE4DEF45B94894D92499654499347CD0C0B380A8969B14113F40CFC324A9EA`; the core
+warnings.
+
+The first monitored adapter build loaded its quest and all properties at runtime
+but exposed no map option. It incorrectly assigned the new topic to the existing
+faculty top-level branch; Skyrim exposes only that branch's designated Starting
+Topic. That ESP (`85AE4DEF...`) is rejected. The corrected generator gives the
+map prompt its own non-blocking, non-exclusive top-level branch and makes it that
+branch's Starting Topic. Generation is byte-idempotent, and the independent
+audit now rejects core-branch reuse while requiring the two-way branch/topic
+links, adapter-quest ownership, whitelist, seven quest properties, faculty
+conditions, and OnBegin fragment. The corrected adapter ESP is SHA-256
+`74D1EF6F6268BFAF5CCC12FA3D6CF4B074790ECC655A233E0AA4481132A08FE4`; the core
 ESP remains
 `F81562179374815AEF3D57015BC0EBC7AD40B7235A730CB727E7994F7EF68B4F`.
 
-The candidate package is
+The corrected candidate package is
 `dist\DiegeticTravelWizardMapAdapter-alpha.zip`, SHA-256
-`22E60A42E9CB0432EF2936848BF21A94C019A958D223816DC9EAB6D7D971D5C5`. All seven
-deployed adapter files hash-match the workspace. The profile currently has BCD
-and the core plugin enabled, but `DiegeticTravelWizardMap.esp` has not yet been
-added to `plugins.txt`; enable it in MO2 before testing. Do not promote the
-adapter until the monitored matrix in `docs\WIZARD_MAP_ADAPTER.md` passes.
+`F55A9B42C6DF05F90A612DEC25168D43CC748C5CD36B3E1F80920B84E6BA3D95`.
+`DiegeticTravelWizardMap.esp`, BCD, and the core plugin are enabled in the
+dedicated profile. Do not promote the adapter until the remaining monitored
+matrix in `docs\WIZARD_MAP_ADAPTER.md` passes.
+
+Run that matrix with
+`tools\Run-WizardGuidesTest.ps1 -RequireMapAdapter`. This mode fails preflight
+unless the adapter ESP, BCD ESP, adapter SEQ, and both adapter PEX files are
+active/present, and it streams both `WIZARD_MAP_*` and `WIZARD_TRAVEL_*` traces.
 
 ### Faculty access
 
