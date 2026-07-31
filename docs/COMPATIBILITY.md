@@ -40,3 +40,17 @@ A proper integration should reuse BCD only as the selection surface:
 That design preserves BCD's polished map UI without surrendering the road and
 hazard model. It requires a deliberate compatibility patch or a small BCD API
 extension; merely changing load order is not sufficient.
+
+### Wizard-guide adapter
+
+The optional `DiegeticTravelWizardMap.esp` implements that selection-only
+boundary for the wizard network without changing BCD itself. It calls the
+native `BCD_Utils.OpenTheMap` function with a five-city whitelist, receives the
+selected marker through `BCD_SetDestination`, translates it to a stable wizard
+destination ID, and delegates fare and movement to `DNT_WizardTravelService`.
+
+The adapter deliberately remains a separate plugin with hard masters on BCD
+and `DiegeticTravelWizardGuides.esp`. The core wizard plugin and its dialogue
+list therefore remain usable when the adapter is removed. This adapter is a
+statically validated candidate pending the monitored checks in
+`docs/WIZARD_MAP_ADAPTER.md`.

@@ -37,8 +37,8 @@ Network:
 
 The UI-independent `DNT_WizardTravelService` exposes stable destination IDs plus
 `GetFare`, `CanTravel`, and `RequestTravel`. New dialogue records call that
-service through `DNT_WizardTravelFragment`; a future BCD/Shazdeh adapter can
-call the same service without duplicating travel logic.
+service through `DNT_WizardTravelFragment`; the optional BCD/Shazdeh adapter now
+calls the same service without duplicating travel logic.
 
 The generated plugin is `DiegeticTravelWizardGuides.esp`. It defines one
 start-game-enabled quest, one top-level player branch, five custom topics, and
@@ -172,6 +172,46 @@ The exact live-tested payload was packaged with `-PackageOnly` as
 A normal package build recompiles the PEX files and changes their binary hashes;
 use `-PackageOnly` when checkpointing already-tested artifacts, or require a
 new live pass after recompilation.
+
+### BCD wizard map-adapter candidate
+
+The optional adapter lives under `modules\wizard-map-picker` and is deployed as
+additional files inside the existing owned
+`houseCARL - DiegeticTravelWizardGuides` mod directory. It does not modify the
+live-proven core ESP. `DiegeticTravelWizardMap.esp` hard-masters the core wizard
+plugin and Better Carriage Destinations, adds a second faculty dialogue option,
+and opens BCD with a whitelist containing exactly these world-map markers:
+
+- Whiterun `000162CE`
+- Riften `0001C390`
+- Solitude `0004D0F4`
+- Windhelm `00038436`
+- Markarth `0001C38A`
+
+`DNT_WizardMapPicker` receives `BCD_SetDestination`, resolves the selected
+marker while MapMenu is open, translates it to the existing lowercase stable
+destination ID, closes the map, and calls
+`DNT_WizardTravelService.RequestTravel`. It never calls BCD's pricing, scene,
+or travel functions. Cancelling does not invoke the core service, and the old
+five-choice dialogue submenu remains available.
+
+Research is pinned to current BCD HEAD
+`136dc7b3ad9754877c485fd5cea29550af108888`; LoreRim has BCD 1.0.10 enabled in
+`UltraDiegeticTravel`. Both adapter scripts compile with 0 errors and 0
+warnings. Generation is byte-idempotent, and the independent audit passes both
+integration masters, the whitelist, seven quest properties, faculty conditions, branch,
+quest ownership, and OnBegin fragment. The adapter ESP is SHA-256
+`85AE4DEF45B94894D92499654499347CD0C0B380A8969B14113F40CFC324A9EA`; the core
+ESP remains
+`F81562179374815AEF3D57015BC0EBC7AD40B7235A730CB727E7994F7EF68B4F`.
+
+The candidate package is
+`dist\DiegeticTravelWizardMapAdapter-alpha.zip`, SHA-256
+`22E60A42E9CB0432EF2936848BF21A94C019A958D223816DC9EAB6D7D971D5C5`. All seven
+deployed adapter files hash-match the workspace. The profile currently has BCD
+and the core plugin enabled, but `DiegeticTravelWizardMap.esp` has not yet been
+added to `plugins.txt`; enable it in MO2 before testing. Do not promote the
+adapter until the monitored matrix in `docs\WIZARD_MAP_ADAPTER.md` passes.
 
 ### Faculty access
 

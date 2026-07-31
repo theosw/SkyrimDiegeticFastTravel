@@ -1,0 +1,86 @@
+# Wizard map-picker adapter research and design
+
+Updated: 2026-07-31
+
+## Decision
+
+Use Better Carriage Destinations as a selection surface only. Keep its native
+DLL and injected Scaleform movie unchanged, and put the integration in a
+separate Papyrus/ESP adapter. Do not call BCD's `BCD_Script.OpenMap`, pricing,
+response scenes, or travel functions.
+
+This preserves the live-proven wizard service as the sole authority for stable
+destination IDs, fare validation, payment, trace output, and arrival markers.
+It also leaves the existing dialogue destination list available as a rollback
+path.
+
+## Upstream evidence
+
+Research is pinned to BCD commit
+`136dc7b3ad9754877c485fd5cea29550af108888`, which was still repository `HEAD`
+on 2026-07-31. LoreRim has BCD `1.0.10` installed and enabled in the dedicated
+`UltraDiegeticTravel` profile.
+
+BCD's native `OpenTheMap(FormList, Bool)` closes the Dialogue Menu, stores one
+global whitelist/blocklist, registers a MapMenu event sink, and opens the map.
+Its injected ActionScript dims rejected markers and sends
+`BCD_SetDestination` with the selected marker's runtime array index. The native
+`GetMapMarkerByIndex` function translates that index back to the selected
+reference while the MapMenu is open.
+
+Relevant upstream source:
+
+- [Native whitelist and map opening](https://github.com/shazdeh/Better-Carriage-Destinations/blob/136dc7b3ad9754877c485fd5cea29550af108888/src/plugin.cpp#L35-L82)
+- [Native Papyrus functions](https://github.com/shazdeh/Better-Carriage-Destinations/blob/136dc7b3ad9754877c485fd5cea29550af108888/src/plugin.cpp#L201-L222)
+- [Scaleform selection event](https://github.com/shazdeh/Better-Carriage-Destinations/blob/136dc7b3ad9754877c485fd5cea29550af108888/Fla/BetterCarriageDestinations.as#L69-L75)
+
+The installed BCD quest registers for that event only inside its own `OpenMap`
+function. The adapter calls the lower-level native `BCD_Utils.OpenTheMap`
+instead, so BCD's carriage quest is not listening during a wizard selection.
+
+## Adapter flow
+
+1. An eligible College faculty member exposes a new terminal dialogue option.
+2. `DNT_WizardMapFragment` passes the speaker reference to
+   `DNT_WizardMapPicker.OpenMap`.
+3. The picker registers for `BCD_SetDestination` and opens BCD with a whitelist
+   of exactly five city world-map markers.
+4. A valid click is resolved to its map-marker reference before the map closes.
+5. The picker translates that exact reference to `whiterun`, `riften`,
+   `solitude`, `windhelm`, or `markarth`.
+6. The picker closes the map and calls the existing
+   `DNT_WizardTravelService.RequestTravel(destinationId, speakerRef)`.
+7. The core service revalidates, charges, logs, and moves the player to its
+   existing interior arrival marker.
+
+Cancellation closes the map without payment or travel. A per-quest active flag
+prevents overlapping picker sessions. An unknown marker is rejected and leaves
+the map open.
+
+## Marker inventory
+
+The headless xEdit inventory read BCD's installed `BCD_AutoUnlockMarkers` list
+and resolved the five required selection markers:
+
+- Whiterun: `000162CE` `WhiterunMapMarkerREF`
+- Riften: `0001C390` `RiftenMapMarkerREF`
+- Solitude: `0004D0F4` `SolitudeMapmarkerRef`
+- Windhelm: `00038436` `WindhelmMapMarkerRef`
+- Markarth: `0001C38A` `MarkarthMapMarkerREF`
+
+These are distinct from the core service's interior arrival references.
+
+## Live promotion gate
+
+The adapter remains Candidate until one monitored test confirms:
+
+1. Eligible faculty show both the new map option and the old list option.
+2. Ancano and other ineligible actors do not show the map option.
+3. The map opens correctly at 32:9 and only the five destination markers are
+   selectable.
+4. Cancelling the map produces `WIZARD_MAP_CANCEL`, removes no gold, and leaves
+   the player in place.
+5. Selecting one marker produces `WIZARD_MAP_SELECT` followed by one matching
+   core `WIZARD_TRAVEL_START` / `WIZARD_TRAVEL_COMPLETE` pair.
+6. Fare denial still comes from the core service and does not move the player.
+7. The original dialogue list still completes a regression trip.

@@ -33,7 +33,15 @@ branching faculty hub owns a forced-subtitle response so its custom `LinkTo`
 submenu advances reliably; Mirabelle uses subtitle-only terminal fallbacks
 because her unique voice lacks the selected generic recording. Only the
 selected destination runs a travel fragment. This proves the dialogue
-infrastructure before more spokes or a map picker are added.
+infrastructure before more spokes are added.
+
+The separate [`modules/wizard-map-picker`](modules/wizard-map-picker) candidate
+uses Better Carriage Destinations only as a five-city MapMenu selector. It
+translates the selected world-map marker to one of the core service's stable
+destination IDs; the core still validates, charges, logs, and teleports. The
+proven dialogue list remains available as a fallback. See
+[`docs/WIZARD_MAP_ADAPTER.md`](docs/WIZARD_MAP_ADAPTER.md) for the pinned
+upstream contract and live-test gate.
 
 Dialogue hypotheses and their actual evidence level are tracked in
 [`docs/EVIDENCE_LEDGER.md`](docs/EVIDENCE_LEDGER.md). Commit `ed004f2` is the
@@ -141,6 +149,15 @@ changing PEX hashes, use:
 ```powershell
 .\tools\Build-WizardGuides.ps1 -PackageOnly
 ```
+
+The optional BCD wizard map adapter is built and audited separately:
+
+```powershell
+.\tools\Build-WizardMapAdapter.ps1
+```
+
+This writes `dist\DiegeticTravelWizardMapAdapter-alpha.zip`. It requires BCD
+and the core wizard-guide plugin and does not alter either of them.
 
 For the SEQ artifact, the xEdit script mirrors xEdit's built-in eligibility
 rule and emits the fixed FormIDs of newly start-game-enabled quests. PowerShell

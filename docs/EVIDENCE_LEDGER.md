@@ -395,6 +395,36 @@ topic, and require that topic to be Misc dialogue with subtype name
 **Limit:** Static validation cannot prove runtime choice eligibility, audio
 playback, lip movement, or fragment execution; those remain live gates.
 
+### UI-001 — BCD as a wizard selection-only map adapter
+
+**Status:** Candidate
+
+**Claim:** A separate adapter can call BCD's native filtered MapMenu, translate
+one of five selected world-map marker references to the wizard service's stable
+destination ID, and leave fare and movement under the proven core service.
+
+**Evidence:** BCD repository HEAD on 2026-07-31 is commit
+`136dc7b3ad9754877c485fd5cea29550af108888`, matching the source already cited
+in the compatibility notes. The installed BCD 1.0.10 Papyrus source confirms
+that its carriage quest registers for `BCD_SetDestination` only inside its own
+`OpenMap`; the adapter instead calls the lower-level native
+`BCD_Utils.OpenTheMap`. A headless xEdit inventory resolved the exact Whiterun,
+Riften, Solitude, Windhelm, and Markarth map-marker references. Both adapter
+scripts compile with zero errors and warnings. The adapter ESP is byte-
+idempotent at SHA-256
+`85AE4DEF45B94894D92499654499347CD0C0B380A8969B14113F40CFC324A9EA`, while the
+core ESP remains unchanged at
+`F81562179374815AEF3D57015BC0EBC7AD40B7235A730CB727E7994F7EF68B4F`. The
+independent audit passes both integration masters, the five-entry whitelist, seven quest
+properties, faculty eligibility, dialogue branch and quest ownership, and
+OnBegin picker fragment. The exact candidate package is
+`dist\DiegeticTravelWizardMapAdapter-alpha.zip`, SHA-256
+`22E60A42E9CB0432EF2936848BF21A94C019A958D223816DC9EAB6D7D971D5C5`.
+
+**Required test:** Confirm 32:9 rendering and five-marker selection, cancellation
+without payment, one selected trip with map/core trace pairs, core fare denial,
+Ancano exclusion, and one successful trip through the retained dialogue list.
+
 ## Promotion gate for future claims
 
 Promote a dialogue candidate to **Proven** only after all applicable checks:
@@ -412,7 +442,7 @@ Promote a dialogue candidate to **Proven** only after all applicable checks:
 ## Deferred Phase 1 ideas
 
 - Trust, faction, disposition, and quest-based service gates.
-- Map-based destination selection and Better Carriage Destinations integration.
+- Promotion and polish of the Candidate BCD wizard map adapter.
 - More College spokes beyond Whiterun, Riften, Solitude, Windhelm, and Markarth.
 - Travel-time passage, rest/recovery behavior, and intervention/recall magic.
 
