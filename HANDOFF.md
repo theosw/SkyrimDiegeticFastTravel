@@ -1,6 +1,104 @@
 # Diegetic Travel handoff
 
-Updated: 2026-07-30
+Updated: 2026-07-31
+
+## Wizard-guide Phase 1
+
+Phase 1 of the separate wizard-guide pillar is implemented under
+`modules\wizard-guides`. It does not modify the carriage checkpoint or depend
+on CFTO/Better Carriage Destinations.
+
+Network:
+
+- The College of Winterhold is the permanent hub.
+- Farengar Secret-Fire (`013BBB:Skyrim.esm`) offers the College.
+- Phinis Gestor (`01C199:Skyrim.esm`) offers the return trip to Whiterun.
+- Riften/Wylandriah records remain only as scaffolding for a later spoke and
+  are outside the supported gameplay checkpoint.
+- All services are immediately available; faction, relationship, quest, and
+  trust gates are deliberately deferred.
+- Every hop costs 250 gold.
+- Travel waits one second for dialogue to close and then calls `MoveTo`: no
+  elapsed game time, rest, or recovery.
+
+The UI-independent `DNT_WizardTravelService` exposes stable destination IDs plus
+`GetFare`, `CanTravel`, and `RequestTravel`. New dialogue records call that
+service through `DNT_WizardTravelFragment`; a future BCD/Shazdeh adapter can
+call the same service without duplicating travel logic.
+
+The generated plugin is `DiegeticTravelWizardGuides.esp`. It defines one
+start-game-enabled quest, one top-level player branch, four custom topics, and
+seven speaker-gated INFOs. It overrides no existing records. Its SEQ and two
+compiled PEX files live beside it in the module.
+
+The supported slice is now two-way. INFO `000806` presents
+`Can you teleport me to the College of Winterhold? (250 gold)` to Farengar and
+binds `DestinationId=college`. INFO `000808` presents
+`Can you teleport me to Whiterun? (250 gold)` to Phinis and binds
+`DestinationId=whiterun`. Both own a single response instead of using Shared
+Info, have `Goodbye + Force Subtitle + No LIP File`, have no `LinkTo`, and run
+`DNT_WizardTravelFragment` on `OnBegin`. The owned responses are currently
+unvoiced prototype subtitles:
+
+- `Very well. The College, then.`
+- `Very well. Whiterun, then.`
+
+Arrival markers reuse stable Skyrim references whose effective positions
+already reflect the installed JK interiors:
+
+- College: `036A67:Skyrim.esm` (`MGPhinisSleepMarker`), winner
+  `JK's College of Winterhold.esp`
+- Whiterun: `0B7AA5:Skyrim.esm` (`FarengarLabMARKER`), vanilla winner
+
+Both scripts compile with 0 errors and 0 warnings. The workspace plugin parses
+successfully off-order and has zero dangling references or missing masters.
+Raw binary reads confirm both root INFOs own one response, have no Shared Info
+or `LinkTo`, carry the correct speaker condition and destination property, and
+contain an `OnBegin` fragment. Arrival-marker geometry remains a gameplay-only
+check.
+
+The preceding live pass proved that Farengar's top-level option appears, but
+the borrowed response played and no `WIZARD_TRAVEL_*` trace was emitted. The
+fragment never entered the service. The new build removes both suspect layers:
+there is no Shared Info inheritance, and the fragment runs on `OnBegin` rather
+than `OnEnd`. `DNT_WizardTravelService` then waits one second before charging
+and moving the player.
+
+The replacement build passed its live two-way test on 2026-07-31. With only
+72 gold, Farengar's route emitted `WIZARD_TRAVEL_DENIED` and did not move the
+player. After adding test funds, Farengar completed the College trip:
+
+- `WIZARD_TRAVEL_START destination=college fare=250`
+- `WIZARD_TRAVEL_COMPLETE destination=college fare=250`
+
+Phinis then completed the return trip:
+
+- `WIZARD_TRAVEL_START destination=Whiterun fare=250`
+- `WIZARD_TRAVEL_COMPLETE destination=Whiterun fare=250`
+
+The player confirmed arrival at the College and then back in Whiterun. This
+proves the full dialogue -> fragment -> fare -> delayed `MoveTo` path in both
+directions and establishes the College-centred star's first working spoke.
+
+`tools/Patch-WizardGuideDialogue.ps1` now defaults to the patched headless
+xEdit at `build/xedit-patched/SSEEdit64.exe`, patches the workspace copy only,
+and deploys to LoreRim only when passed `-Deploy`; deployment is refused while
+`SkyrimSE` is running. `-Deploy` copies the complete owned module payload so
+the ESP, SEQ, and newly compiled PEX files stay in sync. The generated ESP is
+byte-idempotent at SHA-256
+`91B1C5E7ECAB0664E007E3A39CF59FB03142508143C5095C3599C3058B6AABF5`.
+The rebuilt Phase 1 ZIP SHA-256 is
+`66682A3A61131EFE2CB4159F0266827F2FD7B3C1AE95D4D0B3F4C98FF1AADB58`.
+
+At this checkpoint MO2's active profile is `UltraDiegeticTravel`. The complete
+workspace payload has been deployed to
+`D:\Lorerim\mods\houseCARL - DiegeticTravelWizardGuides`, and the installed
+ESP, SEQ, PEX, and PSC files hash-match the tested workspace copies. houseCARL
+sees the mod enabled in the left pane, but
+`DiegeticTravelWizardGuides.esp` is not yet present/checked in the profile's
+right-pane load order. Enable that plugin before active-load-order dialogue
+validation or the next gameplay test. Do not launch Skyrim without
+coordinating with the user; a parallel PickUpAsJunk task may also use MO2.
 
 ## Safety and environment
 

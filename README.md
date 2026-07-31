@@ -18,6 +18,18 @@ The current beta track is deliberately carriage-only:
 This repository is the public-release implementation. The LoreRim research and
 load-order datamine remain upstream evidence, not runtime dependencies.
 
+The project also contains a separate
+[`modules/wizard-guides`](modules/wizard-guides) vertical slice. That module
+starts the Morrowind-style mage-guide pillar without depending on CFTO or
+overriding the carriage prototype: Phinis Gestor is the hub, Farengar and
+the court wizards are spokes, and the travel service is UI-independent so a
+later map adapter can call the same fare, payment, and teleport functions. The
+current vertical slice exposes Farengar to College and Phinis to Whiterun as
+direct top-level transactions. Their INFOs own short forced-subtitle responses
+and run their travel fragments on begin, allowing the complete two-hop
+Whiterun-to-College-to-Whiterun loop to be proven before more spokes or a map
+picker are added.
+
 ## Implementation status
 
 The carriage alpha now contains:
@@ -101,6 +113,16 @@ set before CFTO constructs its destination choices. The root INFO fragment is a
 cache-aware fallback; it no longer clears a successfully preloaded menu. The
 package ships `Seq\DiegeticTravel.seq` so the listener and service quests start
 reliably.
+
+The standalone wizard-guide Phase 1 package is built separately:
+
+```powershell
+.\tools\Build-WizardGuides.ps1
+```
+
+This compiles the two wizard scripts and writes
+`dist\DiegeticTravelWizardGuides-phase1.zip`. It does not launch Skyrim or
+deploy/toggle the module in MO2.
 
 For the SEQ artifact, the xEdit script mirrors xEdit's built-in eligibility
 rule and emits the fixed FormIDs of newly start-game-enabled quests. PowerShell

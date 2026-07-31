@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "fare_per_hop": 250,
+  "destinations": [
+    {
+      "id": "college",
+      "name": "College of Winterhold",
+      "service_npc": "01C199:Skyrim.esm",
+      "service_reference": "01C1A7:Skyrim.esm",
+      "arrival_marker": "036A67:Skyrim.esm",
+      "links": [
+        "whiterun",
+        "riften"
+      ]
+    },
+    {
+      "id": "whiterun",
+      "name": "Whiterun",
+      "service_npc": "013BBB:Skyrim.esm",
+      "service_reference": "01A67E:Skyrim.esm",
+      "arrival_marker": "0B7AA5:Skyrim.esm",
+      "links": [
+        "college"
+      ]
+    },
+    {
+      "id": "riften",
+      "name": "Riften",
+      "service_npc": "019DEF:Skyrim.esm",
+      "service_reference": "019DF0:Skyrim.esm",
+      "arrival_marker": "044A4A:Skyrim.esm",
+      "links": [
+        "college"
+      ]
+    }
+  ]
+}
