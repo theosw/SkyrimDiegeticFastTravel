@@ -7,11 +7,11 @@ Updated: 2026-07-31
 Use `docs\EVIDENCE_LEDGER.md` as the source of truth for working assumptions,
 rejected approaches, live-proven behavior, and the next candidate test. In
 particular, do not treat xEdit accepting a dialogue field as runtime proof.
-Commit `4dfb646`, whose ESP is SHA-256
-`4EEAED7C6556ADC159A128C9D95FB66124C3C90FC3FB9200D4CF7CC797567E89`, is the
-previous live-proven faculty-access checkpoint. The Solitude-spoke build is
-now the latest live-proven gameplay checkpoint; its ESP is SHA-256
-`3F5C3BEBCBBD26DC70517A7943CF36E918942C57240736A3BFD3731EAB2D9550`.
+Commit `ae1dc5c`, whose ESP is SHA-256
+`3F5C3BEBCBBD26DC70517A7943CF36E918942C57240736A3BFD3731EAB2D9550`, is the
+previous live-proven Solitude checkpoint. The corrected Windhelm/Markarth build
+is now the latest live-proven gameplay checkpoint; its ESP is SHA-256
+`F81562179374815AEF3D57015BC0EBC7AD40B7235A730CB727E7994F7EF68B4F`.
 
 ## Wizard-guide Phase 1
 
@@ -25,8 +25,10 @@ Network:
 - Farengar Secret-Fire (`013BBB:Skyrim.esm`) offers the College.
 - Wylandriah (`019DEF:Skyrim.esm`) offers the College.
 - Sybille Stentor (`0132AA:Skyrim.esm`) offers the College.
+- Wuunferth the Unliving (`014146:Skyrim.esm`) offers the College.
+- Calcelmo (`01338E:Skyrim.esm`) offers the College.
 - Permanent College faculty at faction rank 3 or higher offer Whiterun,
-  Riften, or Solitude from the College; students remain ineligible.
+  Riften, Solitude, Windhelm, or Markarth; students remain ineligible.
 - All services are immediately available; faction, relationship, quest, and
   trust gates are deliberately deferred.
 - Every hop costs 250 gold.
@@ -98,6 +100,10 @@ already reflect the installed JK interiors:
   `JK's Mistveil Keep.esp`
 - Solitude: `02C194:Skyrim.esm` (`BluePalaceAudienceMarker`), winner
   `JK's Blue Palace.esp`
+- Windhelm: `0A3F1C:Skyrim.esm` (`WindhelmWuunferthLabMarker`), focused
+  inventory winner `Unofficial Skyrim Special Edition Patch.esp`
+- Markarth: `03692A:Skyrim.esm`
+  (`MarkarthCastleWizardVendorMarkerREF`), focused inventory winner Skyrim.esm
 
 Both scripts compile with 0 errors and 0 warnings. The workspace plugin parses
 successfully off-order and has zero dangling references or missing masters.
@@ -159,10 +165,10 @@ and deploys to LoreRim only when passed `-Deploy`; deployment is refused while
 `SkyrimSE` is running. `-Deploy` copies the complete owned module payload so
 the ESP, SEQ, and newly compiled PEX files stay in sync. The latest fully proven
 ESP is SHA-256
-`3F5C3BEBCBBD26DC70517A7943CF36E918942C57240736A3BFD3731EAB2D9550`.
+`F81562179374815AEF3D57015BC0EBC7AD40B7235A730CB727E7994F7EF68B4F`.
 The exact live-tested payload was packaged with `-PackageOnly` as
 `dist\DiegeticTravelWizardGuides-phase1.zip`, SHA-256
-`9D8004F580DB5FBE15DDA5F83FC594D6250C1DF56F06DAE175C41D3E0566A8A2`.
+`55301E384F844661C0F5CE884115F54AD66E5039C965D5A99E3B95FF86086C7E`.
 A normal package build recompiles the PEX files and changes their binary hashes;
 use `-PackageOnly` when checkpointing already-tested artifacts, or require a
 new live pass after recompilation.
@@ -211,18 +217,66 @@ conditions and fragments, and the service marker property. The monitored
 safe Blue Palace arrival, Sybille's audible lip-synced response and return to
 the College, and a Riften/Wylandriah regression.
 
+### Windhelm/Markarth proof
+
+The proven build extends the same College-centred star with Wuunferth the
+Unliving and Calcelmo. A repeatable headless-xEdit inventory loads USSEP, JK's
+Palace of the Kings, JK's Understone Keep, and the installed Snazzy interior
+plugins. It resolves Wuunferth as `MaleOldGrumpy` NPC `00014146` with persistent
+reference `0001B132`, and Calcelmo as `MaleOldKindly` NPC `0001338E` with
+persistent reference `00019908`. The existing `000DBA22` `Of course.` FUZ/LIP
+exists for both voice types.
+
+The service binds `WindhelmMarker` to persistent reference `000A3F1C`,
+`WindhelmWuunferthLabMarker`, and `MarkarthMarker` to persistent reference
+`0003692A`, `MarkarthCastleWizardVendorMarkerREF`. Both are purpose-named
+markers beside the relevant wizard. The focused winners are USSEP and
+Skyrim.esm respectively; live arrival geometry is still required.
+
+The generator adds Windhelm DIAL `000813`, voiced INFO `000814`, Mirabelle INFO
+`000815`, and Wuunferth root INFO `000816`; Markarth uses DIAL `000817`, voiced
+INFO `000818`, Mirabelle INFO `000819`, and Calcelmo root INFO `00081A`. The
+faculty hub now links to exactly five destination topics. Both Papyrus scripts
+compile with zero errors and warnings, all exact-record and voice-asset audits
+pass, and a second generation is byte-identical at ESP SHA-256
+`F81562179374815AEF3D57015BC0EBC7AD40B7235A730CB727E7994F7EF68B4F`.
+The initial live build `9B4545B8...` completed five trips, including both new
+round trips, but exposed a semantic audit hole: INFO `ANAM` did not gate the
+top-level response. Ancano reference `0001E7D8` received a court-wizard route,
+and both he and Calcelmo could select another identical root INFO and therefore
+play the wrong donor voice. The corrected generator adds one subject
+`GetIsID == 1` condition to every exact-speaker INFO, including Mirabelle's
+fallbacks. The strengthened audit now requires both `ANAM` and that condition.
+The monitored corrected-build pass confirmed Ancano no longer had the option;
+faculty-to-Markarth, Calcelmo-to-College, Mirabelle-to-Windhelm,
+Wuunferth-to-College, and a faculty-to-Whiterun regression all completed. The
+user confirmed the tested voices matched their speakers and both arrivals were
+usable. Wuunferth's line ended slightly early because travel begins after one
+second; timing polish is deferred while the final voice set remains unsettled.
+The complete module is deployed to the owned LoreRim mod under
+`UltraDiegeticTravel`; all seven ESP/README/SEQ/PEX/PSC payload hashes match the
+workspace, and the non-launching profile preflight passes.
+
 At this checkpoint MO2's active profile is `UltraDiegeticTravel`. The complete
 workspace payload has been deployed to
 `D:\Lorerim\mods\houseCARL - DiegeticTravelWizardGuides`, and the installed
 ESP, README, SEQ, PEX, and PSC files hash-match the workspace copies. Direct
 reads of the MO2 profile files confirm the mod is enabled in the left pane and
 `DiegeticTravelWizardGuides.esp` is checked in the right pane. The installed
-build passes the strengthened structural audit and the monitored faculty
-gameplay regression; the Solitude extension is live-proven. Do not launch
-Skyrim without coordinating with
+build passes the strengthened structural audit and the monitored faculty and
+five-city gameplay regressions. Do not launch Skyrim without coordinating with
 the user; a parallel PickUpAsJunk task may also use MO2.
 
 ## Wizard-guide live tests
+
+### Windhelm/Markarth exact-speaker regression
+
+The monitored corrected-build pass recorded five trips and five matching
+completions: faculty `0001C1A1` -> Markarth, Calcelmo `00019908` -> College,
+Mirabelle `0001C1B9` -> Windhelm, Wuunferth `0001B132` -> College, and faculty
+`0001C1A8` -> Whiterun. Ancano had no option and produced no travel trace. The
+tested voices matched their actors; Wuunferth's line was only slightly clipped
+by the one-second travel delay. Skyrim exited normally.
 
 ### Solitude-spoke regression
 

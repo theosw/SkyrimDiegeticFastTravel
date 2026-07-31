@@ -39,6 +39,24 @@ $expected.Add(
         )
     }
 )
+$expected.Add(
+    [pscustomobject]@{
+        Label = "Wuunferth the Unliving: Of course."
+        Path = (
+            "sound\voice\skyrim.esm\maleoldgrumpy\" +
+            "dialoguege_dialoguegeneric_000dba22_1.fuz"
+        )
+    }
+)
+$expected.Add(
+    [pscustomobject]@{
+        Label = "Calcelmo: Of course."
+        Path = (
+            "sound\voice\skyrim.esm\maleoldkindly\" +
+            "dialoguege_dialoguegeneric_000dba22_1.fuz"
+        )
+    }
+)
 
 $facultyVoiceTypes = [ordered]@{
     "Sergius Turrianus" = "MaleOldGrumpy"

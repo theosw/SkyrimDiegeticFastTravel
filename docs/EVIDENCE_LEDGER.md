@@ -19,12 +19,14 @@ monitored gameplay test on the `UltraDiegeticTravel` profile.
 
 ## Current decision
 
-The latest fully proven faculty-access wizard star includes the Solitude spoke;
-its ESP is SHA-256
+The latest fully proven faculty-access wizard star is the six-node College,
+Whiterun, Riften, Solitude, Windhelm, and Markarth network. Its ESP is SHA-256
+`F81562179374815AEF3D57015BC0EBC7AD40B7235A730CB727E7994F7EF68B4F`.
+The preceding Solitude checkpoint is commit `ae1dc5c`, whose ESP is SHA-256
 `3F5C3BEBCBBD26DC70517A7943CF36E918942C57240736A3BFD3731EAB2D9550`.
 Commit `4dfb646`, whose ESP is SHA-256
 `4EEAED7C6556ADC159A128C9D95FB66124C3C90FC3FB9200D4CF7CC797567E89`, is the
-previous Whiterun/Riften faculty-access checkpoint.
+earlier Whiterun/Riften faculty-access checkpoint.
 The earlier `9aa25ef` checkpoint is the all-owned-response fallback. One failed
 voice experiment pointed the Phinis destination `DNAM` fields at ordinary
 `Favor258` dialogue rather than a real SharedInfo record.
@@ -54,9 +56,21 @@ ESP is byte-idempotent at SHA-256
 `3F5C3BEBCBBD26DC70517A7943CF36E918942C57240736A3BFD3731EAB2D9550` and passes
 the independent structural/service and voice-asset audits. The monitored
 2026-07-31 gameplay matrix in DLG-009 and RUN-004 passed in full.
-The exact tested Solitude payload was packaged without recompilation at
+The exact tested Solitude payload was historically packaged without
+recompilation at
 `dist\DiegeticTravelWizardGuides-phase1.zip`, SHA-256
 `9D8004F580DB5FBE15DDA5F83FC594D6250C1DF56F06DAE175C41D3E0566A8A2`.
+
+The proven Windhelm/Markarth extension adds Wuunferth and Calcelmo as inbound
+guides and expands the faculty hub from three to five destinations. Both
+Papyrus scripts compile with zero errors and warnings; the exact-record,
+service-marker, and voice-asset audits pass. A corrected monitored gameplay
+pass promoted DLG-010, RUN-005, and RUN-006 to Proven. The complete module is
+deployed under `UltraDiegeticTravel`; all seven installed payload hashes match
+the workspace, and the non-launching profile preflight passes. The exact
+live-tested payload was packaged without recompilation at
+`dist\DiegeticTravelWizardGuides-phase1.zip`, SHA-256
+`55301E384F844661C0F5CE884115F54AD66E5039C965D5A99E3B95FF86086C7E`.
 
 ## Dialogue and voice claims
 
@@ -214,6 +228,59 @@ College. A subsequent faculty-to-Riften and Wylandriah-to-College pair proved
 the earlier spokes still worked. Papyrus recorded four starts and four matching
 completions, with source references on every trace.
 
+### DLG-010 — Windhelm and Markarth court-wizard spokes
+
+**Status:** Proven
+
+**Claim:** Wuunferth and Calcelmo can each expose the direct College route,
+while the faculty hub can reliably expose five linked destination topics.
+
+**Evidence:** The focused Skyrim/LoreRim inventory resolves Wuunferth as
+`MaleOldGrumpy` NPC `00014146`, reference `0001B132`, and Calcelmo as
+`MaleOldKindly` NPC `0001338E`, reference `00019908`. Vanilla ships the proven
+`000DBA22` `Of course.` FUZ/LIP for both voice types. The generated plugin adds
+exact-Wuunferth INFO `000816`, exact-Calcelmo INFO `00081A`, Windhelm DIAL/INFOs
+`000813`/`000814`/`000815`, and Markarth DIAL/INFOs
+`000817`/`000818`/`000819`. The independent audit verifies all speakers,
+responses, five hub links, topic membership, OnBegin fragments, destination
+IDs, and Mirabelle subtitle fallbacks. A second generator pass is byte-identical.
+
+The first live build (`9B4545B8...`) completed Mirabelle-to-Windhelm,
+Wuunferth-to-College, faculty-to-Markarth, and Calcelmo-to-College travel, but
+also allowed Ancano reference `0001E7D8` to invoke `destination=college`.
+Calcelmo and Ancano played another root's voice. This disproved `ANAM` as a
+standalone eligibility gate. The corrected build adds an explicit subject
+`GetIsID == 1` condition to every exact-speaker INFO, and the strengthened audit
+requires exactly that one condition in addition to the expected `ANAM`.
+
+The corrected monitored pass recorded five starts and five matching
+completions: faculty `0001C1A1` to Markarth, Calcelmo `00019908` to the College,
+Mirabelle `0001C1B9` to Windhelm, Wuunferth `0001B132` to the College, and
+faculty `0001C1A8` to Whiterun. Ancano had no travel option and produced no
+wizard-travel trace. The user confirmed that the tested voices matched their
+speakers. Returning through Calcelmo and Wuunferth also demonstrated that both
+arrival points left their wizard immediately accessible. Wuunferth's line was
+slightly clipped before travel; timing polish is deferred while the final line
+selection remains unsettled.
+
+### DLG-011 — `ANAM` as a standalone speaker gate
+
+**Status:** Rejected
+
+**Claim:** Setting an INFO's `ANAM` speaker and removing its conditions limits
+that top-level dialogue response to the named actor.
+
+**Evidence:** In the monitored `9B4545B8...` pass, Ancano displayed the shared
+court-wizard prompt and Papyrus recorded a complete College trip from his
+reference `0001E7D8`. Ancano and Calcelmo also received the wrong donor voice,
+showing that Skyrim could choose another eligible root INFO with the identical
+prompt. The static audit had incorrectly passed because it checked `ANAM` but
+not runtime eligibility conditions.
+
+**Decision:** Every exact-speaker INFO must carry both the expected `ANAM` and
+one subject `GetIsID == 1` condition. The generator and audit now enforce this
+for all direct court-wizard roots and Mirabelle fallbacks.
+
 ## Runtime claims
 
 ### RUN-001 — Travel fragment timing
@@ -262,6 +329,43 @@ The monitored 2026-07-31 pass moved the player from Mirabelle to this marker;
 the player reported that the arrival looked correct before continuing to
 Sybille and returning to the College.
 
+### RUN-005 — Wuunferth lab marker arrival
+
+**Status:** Proven
+
+**Claim:** Persistent reference `000A3F1C:Skyrim.esm`
+(`WindhelmWuunferthLabMarker`) is a safe arrival point in the installed Palace
+of the Kings Upstairs interior.
+
+**Evidence:** A focused xEdit inventory identifies the reference as a
+purpose-named persistent `XMarker` beside Wuunferth's lab. Its winner among the
+loaded Skyrim, USSEP, JK, and Snazzy interior records is USSEP. The independent
+plugin audit verifies that `WindhelmMarker` resolves to this exact reference.
+
+**Gameplay evidence:** The corrected monitored pass completed Mirabelle to
+Windhelm and then Wuunferth back to the College. The successful immediate
+return conversation demonstrates a usable arrival with convenient access to
+Wuunferth.
+
+### RUN-006 — Calcelmo vendor marker arrival
+
+**Status:** Proven
+
+**Claim:** Persistent reference `0003692A:Skyrim.esm`
+(`MarkarthCastleWizardVendorMarkerREF`) is a safe arrival point beside Calcelmo
+in the installed Understone Keep interior.
+
+**Evidence:** A focused xEdit inventory identifies the reference as a
+purpose-named persistent `XMarker` adjacent to Calcelmo's persistent actor
+reference. Its winner among the loaded Skyrim, USSEP, JK, and Snazzy interior
+records is Skyrim.esm. The independent plugin audit verifies that
+`MarkarthMarker` resolves to this exact reference.
+
+**Gameplay evidence:** The corrected monitored pass completed a faculty trip
+to Markarth and then Calcelmo back to the College. The successful immediate
+return conversation demonstrates a usable arrival with convenient access to
+Calcelmo.
+
 ## Workflow claims
 
 ### TOOL-001 — Patched headless xEdit
@@ -309,7 +413,7 @@ Promote a dialogue candidate to **Proven** only after all applicable checks:
 
 - Trust, faction, disposition, and quest-based service gates.
 - Map-based destination selection and Better Carriage Destinations integration.
-- More College spokes beyond Whiterun, Riften, and Solitude.
+- More College spokes beyond Whiterun, Riften, Solitude, Windhelm, and Markarth.
 - Travel-time passage, rest/recovery behavior, and intervention/recall magic.
 
 These remain design goals, not implementation assumptions.

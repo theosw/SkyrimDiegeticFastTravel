@@ -1,8 +1,8 @@
 {
   Read-only, exact-record audit for the College-centred wizard-guide star.
-  It checks the three inbound court-wizard routes, the shared College faculty
-  hub, all three voiced faculty destinations, Mirabelle's three subtitle-only
-  fallbacks, and the Solitude service-marker binding.
+  It checks the five inbound court-wizard routes, the shared College faculty
+  hub, all five voiced faculty destinations, Mirabelle's five subtitle-only
+  fallbacks, and all three extended service-marker bindings.
 }
 unit DNT_AuditWizardGuideStar;
 
@@ -13,6 +13,7 @@ const
   SilentDirectResponseFlagsMask = $0A01;
   HubResponseFlagsMask = $0A00;
   MiscDialogueCategory = 7;
+  EqualConditionType = $00;
   GreaterThanOrEqualConditionType = $60;
   NotEqualConditionType = $20;
 
@@ -220,6 +221,34 @@ begin
     raise Exception.Create(EditorID + ' condition parameter does not match');
 end;
 
+procedure AssertDirectSpeakerGate(
+  InfoRecord: IInterface;
+  const EditorID: string;
+  ExpectedFormID: Cardinal
+);
+var
+  Conditions: IInterface;
+begin
+  Conditions := ElementByPath(InfoRecord, 'Conditions');
+  if not Assigned(Conditions) or (ElementCount(Conditions) <> 1) then
+    if not Assigned(Conditions) then
+      raise Exception.Create(EditorID + ' has no exact-speaker condition')
+    else
+      raise Exception.Create(
+        EditorID + ' exact-speaker condition count=' +
+        IntToStr(ElementCount(Conditions)) + ', expected=1'
+      );
+  AssertConditionAt(
+    InfoRecord,
+    EditorID,
+    0,
+    'GetIsID',
+    ExpectedFormID,
+    EqualConditionType,
+    1.0
+  );
+end;
+
 procedure AssertCollegeFacultySpeaker(
   InfoRecord: IInterface;
   const EditorID: string;
@@ -371,7 +400,11 @@ begin
     raise Exception.Create(EditorID + ' Service is missing');
 end;
 
-procedure AuditSolitudeServiceMarker;
+procedure AuditServiceMarker(
+  const PropertyNameValue: string;
+  ExpectedMarkerFormID: Cardinal;
+  const ExpectedMarkerEditorID: string
+);
 var
   ServiceQuest, VMAD, Scripts, ScriptEntry, Properties, PropertyEntry,
     MarkerRecord: IInterface;
@@ -406,7 +439,7 @@ begin
   for i := 0 to Pred(ElementCount(Properties)) do begin
     PropertyEntry := ElementByIndex(Properties, i);
     PropertyName := GetElementEditValues(PropertyEntry, 'propertyName');
-    if PropertyName = 'SolitudeMarker' then begin
+    if PropertyName = PropertyNameValue then begin
       Inc(MatchCount);
       MarkerRecord := LinksTo(
         ElementByPath(
@@ -415,16 +448,26 @@ begin
         )
       );
       if not Assigned(MarkerRecord) or
-        (FormID(MarkerRecord) <> $0002C194) then
-        raise Exception.Create('SolitudeMarker does not point to 0002C194');
+        (FormID(MarkerRecord) <> ExpectedMarkerFormID) then
+        raise Exception.Create(
+          PropertyNameValue + ' does not point to ' +
+          IntToHex(ExpectedMarkerFormID, 8)
+        );
+      if GetElementEditValues(MarkerRecord, 'EDID') <>
+        ExpectedMarkerEditorID then
+        raise Exception.Create(
+          PropertyNameValue + ' marker EditorID does not match'
+        );
     end;
   end;
   if MatchCount <> 1 then
     raise Exception.Create(
-      'Wizard travel service SolitudeMarker count=' + IntToStr(MatchCount)
+      'Wizard travel service ' + PropertyNameValue + ' count=' +
+      IntToStr(MatchCount)
     );
   ReportLines.Add(
-    'PASS service SolitudeMarker -> BluePalaceAudienceMarker 0002C194'
+    'PASS service ' + PropertyNameValue + ' -> ' +
+    ExpectedMarkerEditorID + ' ' + IntToHex(ExpectedMarkerFormID, 8)
   );
 end;
 
@@ -447,6 +490,7 @@ begin
     SharedInfoTopicFormID
   );
   AssertSpeaker(InfoRecord, EditorID, SpeakerFormID);
+  AssertDirectSpeakerGate(InfoRecord, EditorID, SpeakerFormID);
   if GetElementNativeValues(
     InfoRecord,
     'ENAM\Response Flags'
@@ -508,8 +552,7 @@ begin
     raise Exception.Create(EditorID + ' prompt does not match');
   AssertOwnedResponse(InfoRecord, EditorID, 'Of course.');
   AssertSpeaker(InfoRecord, EditorID, $0001C1A0);
-  if Assigned(ElementByPath(InfoRecord, 'Conditions')) then
-    raise Exception.Create(EditorID + ' unexpectedly has conditions');
+  AssertDirectSpeakerGate(InfoRecord, EditorID, $0001C1A0);
   if GetElementNativeValues(
     InfoRecord,
     'ENAM\Response Flags'
@@ -527,8 +570,9 @@ end;
 
 procedure AuditHub;
 var
-  HubInfo, Links, FirstTarget, SecondTarget, ThirdTarget, WhiterunTopic,
-    RiftenTopic, SolitudeTopic: IInterface;
+  HubInfo, Links, FirstTarget, SecondTarget, ThirdTarget, FourthTarget,
+    FifthTarget, WhiterunTopic, RiftenTopic, SolitudeTopic, WindhelmTopic,
+    MarkarthTopic: IInterface;
 begin
   HubInfo := RequireRecord($000808, 'INFO', 'DNT_WG_Request_Phinis');
   WhiterunTopic := RequireRecord(
@@ -538,6 +582,8 @@ begin
   );
   RiftenTopic := RequireRecord($000804, 'DIAL', 'DNT_WG_ToRiften');
   SolitudeTopic := RequireRecord($00080F, 'DIAL', 'DNT_WG_ToSolitude');
+  WindhelmTopic := RequireRecord($000813, 'DIAL', 'DNT_WG_ToWindhelm');
+  MarkarthTopic := RequireRecord($000817, 'DIAL', 'DNT_WG_ToMarkarth');
 
   if GetElementEditValues(HubInfo, 'RNAM') <>
     'Can you teleport me somewhere? (250 gold per trip)' then
@@ -557,11 +603,13 @@ begin
     raise Exception.Create('Phinis hub unexpectedly has a travel VMAD');
 
   Links := ElementByPath(HubInfo, 'Link To');
-  if not Assigned(Links) or (ElementCount(Links) <> 3) then
-    raise Exception.Create('Phinis hub must have exactly three Link To entries');
+  if not Assigned(Links) or (ElementCount(Links) <> 5) then
+    raise Exception.Create('Phinis hub must have exactly five Link To entries');
   FirstTarget := LinksTo(ElementByIndex(Links, 0));
   SecondTarget := LinksTo(ElementByIndex(Links, 1));
   ThirdTarget := LinksTo(ElementByIndex(Links, 2));
+  FourthTarget := LinksTo(ElementByIndex(Links, 3));
+  FifthTarget := LinksTo(ElementByIndex(Links, 4));
   if not Assigned(FirstTarget) or
     (FormID(FirstTarget) <> FormID(WhiterunTopic)) then
     raise Exception.Create('Phinis first hub target is not Whiterun');
@@ -571,15 +619,23 @@ begin
   if not Assigned(ThirdTarget) or
     (FormID(ThirdTarget) <> FormID(SolitudeTopic)) then
     raise Exception.Create('Phinis third hub target is not Solitude');
+  if not Assigned(FourthTarget) or
+    (FormID(FourthTarget) <> FormID(WindhelmTopic)) then
+    raise Exception.Create('Phinis fourth hub target is not Windhelm');
+  if not Assigned(FifthTarget) or
+    (FormID(FifthTarget) <> FormID(MarkarthTopic)) then
+    raise Exception.Create('Phinis fifth hub target is not Markarth');
 
   ReportLines.Add(
-    'PASS hub DNT_WG_Request_Phinis -> whiterun,riften,solitude'
+    'PASS hub DNT_WG_Request_Phinis -> ' +
+    'whiterun,riften,solitude,windhelm,markarth'
   );
 end;
 
 function Initialize: Integer;
 var
-  WhiterunTopic, RiftenTopic, SolitudeTopic, SolitudeInfoGroup: IInterface;
+  WhiterunTopic, RiftenTopic, SolitudeTopic, WindhelmTopic, MarkarthTopic,
+    SolitudeInfoGroup, WindhelmInfoGroup, MarkarthInfoGroup: IInterface;
 begin
   Result := 1;
   StatusPath :=
@@ -626,7 +682,41 @@ begin
       $000DBA22,
       $0001F319
     );
-    AuditSolitudeServiceMarker;
+    AuditDirect(
+      $000816,
+      'DNT_WG_Request_Wuunferth',
+      'Can you teleport me to the College of Winterhold? (250 gold)',
+      'Of course.',
+      'college',
+      $00014146,
+      $000DBA22,
+      $0001F319
+    );
+    AuditDirect(
+      $00081A,
+      'DNT_WG_Request_Calcelmo',
+      'Can you teleport me to the College of Winterhold? (250 gold)',
+      'Of course.',
+      'college',
+      $0001338E,
+      $000DBA22,
+      $0001F319
+    );
+    AuditServiceMarker(
+      'SolitudeMarker',
+      $0002C194,
+      'BluePalaceAudienceMarker'
+    );
+    AuditServiceMarker(
+      'WindhelmMarker',
+      $000A3F1C,
+      'WindhelmWuunferthLabMarker'
+    );
+    AuditServiceMarker(
+      'MarkarthMarker',
+      $0003692A,
+      'MarkarthCastleWizardVendorMarkerREF'
+    );
     AuditHub;
     WhiterunTopic := RequireRecord(
       $000803,
@@ -643,11 +733,33 @@ begin
       'DIAL',
       'DNT_WG_ToSolitude'
     );
+    WindhelmTopic := RequireRecord(
+      $000813,
+      'DIAL',
+      'DNT_WG_ToWindhelm'
+    );
+    MarkarthTopic := RequireRecord(
+      $000817,
+      'DIAL',
+      'DNT_WG_ToMarkarth'
+    );
     SolitudeInfoGroup := ChildGroup(SolitudeTopic);
     if not Assigned(SolitudeInfoGroup) or
       (ElementCount(SolitudeInfoGroup) <> 2) then
       raise Exception.Create(
         'DNT_WG_ToSolitude must contain exactly two INFO records'
+      );
+    WindhelmInfoGroup := ChildGroup(WindhelmTopic);
+    if not Assigned(WindhelmInfoGroup) or
+      (ElementCount(WindhelmInfoGroup) <> 2) then
+      raise Exception.Create(
+        'DNT_WG_ToWindhelm must contain exactly two INFO records'
+      );
+    MarkarthInfoGroup := ChildGroup(MarkarthTopic);
+    if not Assigned(MarkarthInfoGroup) or
+      (ElementCount(MarkarthInfoGroup) <> 2) then
+      raise Exception.Create(
+        'DNT_WG_ToMarkarth must contain exactly two INFO records'
       );
     AuditFacultyVoicedDestination(
       $00080B,
@@ -690,6 +802,34 @@ begin
       'Send me to Solitude. (250 gold)',
       'solitude',
       SolitudeTopic
+    );
+    AuditFacultyVoicedDestination(
+      $000814,
+      'DNT_WG_Windhelm_FromPhinis',
+      'Send me to Windhelm. (250 gold)',
+      'windhelm',
+      WindhelmTopic
+    );
+    AuditMirabelleDestination(
+      $000815,
+      'DNT_WG_Windhelm_FromMirabelle',
+      'Send me to Windhelm. (250 gold)',
+      'windhelm',
+      WindhelmTopic
+    );
+    AuditFacultyVoicedDestination(
+      $000818,
+      'DNT_WG_Markarth_FromPhinis',
+      'Send me to Markarth. (250 gold)',
+      'markarth',
+      MarkarthTopic
+    );
+    AuditMirabelleDestination(
+      $000819,
+      'DNT_WG_Markarth_FromMirabelle',
+      'Send me to Markarth. (250 gold)',
+      'markarth',
+      MarkarthTopic
     );
 
     ReportLines.Add('PASS wizard-guide star audit complete');

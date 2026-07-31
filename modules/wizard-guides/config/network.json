@@ -11,7 +11,9 @@
       "links": [
         "whiterun",
         "riften",
-        "solitude"
+        "solitude",
+        "windhelm",
+        "markarth"
       ]
     },
     {
@@ -40,6 +42,26 @@
       "service_npc": "0132AA:Skyrim.esm",
       "service_reference": "0198C5:Skyrim.esm",
       "arrival_marker": "02C194:Skyrim.esm",
+      "links": [
+        "college"
+      ]
+    },
+    {
+      "id": "windhelm",
+      "name": "Windhelm",
+      "service_npc": "014146:Skyrim.esm",
+      "service_reference": "01B132:Skyrim.esm",
+      "arrival_marker": "0A3F1C:Skyrim.esm",
+      "links": [
+        "college"
+      ]
+    },
+    {
+      "id": "markarth",
+      "name": "Markarth",
+      "service_npc": "01338E:Skyrim.esm",
+      "service_reference": "019908:Skyrim.esm",
+      "arrival_marker": "03692A:Skyrim.esm",
       "links": [
         "college"
       ]

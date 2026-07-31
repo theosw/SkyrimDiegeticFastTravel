@@ -10,15 +10,17 @@ Destinations dependency.
 - Farengar Secret-Fire offers a direct trip to the College.
 - Wylandriah offers a direct trip to the College.
 - Sybille Stentor offers a direct trip to the College.
-- Permanent College faculty offer Whiterun, Riften, or Solitude from the
-  College.
+- Wuunferth the Unliving offers a direct trip to the College.
+- Calcelmo offers a direct trip to the College.
+- Permanent College faculty offer Whiterun, Riften, Solitude, Windhelm, or
+  Markarth from the College.
 - Every hop costs 250 gold.
 - Travel is an immediate teleport. It does not advance time, count as rest, or
   restore health, magicka, or stamina.
 - There are no faction, relationship, quest, or trust gates in Phase 1.
 
 The proven three-node star established the route pattern used by the proven
-four-node extension:
+six-node network:
 each court wizard reaches only the College, while any permanent College faculty
 member can provide the same outward destination menu.
 
@@ -46,6 +48,8 @@ vanilla INFO whose FUZ/LIP exists for the speaker's exact voice type:
 - Farengar: `Yes.`
 - Wylandriah: `Of course.`
 - Sybille Stentor: `Of course.`
+- Wuunferth the Unliving: `Of course.`
+- Calcelmo: `Of course.`
 - College faculty destination confirmation: `Of course.`
 
 The branching faculty hub owns the unvoiced forced-subtitle response
@@ -73,6 +77,10 @@ installed JK interior overhauls where necessary:
 - Riften: `RiftenKeepWizardLabMarker` (`044A4A:Skyrim.esm`)
 - Solitude: `BluePalaceAudienceMarker` (`02C194:Skyrim.esm`), whose installed
   winner is `JK's Blue Palace.esp`
+- Windhelm: `WindhelmWuunferthLabMarker` (`0A3F1C:Skyrim.esm`), whose focused
+  inventory winner is USSEP
+- Markarth: `MarkarthCastleWizardVendorMarkerREF` (`03692A:Skyrim.esm`), whose
+  focused inventory winner is Skyrim.esm
 
 Their spatial safety passed the controlled 2026-07-31 in-game regression.
 Structural validation alone still cannot prove marker safety after future
@@ -104,6 +112,26 @@ monitored 2026-07-31 gameplay pass verified Mirabelle's subtitle-only journey
 to Solitude, safe arrival on the remodeled Blue Palace court floor, Sybille's
 audible lip-synced `Of course.` and return to the College, plus a Riften and
 Wylandriah regression. Four starts produced four matching completions.
+
+The proven Windhelm/Markarth build adds exact-speaker direct routes for Wuunferth
+and Calcelmo, extends the faculty hub to five choices, and adds voiced plus
+Mirabelle-subtitle INFOs for both destinations. The generator is
+byte-idempotent at ESP SHA-256
+`F81562179374815AEF3D57015BC0EBC7AD40B7235A730CB727E7994F7EF68B4F`.
+Both scripts compile with zero errors and warnings, and the exact-record and
+voice-asset audits pass. The monitored 2026-07-31 retest confirmed Ancano had no
+option, both new round trips completed with matching voices, both arrival
+markers were usable, and the Whiterun regression completed. Papyrus recorded
+five starts and five completions. Wuunferth's line was slightly cut off by the
+one-second travel delay; timing polish is deferred while voice choices remain
+provisional.
+
+An initial `9B4545B8...` gameplay pass proved all five requested teleports but
+also allowed Ancano to select an identical court-wizard root and produced wrong
+voices for Ancano and Calcelmo. `ANAM` is therefore not accepted as an
+eligibility gate. The corrected build requires an explicit subject
+`GetIsID == 1` condition on every exact-speaker INFO, and the structural audit
+enforces that contract.
 
 Do not launch Skyrim as part of the build. Run the gameplay pass only after
 explicit approval.
