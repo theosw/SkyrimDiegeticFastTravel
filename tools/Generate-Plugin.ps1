@@ -1,9 +1,10 @@
 param(
-    [string]$LoreRimRoot = "D:\Games\US SSE\Lorerim\game-files",
+    [string]$LoreRimRoot = "D:\Lorerim",
     [string]$XEdit = "D:\Lorerim\tools\SSE Edit (4.0.4)\SSEEdit64.exe",
     [string]$Manifest = "build\dialogue_manifest.json",
     [string]$DialogueRuntime = "build\dialogue_runtime.json",
     [string]$PluginOutput = "build\DiegeticTravel.esp",
+    [string]$SeqOutput = "build\Seq\DiegeticTravel.seq",
     [string]$StagingData = "build\xedit-data"
 )
 
@@ -72,11 +73,13 @@ function Find-XEditWindow(
 $manifestPath = Resolve-ProjectPath $Manifest
 $dialogueRuntimePath = Resolve-ProjectPath $DialogueRuntime
 $pluginOutputPath = Resolve-ProjectPath $PluginOutput
+$seqOutputPath = Resolve-ProjectPath $SeqOutput
 $stagingDataPath = Resolve-ProjectPath $StagingData
 $generatorConfigPath = Join-Path $projectRoot "build\xedit_generator_config.json"
 $pluginsListPath = Join-Path $projectRoot "build\xedit_plugins.txt"
 $xeditLogPath = Join-Path $projectRoot "build\xedit_generator.log"
 $xeditStatusPath = Join-Path $projectRoot "build\xedit_generator.status"
+$seqFormIdsPath = Join-Path $projectRoot "build\xedit_seq_formids.txt"
 $scriptPath = Join-Path $PSScriptRoot "xedit\DNT_GeneratePlugin.pas"
 $gameData = Join-Path $LoreRimRoot "Stock Game\Data"
 $cftoPlugin = Join-Path $LoreRimRoot "mods\Carriage and Ferry Travel Overhaul - Fixes and Winterhold\CFTO.esp"
@@ -90,6 +93,7 @@ foreach ($required in @($XEdit, $manifestPath, $scriptPath, $cftoPlugin)) {
 New-Item -ItemType Directory -Force -Path $stagingDataPath | Out-Null
 New-Item -ItemType Directory -Force -Path (Split-Path -Parent $pluginOutputPath) | Out-Null
 New-Item -ItemType Directory -Force -Path (Split-Path -Parent $dialogueRuntimePath) | Out-Null
+New-Item -ItemType Directory -Force -Path (Split-Path -Parent $seqOutputPath) | Out-Null
 
 foreach ($master in @("Skyrim.esm", "Update.esm", "Dawnguard.esm", "HearthFires.esm", "Dragonborn.esm")) {
     $source = Join-Path $gameData $master
@@ -104,9 +108,11 @@ $stagedGeneratedPlugin = Join-Path $stagingDataPath "DiegeticTravel.esp"
 foreach ($oldOutput in @(
     $stagedGeneratedPlugin,
     $pluginOutputPath,
+    $seqOutputPath,
     $dialogueRuntimePath,
     $xeditLogPath,
-    $xeditStatusPath
+    $xeditStatusPath,
+    $seqFormIdsPath
 )) {
     if (Test-Path -LiteralPath $oldOutput -PathType Leaf) {
         Remove-Item -LiteralPath $oldOutput -Force
@@ -117,6 +123,7 @@ $generatorConfig = @{
     manifest = $manifestPath
     dialogue_runtime = $dialogueRuntimePath
     plugin_output = $pluginOutputPath
+    seq_formids = $seqFormIdsPath
 } | ConvertTo-Json
 [System.IO.File]::WriteAllText(
     $generatorConfigPath,
@@ -250,11 +257,58 @@ if (Test-Path -LiteralPath $xeditLogPath -PathType Leaf) {
     }
 }
 
-foreach ($generated in @($pluginOutputPath, $dialogueRuntimePath)) {
+foreach ($generated in @(
+    $pluginOutputPath,
+    $seqFormIdsPath,
+    $dialogueRuntimePath
+)) {
     if (-not (Test-Path -LiteralPath $generated -PathType Leaf)) {
         throw "xEdit exited without creating: $generated"
     }
 }
 
+$seqFormIds = @(
+    Get-Content -LiteralPath $seqFormIdsPath |
+        ForEach-Object { $_.Trim() } |
+        Where-Object { $_ -ne "" }
+)
+if ($seqFormIds.Count -eq 0) {
+    throw "xEdit reported no start-game quest FormIDs for the SEQ file."
+}
+
+$invalidSeqFormIds = @(
+    $seqFormIds | Where-Object { $_ -notmatch "^[0-9A-Fa-f]{8}$" }
+)
+if ($invalidSeqFormIds.Count -gt 0) {
+    throw (
+        "xEdit emitted invalid SEQ FormIDs: " +
+        ($invalidSeqFormIds -join ", ")
+    )
+}
+
+$uniqueSeqFormIds = @($seqFormIds | Sort-Object -Unique)
+if ($uniqueSeqFormIds.Count -ne $seqFormIds.Count) {
+    throw "xEdit emitted duplicate SEQ FormIDs."
+}
+
+$seqBytes = [byte[]]::new($seqFormIds.Count * 4)
+for ($index = 0; $index -lt $seqFormIds.Count; $index++) {
+    $formId = [Convert]::ToUInt32($seqFormIds[$index], 16)
+    $offset = $index * 4
+    $seqBytes[$offset] = [byte]($formId -band 0xFF)
+    $seqBytes[$offset + 1] = [byte](($formId -shr 8) -band 0xFF)
+    $seqBytes[$offset + 2] = [byte](($formId -shr 16) -band 0xFF)
+    $seqBytes[$offset + 3] = [byte](($formId -shr 24) -band 0xFF)
+}
+[System.IO.File]::WriteAllBytes($seqOutputPath, $seqBytes)
+
+if ((Get-Item -LiteralPath $seqOutputPath).Length -ne ($seqFormIds.Count * 4)) {
+    throw "Generated SEQ byte count does not match its FormID manifest."
+}
+
 Write-Host "Generated plugin: $pluginOutputPath"
+Write-Host (
+    "Generated sequence data: $seqOutputPath " +
+    "($($seqFormIds.Count) quest FormIDs)"
+)
 Write-Host "Generated dialogue data: $dialogueRuntimePath"

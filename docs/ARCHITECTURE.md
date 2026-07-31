@@ -10,8 +10,9 @@ is untouched.
 
 When the player asks a driver for a ride:
 
-1. Opening carriage dialogue identifies the driver and refreshes that origin's
-   quotes.
+1. A player quest alias registers for `Dialogue Menu`, re-registering after
+   every save load. When the menu opens, it resolves the actor under the
+   crosshair and refreshes that driver's complete origin quote set.
 2. The route service evaluates at most three precompiled candidates per
    destination.
 3. It reads live `Location.IsCleared()`, mound-activation state, and Civil War
@@ -26,6 +27,21 @@ Drivers in CFTO's free-carriage faction see zero-cost quotes and are not charged
 but availability is evaluated exactly like a paid trip.
 
 No pathfinding occurs in Papyrus.
+
+The root carriage INFO still carries `DNT_PrepareOrigin.Fragment_0`, but it is a
+cache-aware fallback. If the menu listener already completed the current
+speaker's quote set, the fragment reuses it instead of clearing the globals.
+This separation is deliberate: INFO `OnBegin` is late enough that Skyrim can
+snapshot the first refreshed destination before the remaining route evaluations
+finish. The listener quest and its player alias are start-game enabled and
+shipped with `Seq\DiegeticTravel.seq`.
+
+The Pascal generator does not write the SEQ binary directly. It follows xEdit's
+own eligibility rule—new start-game-enabled quests, plus overrides that newly
+enable the flag—and emits their fixed FormIDs as text. The PowerShell launcher
+validates those IDs and serializes each as a four-byte little-endian entry.
+Keeping binary output outside JvInterpreter avoids its variant/buffer
+marshalling behavior.
 
 ## Provider separation
 

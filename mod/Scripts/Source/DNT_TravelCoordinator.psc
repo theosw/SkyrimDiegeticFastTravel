@@ -3,6 +3,8 @@ Scriptname DNT_TravelCoordinator extends Quest
 String Property DialoguePath = "Data/SKSE/Plugins/DiegeticTravel/dialogue_runtime.json" Auto
 
 Int _dialogue
+Actor _preparedSpeaker
+Bool _quotesReady = False
 
 Event OnInit()
     LoadDialogue()
@@ -31,9 +33,11 @@ Bool Function EnsureDialogue()
     Return LoadDialogue()
 EndFunction
 
-DNT_OriginService Function GetOriginService(Actor speaker)
+DNT_OriginService Function GetOriginService(Actor speaker, Bool traceFailure = True)
     If !speaker
-        Debug.Trace("[DNT] ORIGIN_LOOKUP_FAILED reason=speaker_none", 2)
+        If traceFailure
+            Debug.Trace("[DNT] ORIGIN_LOOKUP_FAILED reason=speaker_none", 2)
+        EndIf
         Return None
     EndIf
     If !EnsureDialogue()
@@ -54,7 +58,9 @@ DNT_OriginService Function GetOriginService(Actor speaker)
         index += 1
     EndWhile
 
-    Debug.Trace("[DNT] ORIGIN_LOOKUP_FAILED reason=unconfigured speaker=" + speaker + " base=" + speakerBase, 2)
+    If traceFailure
+        Debug.Trace("[DNT] ORIGIN_LOOKUP_FAILED reason=unconfigured speaker=" + speaker + " base=" + speakerBase, 2)
+    EndIf
     Return None
 EndFunction
 
@@ -83,12 +89,32 @@ Function ClearDestinationGlobals()
     EndWhile
 EndFunction
 
-Function RefreshForSpeaker(ObjectReference speakerRef)
-    ClearDestinationGlobals()
-    DNT_OriginService service = GetOriginService(speakerRef as Actor)
-    If service
-        service.RefreshQuotesForSpeaker(speakerRef as Actor)
+Bool Function PreloadForSpeaker(ObjectReference speakerRef)
+    Actor speaker = speakerRef as Actor
+    DNT_OriginService service = GetOriginService(speaker, False)
+    If !service
+        _preparedSpeaker = None
+        _quotesReady = False
+        Return False
     EndIf
+
+    ClearDestinationGlobals()
+    Int availableCount = service.RefreshQuotesForSpeaker(speaker)
+    _preparedSpeaker = speaker
+    _quotesReady = True
+    Debug.Trace("[DNT] MENU_QUOTES_READY origin=" + service.OriginId + " available=" + availableCount + " speaker=" + speaker)
+    Return True
+EndFunction
+
+Function PrepareForSpeaker(ObjectReference speakerRef)
+    Actor speaker = speakerRef as Actor
+    If speaker && _quotesReady && _preparedSpeaker == speaker
+        Debug.Trace("[DNT] MENU_QUOTES_REUSED speaker=" + speaker)
+        Return
+    EndIf
+
+    Debug.Trace("[DNT] MENU_QUOTES_FALLBACK speaker=" + speaker)
+    PreloadForSpeaker(speakerRef)
 EndFunction
 
 Bool Function Purchase(String destinationId, ObjectReference speakerRef)

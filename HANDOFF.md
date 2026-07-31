@@ -8,20 +8,24 @@ Updated: 2026-07-30
   replace, or edit mods in its stack to manufacture a "clean" test.
 - The development mod is installed at
   `D:\Lorerim\mods\DiegeticTravel`.
-- The user enabled the appropriate 32:9 AIO during the earlier live test.
-  houseCARL reported it disabled after the switch to `UltraDiegeticTravel`;
-  verify that display-specific mod is enabled before the next visual test.
+- The user's current `[No Delete] 32x9 AIO` is enabled in
+  `UltraDiegeticTravel`. The older
+  `32x9 USERS ENABLE THIS - Misc AIO Patch for LoreRim` is intentionally
+  disabled and must remain disabled; it is obsolete and has a broken BTPS icon.
 - Do not launch Skyrim without the user's explicit approval.
 - Do not edit `C:\Users\Theo\Documents\PickUpAsJunk`; another Codex task may be
   using it.
 
 ## Last live test
 
-- Carriage dialogue appeared and displayed generated fare/time labels.
-- Selecting Mixwater Mill from Whiterun successfully charged the player and
-  completed CFTO travel.
-- The purchase log recorded a fare of 700, but the dialogue text showed a stale
-  or otherwise incorrect gold amount.
+- The fixed root fragment fired and matched the Whiterun driver.
+- The destination menu showed only its first generated entry, Darkwater
+  Crossing, because INFO OnBegin refreshed globals too late for the menu's
+  choice snapshot.
+- Darkwater Crossing displayed 800 gold / 5.60 hours.
+- The purchase trace committed exactly 800 gold with CFTO destination code 11,
+  and the player arrived at Darkwater Crossing. The stale-price/payment defect
+  is fixed; menu population timing remains the target.
 
 ## Root cause and current source fix
 
@@ -51,14 +55,55 @@ The deployed ESP SHA-256 is
 The pre-deployment mod folder is backed up at
 `build\backups\DiegeticTravel-20260730-184454`.
 
-This deployed build has not yet been tested in game.
+This deployed build was tested successfully for payment and CFTO handoff, but
+confirmed the INFO OnBegin timing defect described above.
 
-There is a second timing risk: dialogue choices may be rendered before an INFO
-OnBegin fragment can refresh globals used by sibling topic labels. houseCARL's
-dialogue-authoring guidance recommends preparing those globals on
-`RegisterForMenu("Dialogue Menu")`. If the regenerated VMAD still produces
-stale labels, move quote preparation to that menu-open event instead of adding
-more INFO-fragment timing assumptions.
+The workspace source now implements the timing fix:
+
+- `DNT_DialogueMenuListener` is a player `ReferenceAlias` script;
+- it registers for `Dialogue Menu` on initialization and after every save load;
+- menu open resolves `Game.GetCurrentCrosshairRef()` and preloads every quote
+  for the matched origin;
+- `DNT_PrepareOrigin` reuses the completed cache instead of clearing it;
+- `DNT_OriginService.RefreshQuotes` returns the available-route count, logged as
+  `MENU_QUOTES_READY origin=<origin> available=<count>`;
+- the generator adds the player alias/VMAD listener binding and emits the
+  eligible start-game quest FormIDs; the PowerShell launcher serializes them
+  into `Seq\DiegeticTravel.seq`;
+- the origin services no longer all refresh the shared globals during startup.
+
+The six Papyrus scripts compile cleanly, all ten Python tests pass, and the
+generated ESP completed both off-order and active-load structural readback. The
+coordinator quest has a forced player alias (ID 0), the alias VMAD points back
+to that quest and alias ID, and `DNT_DialogueMenuListener.Coordinator` points at
+the coordinator quest.
+
+The first Pascal binary SEQ writer was rejected during validation:
+JvInterpreter wrote twelve copies of `0x00000013` instead of raw FormIDs, and it
+included an already-SGE CFTO quest override. The final build mirrors xEdit's
+built-in eligibility rule, writes the fixed FormIDs to a text manifest, and lets
+PowerShell serialize the four-byte little-endian entries with format,
+uniqueness, and byte-count checks. The deployed 44-byte SEQ contains the 11
+unique IDs `0x06000852` through `0x0600085C`.
+
+The timing-fix package was deployed on 2026-07-30 after Skyrim closed. Only
+`D:\Lorerim\mods\DiegeticTravel` was overlaid; no profile or other mod was
+changed. The pre-deployment folder is backed up at
+`build\backups\DiegeticTravel-20260730-201745`.
+
+Deployed/package hashes:
+
+- `DiegeticTravel.esp`:
+  `63170DA469959069D8BD8841657AEEAD9E0D6522B7CB8EBBBA2FAD88F31B1E8C`
+- `Seq\DiegeticTravel.seq`:
+  `50BF3B406D9033462103C045C8727C29197C5747DC11504D4FC4E437ECA6ED4D`
+- `dist\DiegeticTravel-alpha.zip`:
+  `DA98AAF9FDE2FB9C4031EB477067C6132FA444E57F2B6D608B58003DAFFC1061`
+
+No live Skyrim test of the menu-preload listener has been launched yet. Because
+this update adds an alias to an already start-game-enabled quest, prefer the
+gameplay harness's fresh test save/new-game path; an existing save may retain
+the old running quest instance instead of reconstructing its new alias.
 
 ## xEdit work
 
@@ -76,9 +121,12 @@ more INFO-fragment timing assumptions.
 - The patch makes `-autoload` and `-autoexit` available in Script mode. Stock
   xEdit parses those switches only in Edit mode even though Script mode has the
   corresponding load/shutdown paths.
-- Delphi 12 was installed during this session, but the patched xEdit executable
-  has not yet been compiled or tested. The exact xEdit 4.1.5f source targets
-  Delphi 11 and its submodules/package dependencies are not initialized.
+- Delphi 12 Community is installed with its Win64 compiler files. The exact
+  xEdit 4.1.5f source targets Delphi 11; all pinned source submodules (including
+  nested JCL/JEDI) were initialized on 2026-07-30. MSBuild reaches `dcc64` but
+  Community reports that the product does not support command-line compiling
+  and produces no executable. Build the patched project through the RAD Studio
+  IDE; the patched executable has not yet been produced or tested.
 
 ## houseCARL
 
@@ -93,16 +141,21 @@ Both required runtimes are installed and verified:
 - `Microsoft.AspNetCore.App 9.0.18`
 
 houseCARL is installed and persistently configured to the MO2 instance at
-`D:\Lorerim`. The active profile is `UltraDiegeticTravel`, the
-`DiegeticTravel` mod is enabled, and `DiegeticTravel.esp` is active.
+`D:\Lorerim`. `UltraDiegeticTravel` had `DiegeticTravel` and
+`DiegeticTravel.esp` active during the recorded validation; do not assume the
+currently selected profile while the parallel gameplay test is running.
 
-Post-deployment read-only validation on 2026-07-30 found:
+Post-deployment read-only validation of the timing-fix build on 2026-07-30
+found:
 
 - the root carriage topic winner is `DiegeticTravel.esp`;
 - the root topic graph is OK and its one INFO has a bound, compiled result
   fragment;
 - the Mixwater topic graph is OK and its purchase fragment is bound and
   compiled;
+- the coordinator's forced player alias, alias VMAD quest/ID link, listener
+  script, and `Coordinator` property all resolve to the generated coordinator
+  quest;
 - `DiegeticTravel.esp` has 0 dangling references, 0 missing masters, and
   0 unscannable records;
 - 39 scripted records have 0 unbound properties, 0 bound-null properties, and
@@ -117,10 +170,16 @@ this project.
 
 `$env:PYTHONPATH='src'; python -m unittest discover -s tests -v`
 
-passes all 10 tests. No Skyrim launch was performed while creating this
-checkpoint.
+passes all 10 tests. The six current Papyrus scripts also compile with 0 errors
+and 0 warnings.
 
-`tools\Build-Alpha.ps1 -LoreRimRoot D:\Lorerim` also completed successfully:
-all five Papyrus scripts compiled with 0 errors and 0 warnings, and the alpha
-package was written to `dist\DiegeticTravel-alpha.zip` with SHA-256
-`C34F4D9B78D4EEE8B3F7209F2A17B62FC39BA9D79F35ADDB95E84151501F63DC`.
+`tools\Generate-Plugin.ps1 -LoreRimRoot D:\Lorerim` completed successfully.
+The staged CFTO SHA-256 exactly matched the current `D:\Lorerim` source:
+`17581B6A701A90F0F8DE71AB893B7D24F0BAA39E8B35B9522DF5FDC254B6710D`.
+After the six-script compile and structural validation,
+`tools\Build-Alpha.ps1 -PackageOnly` wrote
+`dist\DiegeticTravel-alpha.zip` with SHA-256
+`DA98AAF9FDE2FB9C4031EB477067C6132FA444E57F2B6D608B58003DAFFC1061`.
+`Compress-Archive` includes fresh directory timestamps, so rebuilding the same
+contents can change the ZIP hash; the ESP, SEQ, PEX, and runtime hashes are the
+stable artifact checks.

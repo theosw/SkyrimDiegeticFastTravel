@@ -12,10 +12,6 @@ String Property DialoguePath = "Data/SKSE/Plugins/DiegeticTravel/dialogue_runtim
 
 Int _dialogue
 
-Event OnInit()
-    RefreshQuotes()
-EndEvent
-
 Bool Function LoadDialogue()
     If _dialogue != 0
         JValue.release(_dialogue)
@@ -53,17 +49,21 @@ Int Function GetEntries()
     Return JMap.getObj(origin, "entries")
 EndFunction
 
-Function RefreshQuotes(Bool freeRide = False)
+Int Function RefreshQuotes(Bool freeRide = False)
     Int entries = GetEntries()
     If entries == 0
-        Return
+        Return 0
     EndIf
 
     Int index = 0
+    Int availableCount = 0
     While index < JArray.count(entries)
-        RefreshQuote(index, freeRide)
+        If RefreshQuote(index, freeRide)
+            availableCount += 1
+        EndIf
         index += 1
     EndWhile
+    Return availableCount
 EndFunction
 
 Bool Function RefreshQuote(Int index, Bool freeRide = False)
@@ -105,9 +105,9 @@ Bool Function RefreshQuote(Int index, Bool freeRide = False)
     Return available
 EndFunction
 
-Function RefreshQuotesForSpeaker(Actor speaker)
+Int Function RefreshQuotesForSpeaker(Actor speaker)
     Bool freeRide = KmodCarriageFreeFaction && speaker && speaker.IsInFaction(KmodCarriageFreeFaction)
-    RefreshQuotes(freeRide)
+    Return RefreshQuotes(freeRide)
 EndFunction
 
 Bool Function Purchase(Int index, Actor speaker)

@@ -16,7 +16,7 @@ var
   OutputFile, RouteQuest, CoordinatorQuest, TemplateInfo, LegacyFreeGlobal: IInterface;
   AvailableGlobals, CostGlobals, HoursGlobals, OriginServices: TStringList;
   GeneratorConfigPath, ManifestPath, DialogueRuntimePath, PluginOutputPath,
-    GeneratorStatusPath, OutputPluginName: string;
+    SeqFormIDsPath, GeneratorStatusPath, OutputPluginName: string;
 
 procedure WriteGeneratorStatus(const Status: string);
 var
@@ -187,6 +187,117 @@ end;
 function QuestScript(QuestRecord: IInterface): IInterface;
 begin
   Result := ElementByIndex(ElementByPath(QuestRecord, 'VMAD\Scripts'), 0);
+end;
+
+procedure AddPlayerListenerAlias(QuestRecord: IInterface);
+var
+  TemplateQuest, PlayerRef, SourceAlias, SourceVMADAlias: IInterface;
+  Aliases, AliasEntry, VMAD, VMADAliases, AliasVMAD: IInterface;
+  Scripts, ScriptEntry, Properties: IInterface;
+begin
+  TemplateQuest := ResolveFormRef('__formData|Skyrim.esm|0x0E3308');
+  PlayerRef := ResolveFormRef('__formData|Skyrim.esm|0x000014');
+  SourceAlias := ElementByIndex(
+    ElementByPath(TemplateQuest, 'Aliases'),
+    1
+  );
+  SourceVMADAlias := ElementByIndex(
+    ElementByPath(TemplateQuest, 'VMAD\Aliases'),
+    1
+  );
+  if not Assigned(SourceAlias) or not Assigned(SourceVMADAlias) then
+    raise Exception.Create('Player alias template is incomplete');
+
+  Aliases := ElementByPath(QuestRecord, 'Aliases');
+  if not Assigned(Aliases) then
+    Aliases := Add(QuestRecord, 'Aliases', True);
+  while ElementCount(Aliases) > 0 do
+    RemoveElement(Aliases, Pred(ElementCount(Aliases)));
+  AliasEntry := ElementAssign(
+    Aliases,
+    HighInteger,
+    SourceAlias,
+    False
+  );
+  SetElementNativeValues(AliasEntry, 'ALST', 0);
+  SetElementEditValues(AliasEntry, 'ALID', 'DNT_Player');
+  SetElementEditValues(AliasEntry, 'ALFR', Name(PlayerRef));
+  Add(QuestRecord, 'ANAM', True);
+  SetElementNativeValues(QuestRecord, 'ANAM', 1);
+
+  VMAD := ElementByPath(QuestRecord, 'VMAD');
+  VMADAliases := ElementByPath(VMAD, 'Aliases');
+  if not Assigned(VMADAliases) then
+    VMADAliases := Add(VMAD, 'Aliases', True);
+  while ElementCount(VMADAliases) > 0 do
+    RemoveElement(VMADAliases, Pred(ElementCount(VMADAliases)));
+  AliasVMAD := ElementAssign(
+    VMADAliases,
+    HighInteger,
+    SourceVMADAlias,
+    False
+  );
+
+  SetElementEditValues(
+    AliasVMAD,
+    'Object Union\Object v2\FormID',
+    Name(QuestRecord)
+  );
+  SetElementNativeValues(
+    AliasVMAD,
+    'Object Union\Object v2\Alias',
+    0
+  );
+
+  // xEdit names the nested quest-alias VMAD collection "Alias Scripts";
+  // Mutagen exposes the same field as QuestFragmentAlias.Scripts.
+  Scripts := ElementByPath(AliasVMAD, 'Alias Scripts');
+  if not Assigned(Scripts) then
+    Scripts := Add(AliasVMAD, 'Alias Scripts', True);
+  if not Assigned(Scripts) then
+    raise Exception.Create('Could not create player listener script array');
+  while ElementCount(Scripts) > 1 do
+    RemoveElement(Scripts, Pred(ElementCount(Scripts)));
+  if ElementCount(Scripts) = 0 then
+    ScriptEntry := ElementAssign(Scripts, HighInteger, nil, False)
+  else
+    ScriptEntry := ElementByIndex(Scripts, 0);
+  if not Assigned(ScriptEntry) then
+    raise Exception.Create('Could not create player listener script entry');
+  SetElementEditValues(
+    ScriptEntry,
+    'ScriptName',
+    'DNT_DialogueMenuListener'
+  );
+  Properties := ElementByPath(ScriptEntry, 'Properties');
+  if not Assigned(Properties) then
+    Properties := Add(ScriptEntry, 'Properties', True);
+  if not Assigned(Properties) then
+    raise Exception.Create('Could not create player listener properties');
+  while ElementCount(Properties) > 0 do
+    RemoveElement(Properties, 0);
+  AddProperty(
+    ScriptEntry,
+    'Coordinator',
+    'Object',
+    Name(QuestRecord)
+  );
+
+  if GetElementEditValues(AliasEntry, 'ALID') <> 'DNT_Player' then
+    raise Exception.Create('Could not create DNT player alias');
+  if GetElementEditValues(
+    AliasVMAD,
+    'Object Union\Object v2\FormID'
+  ) <> Name(QuestRecord) then
+    raise Exception.Create('Player listener alias points to the wrong quest');
+  if GetElementNativeValues(
+    AliasVMAD,
+    'Object Union\Object v2\Alias'
+  ) <> 0 then
+    raise Exception.Create('Player listener alias points to the wrong alias ID');
+  if GetElementEditValues(ScriptEntry, 'ScriptName') <>
+    'DNT_DialogueMenuListener' then
+    raise Exception.Create('Could not bind DNT dialogue menu listener');
 end;
 
 function ReplaceInfoFragment(
@@ -376,6 +487,7 @@ begin
     'DNT_TravelCoordinatorQuest',
     'DNT_TravelCoordinator'
   );
+  AddPlayerListenerAlias(CoordinatorQuest);
 
   OriginsObject := Manifest.O['origins'];
   for i := 0 to Pred(OriginsObject.Count) do begin
@@ -665,6 +777,7 @@ begin
   ManifestPath := GeneratorConfig.S['manifest'];
   DialogueRuntimePath := GeneratorConfig.S['dialogue_runtime'];
   PluginOutputPath := GeneratorConfig.S['plugin_output'];
+  SeqFormIDsPath := GeneratorConfig.S['seq_formids'];
 end;
 
 procedure ValidateInputs;
@@ -675,6 +788,8 @@ begin
     raise Exception.Create('Generator config dialogue output path is empty');
   if PluginOutputPath = '' then
     raise Exception.Create('Generator config plugin output path is empty');
+  if SeqFormIDsPath = '' then
+    raise Exception.Create('Generator config sequence FormID path is empty');
   if not FileExists(ManifestPath) then
     raise Exception.Create('Manifest does not exist: ' + ManifestPath);
   if not Assigned(FileByPluginName('Skyrim.esm')) then
@@ -692,6 +807,42 @@ begin
     FileWriteToStream(OutputFile, OutputStream, False);
   finally
     OutputStream.Free;
+  end;
+end;
+
+procedure SaveGeneratedSeqFormIDs;
+var
+  QuestGroup, QuestRecord, QuestFlags, MasterQuest: IInterface;
+  SeqFormIDs: TStringList;
+  i: Integer;
+begin
+  QuestGroup := GroupBySignature(OutputFile, 'QUST');
+  if not Assigned(QuestGroup) then
+    raise Exception.Create('Generated plugin has no quest group for SEQ');
+
+  SeqFormIDs := TStringList.Create;
+  try
+    for i := 0 to Pred(ElementCount(QuestGroup)) do begin
+      QuestRecord := ElementByIndex(QuestGroup, i);
+      QuestFlags := ElementByPath(QuestRecord, 'DNAM\Flags');
+      if Assigned(QuestFlags) and
+        ((GetNativeValue(QuestFlags) and 1) <> 0) then begin
+        // Match xEdit's built-in Create SEQ rule: include newly defined SGE
+        // quests and overrides that newly turn SGE on, but not an override
+        // whose master quest was already start-game enabled.
+        MasterQuest := Master(QuestRecord);
+        if not Assigned(MasterQuest) or
+          ((GetElementNativeValues(MasterQuest, 'DNAM\Flags') and 1) = 0) then
+          SeqFormIDs.Add(IntToHex(FixedFormID(QuestRecord), 8));
+      end;
+    end;
+    if SeqFormIDs.Count = 0 then
+      raise Exception.Create(
+        'Generated plugin has no start-game quests for SEQ'
+      );
+    SeqFormIDs.SaveToFile(SeqFormIDsPath);
+  finally
+    SeqFormIDs.Free;
   end;
 end;
 
@@ -735,6 +886,7 @@ begin
     PatchCFTOQuest;
     PatchDialogue;
     SaveGeneratedPlugin;
+    SaveGeneratedSeqFormIDs;
 
     DialogueRuntime.SaveToFile(
       DialogueRuntimePath,

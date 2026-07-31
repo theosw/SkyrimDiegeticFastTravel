@@ -28,16 +28,17 @@ The carriage alpha now contains:
 - an executable reference evaluator for runtime pricing and refusal;
 - verified live sensors for every routed hazard;
 - generated CFTO endpoint/dialogue metadata and an xEdit plugin generator;
-- five Papyrus runtime/dialogue scripts that compile with no warnings;
+- six Papyrus runtime/dialogue scripts that compile with no warnings;
 - a reproducible alpha packaging command;
 - regression tests for routing and pricing.
 
 The strict compiler currently emits 29 stops, 812 ordered routes, an average of
 2.99 candidates per trip, and zero sensor or CFTO endpoint errors. The xEdit
-generator now runs unattended, and its smoke build emits a valid TES4 header,
-the six expected masters, 27 availability/cost/hours global sets, nine origin
-quests, and 27 quoted destination topics without xEdit assignment errors. The
-mod still needs the in-game checks listed in
+generator's smoke build emits a valid TES4 header, the six expected masters, 27
+availability/cost/hours global sets, nine origin quests, and 27 quoted
+destination topics without xEdit assignment errors. Stock xEdit may still need
+one manual Module Selection confirmation, as described below. The mod still
+needs the in-game checks listed in
 [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## Developer quick start
@@ -53,7 +54,7 @@ python -m diegetic_travel compile `
   --out build
 
 .\tools\Compile-Papyrus.ps1 `
-  -LoreRimRoot "D:\Games\US SSE\Lorerim\game-files"
+  -LoreRimRoot "D:\Lorerim"
 ```
 
 The compile command writes `runtime.json`, `dialogue_manifest.json`, and a
@@ -72,6 +73,10 @@ and writes `dist\DiegeticTravel-alpha.zip`. The installable alpha requires
 SKSE64, JContainers SE, and CFTO, and the generated plugin must load after
 `CFTO.esp`.
 
+To repackage already-generated, already-validated build artifacts without
+reopening xEdit, use `.\tools\Build-Alpha.ps1 -PackageOnly`. It verifies that
+every `DNT_*.psc` source has its matching compiled PEX before creating the ZIP.
+
 xEdit 4.1.x does not offer a truly headless `-script` mode: `-script` selects
 Script mode, while `-autoload` and `-autoexit` are parsed only in Edit mode.
 `Generate-Plugin.ps1` works around that limitation narrowly: it supplies a
@@ -88,3 +93,17 @@ CFTO** patch: that patch opens its map picker before CFTO's destination topics,
 so it bypasses Diegetic Travel's dynamic route quote and availability dialogue.
 See [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md) for the analyzed integration
 path.
+
+Quote globals are prepared by a player-alias listener registered for SkyUI's
+`Dialogue Menu` event. The listener re-registers after every save load, resolves
+the carriage driver under the crosshair, and completes the whole origin quote
+set before CFTO constructs its destination choices. The root INFO fragment is a
+cache-aware fallback; it no longer clears a successfully preloaded menu. The
+package ships `Seq\DiegeticTravel.seq` so the listener and service quests start
+reliably.
+
+For the SEQ artifact, the xEdit script mirrors xEdit's built-in eligibility
+rule and emits the fixed FormIDs of newly start-game-enabled quests. PowerShell
+then writes those IDs as four-byte little-endian entries and rejects malformed
+or duplicate IDs and an unexpected byte count. This avoids binary-buffer
+marshalling through xEdit's Pascal interpreter.
