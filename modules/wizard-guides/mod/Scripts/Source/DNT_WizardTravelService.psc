@@ -25,27 +25,27 @@ Bool Function CanTravel(String DestinationId)
     Return PlayerRef.GetItemCount(Gold001) >= FarePerHop
 EndFunction
 
-Bool Function RequestTravel(String DestinationId)
+Bool Function RequestTravel(String DestinationId, ObjectReference SourceRef = None)
     ObjectReference DestinationMarker = GetDestinationMarker(DestinationId)
     If DestinationMarker == None
-        Debug.Trace("[DNT] WIZARD_TRAVEL_DENIED destination=" + DestinationId + " reason=unknown_destination", 1)
+        Debug.Trace("[DNT] WIZARD_TRAVEL_DENIED source=" + SourceRef + " destination=" + DestinationId + " reason=unknown_destination", 1)
         Debug.MessageBox("Wizard travel is unavailable.")
         Return False
     EndIf
 
     Int AvailableGold = PlayerRef.GetItemCount(Gold001)
     If AvailableGold < FarePerHop
-        Debug.Trace("[DNT] WIZARD_TRAVEL_DENIED destination=" + DestinationId + " reason=gold required=" + FarePerHop + " available=" + AvailableGold)
+        Debug.Trace("[DNT] WIZARD_TRAVEL_DENIED source=" + SourceRef + " destination=" + DestinationId + " reason=gold required=" + FarePerHop + " available=" + AvailableGold)
         Debug.MessageBox("You need " + FarePerHop + " gold for this journey. You have " + AvailableGold + ".")
         Return False
     EndIf
 
     GoToState("Travelling")
     PlayerRef.RemoveItem(Gold001, FarePerHop, True)
-    Debug.Trace("[DNT] WIZARD_TRAVEL_START destination=" + DestinationId + " fare=" + FarePerHop)
+    Debug.Trace("[DNT] WIZARD_TRAVEL_START source=" + SourceRef + " destination=" + DestinationId + " fare=" + FarePerHop)
     Utility.Wait(1.0)
     PlayerRef.MoveTo(DestinationMarker)
-    Debug.Trace("[DNT] WIZARD_TRAVEL_COMPLETE destination=" + DestinationId + " fare=" + FarePerHop)
+    Debug.Trace("[DNT] WIZARD_TRAVEL_COMPLETE source=" + SourceRef + " destination=" + DestinationId + " fare=" + FarePerHop)
     GoToState("")
     Return True
 EndFunction
@@ -63,8 +63,8 @@ ObjectReference Function GetDestinationMarker(String DestinationId)
 EndFunction
 
 State Travelling
-    Bool Function RequestTravel(String DestinationId)
-        Debug.Trace("[DNT] WIZARD_TRAVEL_DENIED destination=" + DestinationId + " reason=already_travelling", 1)
+    Bool Function RequestTravel(String DestinationId, ObjectReference SourceRef = None)
+        Debug.Trace("[DNT] WIZARD_TRAVEL_DENIED source=" + SourceRef + " destination=" + DestinationId + " reason=already_travelling", 1)
         Return False
     EndFunction
 EndState

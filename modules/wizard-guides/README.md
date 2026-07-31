@@ -9,15 +9,15 @@ Destinations dependency.
 - The College of Winterhold is the permanent hub.
 - Farengar Secret-Fire offers a direct trip to the College.
 - Wylandriah offers a direct trip to the College.
-- Phinis Gestor offers Whiterun or Riften from the College.
+- Permanent College faculty offer Whiterun or Riften from the College.
 - Every hop costs 250 gold.
 - Travel is an immediate teleport. It does not advance time, count as rest, or
   restore health, magicka, or stamina.
 - There are no faction, relationship, quest, or trust gates in Phase 1.
 
 This three-node star proves the route pattern intended for every later court:
-each court wizard reaches only the College, while the College guide provides
-the outward destination menu.
+each court wizard reaches only the College, while any permanent College faculty
+member can provide the same outward destination menu.
 
 ## Runtime boundary
 
@@ -28,26 +28,36 @@ duplicating travel behavior.
 
 Phase 1 deliberately uses new quest, branch, topic, and INFO records. It does
 not override vanilla or LoreRim dialogue topics. Farengar and Wylandriah have
-direct top-level transactions to the College. Phinis has one root response
-linking to the Whiterun and Riften destination topics.
+direct top-level transactions to the College. One owned root response, gated
+to College faction rank 3 or higher, links to the Whiterun and Riften topics.
+The explicit exclusions are Arniel's summoned shade and the dead Alftand
+expedition NPC Endrast. The eligible permanent roster in Skyrim.esm is:
+
+- Sergius Turrianus, Mirabelle Ervine, Savos Aren, and Tolfdir;
+- Arniel Gane, Enthir, Nirya, Colette Marence, and Phinis Gestor;
+- Drevis Neloren, Faralda, and Urag gro-Shub.
 
 Every terminal travel INFO deliberately shares response data from a short
 vanilla INFO whose FUZ/LIP exists for the speaker's exact voice type:
 
 - Farengar: `Yes.`
 - Wylandriah: `Of course.`
-- Phinis destination confirmation: `Of course.`
+- College faculty destination confirmation: `Of course.`
 
-Phinis's branching hub owns the unvoiced forced-subtitle response
+The branching faculty hub owns the unvoiced forced-subtitle response
 `Where do you need to go?`. Every terminal donor is now a genuine SharedInfo
-with an EditorID and a shipped FUZ for the speaker's exact voice type. Earlier
-failed builds pointed `DNAM` at ordinary Hello/Favor INFOs; xEdit accepted
-those records, but Skyrim did not consider the resulting Phinis choices valid.
+with an EditorID. Skyrim ships its `Of course.` FUZ/LIP for ten of the eleven
+faculty voice types. Mirabelle's unique voice is the exception, so her two
+terminal INFOs own subtitle-only `Of course.` responses. Earlier failed builds
+pointed `DNAM` at ordinary Hello/Favor INFOs; xEdit accepted those records, but
+Skyrim did not consider the resulting Phinis choices valid.
 
 Travel INFOs have `Goodbye` and an `OnBegin` fragment that enters the central
 service, waits one second for dialogue to close, charges the fare, and moves
-the player. The hub INFO has no travel fragment and only opens the destination
-choices. Insufficient gold produces an explicit message box and no charge.
+the player. Travel traces include the initiating speaker reference so expanded
+roster tests can identify the actual guide. The hub INFO has no travel fragment
+and only opens the destination choices. Insufficient gold produces an explicit
+message box and no charge.
 
 ## Arrival markers
 
@@ -75,6 +85,12 @@ regressions on 2026-07-31. Together they verified:
 5. the first Phinis line, `Where do you need to go?`, is visibly subtitled but
    silent by design and is distinct from the voiced confirmation;
 6. no game time or recovery is added by the module.
+
+The expanded faculty access passed a monitored gameplay regression on
+2026-07-31. J'zargo did not receive the service option, while all eligible
+faculty encountered by the player did. Phinis retained both choices, and
+Mirabelle's subtitle-only fallback displayed and completed travel. Nine trips
+produced nine matching start/completion pairs with no wizard-script warning.
 
 Do not launch Skyrim as part of the build. Run the gameplay pass only after
 explicit approval.

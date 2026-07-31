@@ -19,10 +19,11 @@ monitored gameplay test on the `UltraDiegeticTravel` profile.
 
 ## Current decision
 
-The last fully proven three-node wizard star is commit `9aa25ef`, where every
-visible INFO owns its response. The earlier deployed voice experiment was not
-a new checkpoint: Farengar worked, but Phinis's destination menu failed because
-both destination INFOs pointed their `DNAM` Shared Info field at ordinary
+The latest fully proven three-node wizard star is commit `ed004f2`, whose ESP
+is SHA-256
+`9402ED91A1207A4BB94D0778FD359FD0B477DA24C745F42BD611CBBD3B6185B5`.
+The earlier `9aa25ef` checkpoint is the all-owned-response fallback. One failed
+voice experiment pointed the Phinis destination `DNAM` fields at ordinary
 `Favor258` dialogue rather than a real SharedInfo record.
 
 The corrected build is now live-proven for menu flow, payment, travel, voice,
@@ -35,6 +36,17 @@ passes the strengthened audit. A monitored 2026-07-31 test exercised every
 route, both Phinis choices, and fare denial. A second monitored pass confirmed
 the expected audio and lip sync for Farengar, Phinis, and Wylandriah across
 four completed trips.
+
+The deployed faculty-access build generalizes the hub to permanent College
+members at faction rank 3 or higher, with explicit shade/corpse exclusions and
+subtitle-only Mirabelle fallbacks. Its ESP is byte-idempotent at SHA-256
+`4EEAED7C6556ADC159A128C9D95FB66124C3C90FC3FB9200D4CF7CC797567E89`, and both
+the workspace and deployed copies pass the strengthened structural and voice
+asset audits. A monitored gameplay pass verified the new eligibility
+conditions and promoted DLG-008 to Proven.
+The exact tested payload was packaged without recompilation at
+`dist\DiegeticTravelWizardGuides-phase1.zip`, SHA-256
+`DDE03EB1B0E7BA3F964E67B4417F598B97F091F3A32F1390A9EAD89DA803995D`.
 
 ## Dialogue and voice claims
 
@@ -139,6 +151,35 @@ to function without custom voice assets.
 **Evidence:** The entire `9aa25ef` three-node star passed live with owned
 responses. This is the reliable fallback when no suitable genuine SharedInfo
 exists.
+
+### DLG-008 — Rank-gated College faculty hub
+
+**Status:** Proven
+
+**Claim:** One owned hub INFO conditioned on College faction rank 3 or higher
+can make the outward Whiterun/Riften menu available through all permanent
+College faculty without NPC overrides.
+
+**Evidence:** A headless Skyrim.esm inventory found 19 explicit members of
+`CollegeofWinterholdFaction`. Rank 0 contains students and former member
+Nelacar. Rank 3+ contains twelve permanent faculty plus two non-dialogue edge
+cases: Arniel's summoned shade and the dead Alftand expedition NPC Endrast.
+The generated build explicitly excludes those two. Its voiced destination
+INFO excludes Mirabelle because her unique voice lacks the chosen generic FUZ;
+two exact-speaker Mirabelle INFOs provide owned subtitle-only fallbacks. The
+strengthened xEdit audit verifies all conditions, exclusions, topic children,
+responses, flags, and fragments. The BSA audit verifies `Of course.` for all
+ten other faculty voice types. The compiled fragment passes its
+speaker reference into the service, whose travel traces now include `source=`,
+allowing the monitored result to identify which faculty actor initiated a trip.
+
+**Gameplay evidence:** In the monitored 2026-07-31 faculty regression, J'zargo
+did not receive the option, while all eligible faculty encountered by the
+player did. Phinis retained the outward menu. Mirabelle displayed the expected
+subtitle-only `Of course.` and completed travel. Papyrus recorded nine
+`WIZARD_TRAVEL_START` / `WIZARD_TRAVEL_COMPLETE` pairs, covering both outward
+destinations and both court-wizard returns, with a source actor on every trace
+and no wizard-script warning.
 
 ## Runtime claims
 

@@ -11,29 +11,50 @@ if (-not (Test-Path -LiteralPath $voiceArchive -PathType Leaf)) {
     throw "Required vanilla voice archive not found: $voiceArchive"
 }
 
-$expected = @(
+$expected = [System.Collections.Generic.List[object]]::new()
+$expected.Add(
     [pscustomobject]@{
         Label = "Farengar: Yes."
         Path = (
             "sound\voice\skyrim.esm\maleeventonedaccented\" +
             "wisharedin_wisharedinfosto_000730fa_1.fuz"
         )
-    },
+    }
+)
+$expected.Add(
     [pscustomobject]@{
         Label = "Wylandriah: Of course."
         Path = (
             "sound\voice\skyrim.esm\femaleeventoned\" +
             "dialoguege_dialoguegeneric_000dba22_1.fuz"
         )
-    },
-    [pscustomobject]@{
-        Label = "Phinis travel: Of course."
-        Path = (
-            "sound\voice\skyrim.esm\malecondescending\" +
-            "dialoguege_dialoguegeneric_000dba22_1.fuz"
-        )
     }
 )
+
+$facultyVoiceTypes = [ordered]@{
+    "Sergius Turrianus" = "MaleOldGrumpy"
+    "Phinis Gestor / Savos Aren" = "MaleCondescending"
+    "Tolfdir" = "MaleOldKindly"
+    "Arniel Gane" = "MaleCoward"
+    "Enthir" = "MaleSlyCynical"
+    "Nirya" = "FemaleElfHaughty"
+    "Colette Marence" = "FemaleShrill"
+    "Drevis Neloren" = "MaleEvenToned"
+    "Faralda" = "FemaleSultry"
+    "Urag gro-Shub" = "MaleOrc"
+}
+foreach ($facultyEntry in $facultyVoiceTypes.GetEnumerator()) {
+    $expected.Add(
+        [pscustomobject]@{
+            Label = "$($facultyEntry.Key): Of course."
+            Path = (
+                "sound\voice\skyrim.esm\" +
+                $facultyEntry.Value.ToLowerInvariant() + "\" +
+                "dialoguege_dialoguegeneric_000dba22_1.fuz"
+            )
+        }
+    )
+}
 $wantedPaths = @{}
 foreach ($entry in $expected) {
     $wantedPaths[$entry.Path.ToLowerInvariant()] = $false

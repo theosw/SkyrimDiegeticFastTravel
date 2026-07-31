@@ -1,7 +1,8 @@
 {
   Read-only, exact-record audit for the College-centred wizard-guide star.
-  It intentionally reports only the five visible travel/menu INFOs needed by
-  the current gameplay milestone.
+  It checks the two inbound court-wizard routes, the shared College faculty
+  hub, both voiced faculty destinations, and Mirabelle's two subtitle-only
+  fallbacks.
 }
 unit DNT_AuditWizardGuideStar;
 
@@ -9,8 +10,11 @@ const
   TargetPluginName = 'DiegeticTravelWizardGuides.esp';
   OnBeginFragmentMask = $01;
   DirectResponseFlagsMask = $0001;
+  SilentDirectResponseFlagsMask = $0A01;
   HubResponseFlagsMask = $0A00;
   MiscDialogueCategory = 7;
+  GreaterThanOrEqualConditionType = $60;
+  NotEqualConditionType = $20;
 
 var
   TargetFile: IInterface;
@@ -175,6 +179,135 @@ begin
     raise Exception.Create(EditorID + ' speaker does not match');
 end;
 
+procedure AssertConditionAt(
+  InfoRecord: IInterface;
+  const EditorID: string;
+  ConditionIndex: Integer;
+  const ExpectedFunction: string;
+  ExpectedParameterFormID, ExpectedType: Cardinal;
+  ExpectedComparisonValue: Double
+);
+var
+  Conditions, ConditionEntry, ConditionData, ParameterRecord: IInterface;
+  ActualComparisonValue: Double;
+begin
+  Conditions := ElementByPath(InfoRecord, 'Conditions');
+  if not Assigned(Conditions) or
+    (ConditionIndex >= ElementCount(Conditions)) then
+    raise Exception.Create(EditorID + ' condition index is missing');
+  ConditionEntry := ElementByIndex(Conditions, ConditionIndex);
+  ConditionData := ElementByPath(ConditionEntry, 'CTDA');
+  if not Assigned(ConditionData) then
+    raise Exception.Create(EditorID + ' condition has no CTDA');
+  if GetElementEditValues(ConditionData, 'Function') <>
+    ExpectedFunction then
+    raise Exception.Create(EditorID + ' condition function does not match');
+  if GetElementNativeValues(ConditionData, 'Type') <> ExpectedType then
+    raise Exception.Create(EditorID + ' condition type does not match');
+  if GetElementNativeValues(ConditionData, 'Run On') <> 0 then
+    raise Exception.Create(EditorID + ' condition does not run on Subject');
+  ActualComparisonValue := GetElementNativeValues(
+    ConditionData,
+    'Comparison Value - Float'
+  );
+  if Abs(ActualComparisonValue - ExpectedComparisonValue) > 0.001 then
+    raise Exception.Create(
+      EditorID + ' condition comparison value does not match'
+    );
+  ParameterRecord := LinksTo(ElementByPath(ConditionData, 'Parameter #1'));
+  if not Assigned(ParameterRecord) or
+    (FormID(ParameterRecord) <> ExpectedParameterFormID) then
+    raise Exception.Create(EditorID + ' condition parameter does not match');
+end;
+
+procedure AssertCollegeFacultySpeaker(
+  InfoRecord: IInterface;
+  const EditorID: string;
+  ExcludeMirabelle: Boolean
+);
+var
+  Conditions, Speaker: IInterface;
+  ExpectedConditionCount: Integer;
+begin
+  Speaker := LinksTo(ElementByPath(InfoRecord, 'ANAM'));
+  if Assigned(Speaker) then
+    raise Exception.Create(EditorID + ' unexpectedly has an exact speaker');
+  Conditions := ElementByPath(InfoRecord, 'Conditions');
+  if ExcludeMirabelle then
+    ExpectedConditionCount := 4
+  else
+    ExpectedConditionCount := 3;
+  if not Assigned(Conditions) or
+    (ElementCount(Conditions) <> ExpectedConditionCount) then
+    if not Assigned(Conditions) then
+      raise Exception.Create(EditorID + ' has no faculty conditions')
+    else
+      raise Exception.Create(
+        EditorID + ' faculty condition count=' +
+        IntToStr(ElementCount(Conditions)) + ', expected=' +
+        IntToStr(ExpectedConditionCount)
+      );
+
+  AssertConditionAt(
+    InfoRecord,
+    EditorID,
+    0,
+    'GetFactionRank',
+    $0001F259,
+    GreaterThanOrEqualConditionType,
+    3.0
+  );
+  AssertConditionAt(
+    InfoRecord,
+    EditorID,
+    1,
+    'GetIsID',
+    $0006A152,
+    NotEqualConditionType,
+    1.0
+  );
+  AssertConditionAt(
+    InfoRecord,
+    EditorID,
+    2,
+    'GetIsID',
+    $0003B0E4,
+    NotEqualConditionType,
+    1.0
+  );
+  if ExcludeMirabelle then
+    AssertConditionAt(
+      InfoRecord,
+      EditorID,
+      3,
+      'GetIsID',
+      $0001C1A0,
+      NotEqualConditionType,
+      1.0
+    );
+end;
+
+procedure AssertTopicChild(
+  TopicRecord, InfoRecord: IInterface;
+  const EditorID: string
+);
+var
+  InfoGroup, CandidateInfo: IInterface;
+  i: Integer;
+begin
+  InfoGroup := ChildGroup(TopicRecord);
+  if not Assigned(InfoGroup) then
+    raise Exception.Create(EditorID + ' topic has no INFO group');
+  for i := 0 to Pred(ElementCount(InfoGroup)) do begin
+    CandidateInfo := ElementByIndex(InfoGroup, i);
+    if Assigned(CandidateInfo) and
+      (Signature(CandidateInfo) = 'INFO') and
+      (FormID(CandidateInfo) = FormID(InfoRecord)) then
+      Exit;
+  end;
+  raise Exception.Create(EditorID + ' is not a child of its destination topic');
+end;
+
 procedure AssertTravelFragment(
   InfoRecord: IInterface;
   const EditorID, ExpectedDestinationID: string
@@ -271,6 +404,70 @@ begin
   );
 end;
 
+procedure AuditFacultyVoicedDestination(
+  ObjectID: Cardinal;
+  const EditorID, PromptText, DestinationID: string;
+  DestinationTopic: IInterface
+);
+var
+  InfoRecord, Links: IInterface;
+begin
+  InfoRecord := RequireRecord(ObjectID, 'INFO', EditorID);
+  if GetElementEditValues(InfoRecord, 'RNAM') <> PromptText then
+    raise Exception.Create(EditorID + ' prompt does not match');
+  AssertSharedResponse(
+    InfoRecord,
+    EditorID,
+    'Of course.',
+    $000DBA22,
+    $0001F319
+  );
+  AssertCollegeFacultySpeaker(InfoRecord, EditorID, True);
+  if GetElementNativeValues(
+    InfoRecord,
+    'ENAM\Response Flags'
+  ) <> DirectResponseFlagsMask then
+    raise Exception.Create(EditorID + ' direct response flags do not match');
+  Links := ElementByPath(InfoRecord, 'Link To');
+  if Assigned(Links) and (ElementCount(Links) > 0) then
+    raise Exception.Create(EditorID + ' unexpectedly has Link To entries');
+  AssertTravelFragment(InfoRecord, EditorID, DestinationID);
+  AssertTopicChild(DestinationTopic, InfoRecord, EditorID);
+  ReportLines.Add(
+    'PASS voiced faculty ' + EditorID + ' -> ' + DestinationID
+  );
+end;
+
+procedure AuditMirabelleDestination(
+  ObjectID: Cardinal;
+  const EditorID, PromptText, DestinationID: string;
+  DestinationTopic: IInterface
+);
+var
+  InfoRecord, Links: IInterface;
+begin
+  InfoRecord := RequireRecord(ObjectID, 'INFO', EditorID);
+  if GetElementEditValues(InfoRecord, 'RNAM') <> PromptText then
+    raise Exception.Create(EditorID + ' prompt does not match');
+  AssertOwnedResponse(InfoRecord, EditorID, 'Of course.');
+  AssertSpeaker(InfoRecord, EditorID, $0001C1A0);
+  if Assigned(ElementByPath(InfoRecord, 'Conditions')) then
+    raise Exception.Create(EditorID + ' unexpectedly has conditions');
+  if GetElementNativeValues(
+    InfoRecord,
+    'ENAM\Response Flags'
+  ) <> SilentDirectResponseFlagsMask then
+    raise Exception.Create(EditorID + ' silent flags do not match');
+  Links := ElementByPath(InfoRecord, 'Link To');
+  if Assigned(Links) and (ElementCount(Links) > 0) then
+    raise Exception.Create(EditorID + ' unexpectedly has Link To entries');
+  AssertTravelFragment(InfoRecord, EditorID, DestinationID);
+  AssertTopicChild(DestinationTopic, InfoRecord, EditorID);
+  ReportLines.Add(
+    'PASS Mirabelle subtitle ' + EditorID + ' -> ' + DestinationID
+  );
+end;
+
 procedure AuditHub;
 var
   HubInfo, Links, FirstTarget, SecondTarget, WhiterunTopic,
@@ -292,11 +489,7 @@ begin
     'DNT_WG_Request_Phinis',
     'Where do you need to go?'
   );
-  AssertSpeaker(
-    HubInfo,
-    'DNT_WG_Request_Phinis',
-    $0001C199
-  );
+  AssertCollegeFacultySpeaker(HubInfo, 'DNT_WG_Request_Phinis', False);
   if GetElementNativeValues(
     HubInfo,
     'ENAM\Response Flags'
@@ -321,6 +514,8 @@ begin
 end;
 
 function Initialize: Integer;
+var
+  WhiterunTopic, RiftenTopic: IInterface;
 begin
   Result := 1;
   StatusPath :=
@@ -358,25 +553,43 @@ begin
       $0001F319
     );
     AuditHub;
-    AuditDirect(
+    WhiterunTopic := RequireRecord(
+      $000803,
+      'DIAL',
+      'DNT_WG_ToWhiterun'
+    );
+    RiftenTopic := RequireRecord(
+      $000804,
+      'DIAL',
+      'DNT_WG_ToRiften'
+    );
+    AuditFacultyVoicedDestination(
       $00080B,
       'DNT_WG_Whiterun_FromPhinis',
       'Send me to Whiterun. (250 gold)',
-      'Of course.',
       'whiterun',
-      $0001C199,
-      $000DBA22,
-      $0001F319
+      WhiterunTopic
     );
-    AuditDirect(
+    AuditFacultyVoicedDestination(
       $00080C,
       'DNT_WG_Riften_FromPhinis',
       'Send me to Riften. (250 gold)',
-      'Of course.',
       'riften',
-      $0001C199,
-      $000DBA22,
-      $0001F319
+      RiftenTopic
+    );
+    AuditMirabelleDestination(
+      $00080D,
+      'DNT_WG_Whiterun_FromMirabelle',
+      'Send me to Whiterun. (250 gold)',
+      'whiterun',
+      WhiterunTopic
+    );
+    AuditMirabelleDestination(
+      $00080E,
+      'DNT_WG_Riften_FromMirabelle',
+      'Send me to Riften. (250 gold)',
+      'riften',
+      RiftenTopic
     );
 
     ReportLines.Add('PASS wizard-guide star audit complete');

@@ -4,5 +4,5 @@ DNT_WizardTravelService Property Service Auto
 String Property DestinationId Auto
 
 Function Fragment_0(ObjectReference akSpeakerRef)
-    Service.RequestTravel(DestinationId)
+    Service.RequestTravel(DestinationId, akSpeakerRef)
 EndFunction

@@ -7,10 +7,11 @@ Updated: 2026-07-31
 Use `docs\EVIDENCE_LEDGER.md` as the source of truth for working assumptions,
 rejected approaches, live-proven behavior, and the next candidate test. In
 particular, do not treat xEdit accepting a dialogue field as runtime proof.
-The deployed build at SHA-256
-`9402ED91A1207A4BB94D0778FD359FD0B477DA24C745F42BD611CBBD3B6185B5` is the
-latest fully live-proven checkpoint, including voice and lip sync. Commit
-`9aa25ef` remains the last committed fallback from before the voice changes.
+Commit `ed004f2`, whose ESP is SHA-256
+`9402ED91A1207A4BB94D0778FD359FD0B477DA24C745F42BD611CBBD3B6185B5`, is the
+rollback checkpoint for the fully voiced three-node star. The newer deployed
+faculty-access build is also live-proven; its ESP is SHA-256
+`4EEAED7C6556ADC159A128C9D95FB66124C3C90FC3FB9200D4CF7CC797567E89`.
 
 ## Wizard-guide Phase 1
 
@@ -23,8 +24,8 @@ Network:
 - The College of Winterhold is the permanent hub.
 - Farengar Secret-Fire (`013BBB:Skyrim.esm`) offers the College.
 - Wylandriah (`019DEF:Skyrim.esm`) offers the College.
-- Phinis Gestor (`01C199:Skyrim.esm`) offers Whiterun or Riften from the
-  College.
+- Permanent College faculty at faction rank 3 or higher offer Whiterun or
+  Riften from the College; students remain ineligible.
 - All services are immediately available; faction, relationship, quest, and
   trust gates are deliberately deferred.
 - Every hop costs 250 gold.
@@ -38,7 +39,7 @@ call the same service without duplicating travel logic.
 
 The generated plugin is `DiegeticTravelWizardGuides.esp`. It defines one
 start-game-enabled quest, one top-level player branch, four custom topics, and
-seven speaker-gated INFOs. It overrides no existing records. Its SEQ and two
+nine speaker-gated INFOs. It overrides no existing records. Its SEQ and two
 compiled PEX files live beside it in the module.
 
 The three-node star passed its monitored gameplay test. INFO `000806` presents
@@ -56,10 +57,12 @@ explicit, genuine vanilla Shared Response Data donor:
 
 - Farengar (`MaleEvenTonedAccented`): `Yes.` from `000730FA:Skyrim.esm`
 - Wylandriah (`FemaleEvenToned`): `Of course.` from `000DBA22:Skyrim.esm`
-- both Phinis destinations: `Of course.` from `000DBA22:Skyrim.esm`
+- both general faculty destinations: `Of course.` from `000DBA22:Skyrim.esm`
+- Mirabelle's two exact-speaker fallbacks: owned subtitle-only `Of course.`
 
-Travel INFOs retain only the vanilla `Goodbye` response flag, have no
-`LinkTo`, and run `DNT_WizardTravelFragment` on `OnBegin`. The branching hub
+Voiced travel INFOs retain only the vanilla `Goodbye` response flag, have no
+`LinkTo`, and run `DNT_WizardTravelFragment` on `OnBegin`. Mirabelle's terminal
+INFOs additionally force subtitles and have no LIP file. The branching hub
 owns the unvoiced response `Where do you need to go?`, has
 `Force Subtitle + No LIP File`, no VMAD, and exactly two `LinkTo` entries.
 This experiment exposed a semantic hole in the original audit. `000730FA` and
@@ -73,14 +76,14 @@ the links. These tests reject arbitrary INFO donors, not SharedInfo on linked
 topics generally. A vanilla-data scan found 1,037 linked-topic INFOs using
 genuine Shared Response Data.
 
-That minimal build is now implemented: the owned Phinis hub is unchanged,
-while both child INFOs use genuine SharedInfo `000DBA22` (`OfCourse`). Skyrim
-ships its `MaleCondescending` FUZ for Phinis. The generator and independent
-audit now require a non-empty donor EditorID, Misc/SharedInfo topic identity,
-and actual parent-child membership. The statically validated build passed its
-monitored gameplay regression on 2026-07-31: the submenu, all four directed
-routes, and fare denial worked. A second monitored presentation pass confirmed
-audible, lip-synced replies for Farengar, Phinis, and Wylandriah.
+The proven baseline uses an owned Phinis hub and genuine SharedInfo `000DBA22`
+(`OfCourse`) on both child INFOs. The generator and independent audit require a
+non-empty donor EditorID, Misc/SharedInfo topic identity, and actual
+parent-child membership. That baseline passed its monitored gameplay
+regressions on 2026-07-31: the submenu, all four directed routes, fare denial,
+and audible lip-synced replies for Farengar, Phinis, and Wylandriah all worked.
+The live-proven faculty-access expansion generalizes those same records as
+described below.
 
 Arrival markers reuse stable Skyrim references whose effective positions
 already reflect the installed JK interiors:
@@ -134,8 +137,9 @@ Every trip emitted one `WIZARD_TRAVEL_START` and one
 gold removal but does not interrupt travel.
 
 Rollback commit `a03262d` checkpoints the proven two-way build. Commit
-`9aa25ef` checkpoints the live-proven three-node star before voice changes.
-`tools/Audit-WizardGuideStar.ps1` checks the five visible INFOs, while
+`9aa25ef` checkpoints the live-proven three-node star before voice changes, and
+commit `ed004f2` checkpoints the fully proven voiced Phase 1 build.
+`tools/Audit-WizardGuideStar.ps1` checks the seven visible INFOs, while
 `tools/Audit-WizardVoiceAssets.ps1` checks the exact FUZ paths. The voice
 patcher produces byte-identical output on a second run. Both the generator and
 the independent audit now prove that every donor belongs to a special
@@ -147,29 +151,64 @@ promoted live evidence and the gate future dialogue changes must pass.
 xEdit at `build/xedit-patched/SSEEdit64.exe`, patches the workspace copy only,
 and deploys to LoreRim only when passed `-Deploy`; deployment is refused while
 `SkyrimSE` is running. `-Deploy` copies the complete owned module payload so
-the ESP, SEQ, and newly compiled PEX files stay in sync. The current
-transport-proven ESP is
-byte-idempotent at SHA-256
+the ESP, SEQ, and newly compiled PEX files stay in sync. The last fully proven
+ESP is SHA-256
 `9402ED91A1207A4BB94D0778FD359FD0B477DA24C745F42BD611CBBD3B6185B5`.
 The exact live-tested payload was packaged with `-PackageOnly` as
 `dist\DiegeticTravelWizardGuides-phase1.zip`, SHA-256
-`E8734A56D725823B4402D1A06004AF0783C133EB753D15D7D0AC57F7C42A79C6`.
+`DDE03EB1B0E7BA3F964E67B4417F598B97F091F3A32F1390A9EAD89DA803995D`.
 A normal package build recompiles the PEX files and changes their binary hashes;
 use `-PackageOnly` when checkpointing already-tested artifacts, or require a
 new live pass after recompilation.
 
+### Faculty access
+
+The current workspace and deployment broaden the College hub from exact
+speaker Phinis to members of `CollegeofWinterholdFaction` at rank 3 or higher.
+This selects twelve permanent faculty: Sergius, Mirabelle, Savos, Tolfdir,
+Arniel, Enthir, Nirya, Colette, Phinis, Drevis, Faralda, and Urag. The condition
+explicitly excludes Arniel's summoned shade and the dead Alftand NPC Endrast;
+rank-0 students and Nelacar remain ineligible.
+
+The generic `Of course.` SharedInfo has shipped audio for ten of the eleven
+faculty voice types. Mirabelle's unique voice lacks it, so each destination
+topic has a second exact-Mirabelle, subtitle-only INFO. The two inbound court
+wizard routes are unchanged. The candidate is byte-idempotent at ESP SHA-256
+`4EEAED7C6556ADC159A128C9D95FB66124C3C90FC3FB9200D4CF7CC797567E89`.
+Both the workspace and deployed copy pass the strengthened seven-record xEdit
+audit, and the archive audit passes all ten voiced faculty types. The focused
+gameplay matrix passed on 2026-07-31: J'zargo had no option, every encountered
+eligible faculty member had the hub and both choices, and Mirabelle's owned
+subtitle-only confirmation completed travel as designed.
+The fragment now passes `akSpeakerRef` into the service, and every denial,
+start, and completion trace includes `source=<actor reference>` so the monitor
+can distinguish faculty members that share the same destination INFO.
+
 At this checkpoint MO2's active profile is `UltraDiegeticTravel`. The complete
 workspace payload has been deployed to
 `D:\Lorerim\mods\houseCARL - DiegeticTravelWizardGuides`, and the installed
-ESP, SEQ, PEX, and PSC files hash-match the tested workspace copies. Direct
+ESP, README, SEQ, PEX, and PSC files hash-match the workspace copies. Direct
 reads of the MO2 profile files confirm the mod is enabled in the left pane and
-`DiegeticTravelWizardGuides.esp` is checked in the right pane. The corrected
-voiced build is deployed, every installed file hash-matches the workspace, and
-the installed ESP passes the strengthened six-line structural audit. It passed
-both focused live regressions described below. Do not launch Skyrim without
-coordinating with the user; a parallel PickUpAsJunk task may also use MO2.
+`DiegeticTravelWizardGuides.esp` is checked in the right pane. The installed
+build passes the strengthened seven-record structural audit and the monitored
+faculty gameplay regression. Do not launch Skyrim without coordinating with
+the user; a parallel PickUpAsJunk task may also use MO2.
 
 ## Wizard-guide live tests
+
+### Faculty-access regression
+
+The monitored 2026-07-31 faculty pass confirmed the rank-gated service in the
+`UltraDiegeticTravel` profile. J'zargo, a rank-0 student, did not receive the
+travel option. Every eligible faculty member encountered by the player did,
+while Phinis retained both destinations. Mirabelle displayed her owned
+subtitle-only `Of course.` fallback and completed the selected trip.
+
+Papyrus recorded nine trips and nine matching completions, with no wizard
+script warning. The run exercised faculty travel to both Whiterun and Riften
+and returns through both Farengar and Wylandriah. Source references were
+present on every trace, including the Phinis (`0001C1A7`), Farengar
+(`0001A67E`), and Wylandriah (`00019DF0`) regressions. Skyrim exited normally.
 
 ### Presentation regression
 

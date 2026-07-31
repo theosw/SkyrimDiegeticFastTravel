@@ -1,14 +1,14 @@
 {
-  Build the first College-centred wizard-guide star:
+  Build the College-centred wizard-guide star:
 
     Farengar Secret-Fire -> College of Winterhold
     Wylandriah           -> College of Winterhold
-    Phinis Gestor        -> Whiterun or Riften
+    College faculty      -> Whiterun or Riften
 
   Terminal travel INFOs deliberately share response data from short vanilla
   INFOs for which the speaker's exact voice type has shipped FUZ/LIP data.
-  Court wizards use direct top-level routes to the College. Phinis's branching
-  hub owns an unvoiced forced-subtitle response because gameplay proved that a
+  Court wizards use direct top-level routes to the College. The faculty hub
+  owns an unvoiced forced-subtitle response because gameplay proved that a
   cross-topic Shared Info donor speaks but suppresses the custom LinkTo
   transition. Each destination INFO closes the dialogue and runs its travel
   fragment on begin.
@@ -22,8 +22,11 @@ unit DNT_FixWizardRootInfo;
 const
   OnBeginFragmentMask = $01;
   DirectResponseFlagsMask = $0001; { Goodbye }
+  SilentDirectResponseFlagsMask = $0A01; { Goodbye + subtitle + no LIP }
   HubResponseFlagsMask = $0A00; { Force Subtitle + No LIP File }
   MiscDialogueCategory = 7;
+  GreaterThanOrEqualConditionType = $60;
+  NotEqualConditionType = $20;
 
 var
   TargetFile: IInterface;
@@ -127,6 +130,186 @@ begin
       GetElementEditValues(Result, 'EDID') + '", expected "' +
       ExpectedEditorID + '"'
     );
+end;
+
+function RequireSkyrimRecord(
+  FormIDValue: Cardinal;
+  const ExpectedSignature, ExpectedEditorID: string
+): IInterface;
+var
+  SkyrimFile: IInterface;
+begin
+  SkyrimFile := FileByPluginName('Skyrim.esm');
+  if not Assigned(SkyrimFile) then
+    raise Exception.Create('Skyrim.esm is not loaded');
+  Result := RecordByFormID(SkyrimFile, FormIDValue, True);
+  if not Assigned(Result) then
+    raise Exception.Create(
+      'Could not resolve Skyrim record ' + IntToHex(FormIDValue, 8)
+    );
+  if Signature(Result) <> ExpectedSignature then
+    raise Exception.Create(
+      ExpectedEditorID + ' resolved to ' + Signature(Result) +
+      ', expected ' + ExpectedSignature
+    );
+  if GetElementEditValues(Result, 'EDID') <> ExpectedEditorID then
+    raise Exception.Create(
+      IntToHex(FormIDValue, 8) + ' is not ' + ExpectedEditorID
+    );
+end;
+
+procedure AddSubjectCondition(
+  InfoRecord: IInterface;
+  const FunctionName: string;
+  ParameterRecord: IInterface;
+  ConditionType: Cardinal;
+  ComparisonValue: Double
+);
+var
+  Conditions, ConditionEntry, ConditionData, ParameterElement,
+    ReadBackParameter: IInterface;
+  CreatedConditions: Boolean;
+begin
+  Conditions := ElementByPath(InfoRecord, 'Conditions');
+  CreatedConditions := False;
+  if not Assigned(Conditions) then begin
+    Add(InfoRecord, 'Conditions', True);
+    Conditions := ElementByPath(InfoRecord, 'Conditions');
+    CreatedConditions := True;
+  end;
+  if not Assigned(Conditions) then
+    raise Exception.Create('Could not create INFO conditions');
+
+  if CreatedConditions and (ElementCount(Conditions) > 0) then
+    ConditionEntry := ElementByIndex(Conditions, 0)
+  else if ElementCount(Conditions) = 0 then
+    ConditionEntry := ElementAssign(Conditions, HighInteger, nil, False)
+  else if (
+    ElementCount(Conditions) = 1
+  ) and (
+    Trim(GetElementEditValues(
+      ElementByIndex(Conditions, 0),
+      'CTDA\Function'
+    )) = ''
+  ) then
+    ConditionEntry := ElementByIndex(Conditions, 0)
+  else
+    ConditionEntry := ElementAssign(Conditions, HighInteger, nil, False);
+
+  if not Assigned(ConditionEntry) then
+    raise Exception.Create('Could not create INFO condition entry');
+  ConditionData := ElementByPath(ConditionEntry, 'CTDA');
+  if not Assigned(ConditionData) then
+    raise Exception.Create('INFO condition has no CTDA');
+
+  SetElementNativeValues(ConditionData, 'Type', ConditionType);
+  SetElementNativeValues(
+    ConditionData,
+    'Comparison Value - Float',
+    ComparisonValue
+  );
+  SetElementEditValues(ConditionData, 'Function', FunctionName);
+  SetElementNativeValues(ConditionData, 'Run On', 0);
+  ParameterElement := ElementByPath(ConditionData, 'Parameter #1');
+  if not Assigned(ParameterElement) then
+    raise Exception.Create(
+      FunctionName + ' condition has no Parameter #1 after function setup'
+    );
+  SetEditValue(ParameterElement, Name(ParameterRecord));
+  ReadBackParameter := LinksTo(ParameterElement);
+  if not Assigned(ReadBackParameter) or
+    (FormID(ReadBackParameter) <> FormID(ParameterRecord)) then
+    raise Exception.Create(
+      FunctionName + ' condition parameter did not read back'
+    );
+end;
+
+procedure ConfigureCollegeFacultySpeaker(
+  InfoRecord: IInterface;
+  ExcludeMirabelle: Boolean
+);
+var
+  CollegeFaction, ArnielShade, Endrast, Mirabelle: IInterface;
+begin
+  CollegeFaction := RequireSkyrimRecord(
+    $0001F259,
+    'FACT',
+    'CollegeofWinterholdFaction'
+  );
+  ArnielShade := RequireSkyrimRecord(
+    $0006A152,
+    'NPC_',
+    'MGArnielSummon'
+  );
+  Endrast := RequireSkyrimRecord(
+    $0003B0E4,
+    'NPC_',
+    'dunAlftandEndrast'
+  );
+
+  if Assigned(ElementByPath(InfoRecord, 'ANAM')) then
+    RemoveElement(InfoRecord, 'ANAM');
+  if Assigned(ElementByPath(InfoRecord, 'Conditions')) then
+    RemoveElement(InfoRecord, 'Conditions');
+
+  AddSubjectCondition(
+    InfoRecord,
+    'GetFactionRank',
+    CollegeFaction,
+    GreaterThanOrEqualConditionType,
+    3.0
+  );
+  AddSubjectCondition(
+    InfoRecord,
+    'GetIsID',
+    ArnielShade,
+    NotEqualConditionType,
+    1.0
+  );
+  AddSubjectCondition(
+    InfoRecord,
+    'GetIsID',
+    Endrast,
+    NotEqualConditionType,
+    1.0
+  );
+
+  if ExcludeMirabelle then begin
+    Mirabelle := RequireSkyrimRecord(
+      $0001C1A0,
+      'NPC_',
+      'MirabelleErvine'
+    );
+    AddSubjectCondition(
+      InfoRecord,
+      'GetIsID',
+      Mirabelle,
+      NotEqualConditionType,
+      1.0
+    );
+  end;
+end;
+
+procedure ConfigureExactSpeaker(
+  InfoRecord, SpeakerRecord: IInterface
+);
+var
+  SpeakerElement, ReadBackSpeaker: IInterface;
+begin
+  if Assigned(ElementByPath(InfoRecord, 'Conditions')) then
+    RemoveElement(InfoRecord, 'Conditions');
+  SpeakerElement := ElementByPath(InfoRecord, 'ANAM');
+  if not Assigned(SpeakerElement) then begin
+    Add(InfoRecord, 'ANAM', True);
+    SpeakerElement := ElementByPath(InfoRecord, 'ANAM');
+  end;
+  if not Assigned(SpeakerElement) then
+    raise Exception.Create('Could not create exact INFO speaker');
+  SetEditValue(SpeakerElement, Name(SpeakerRecord));
+  ReadBackSpeaker := LinksTo(SpeakerElement);
+  if not Assigned(ReadBackSpeaker) or
+    (FormID(ReadBackSpeaker) <> FormID(SpeakerRecord)) then
+    raise Exception.Create('Exact INFO speaker did not read back');
 end;
 
 procedure ConfigureSharedResponse(
@@ -581,10 +764,95 @@ begin
     InfoEditorID,
     DestinationID
   );
+  ConfigureCollegeFacultySpeaker(InfoRecord, True);
 
   AddMessage(
     '[DNT] ' + InfoEditorID + ' -> ' + DestinationID +
-    '; voiced shared response; OnBegin fragment; flags=0x' +
+    '; voiced faculty response; OnBegin fragment; flags=0x' +
+    IntToHex(ReadBackFlags, 4)
+  );
+end;
+
+procedure ConfigureMirabelleTravelInfo(
+  TemplateObjectID: Cardinal;
+  const TemplateEditorID: string;
+  InfoObjectID: Cardinal;
+  const InfoEditorID, PromptText, DestinationID: string
+);
+const
+  ResponseText = 'Of course.';
+var
+  TemplateInfo, InfoRecord, Mirabelle, Links: IInterface;
+  ReadBackFlags: Cardinal;
+begin
+  InfoRecord := DefinedRecordByObjectID(TargetFile, InfoObjectID);
+  if not Assigned(InfoRecord) then begin
+    TemplateInfo := RequireInfo(TemplateObjectID, TemplateEditorID);
+    InfoRecord := wbCopyElementToFile(
+      TemplateInfo,
+      TargetFile,
+      True,
+      True
+    );
+    if not Assigned(InfoRecord) then
+      raise Exception.Create(
+        'Could not create Mirabelle INFO ' + InfoEditorID
+      );
+    if (FormID(InfoRecord) and $00FFFFFF) <> InfoObjectID then
+      raise Exception.Create(
+        InfoEditorID + ' received object ID ' +
+        IntToHex(FormID(InfoRecord) and $00FFFFFF, 6) +
+        ', expected ' + IntToHex(InfoObjectID, 6)
+      );
+    SetElementEditValues(InfoRecord, 'EDID', InfoEditorID);
+  end;
+
+  if Signature(InfoRecord) <> 'INFO' then
+    raise Exception.Create(InfoEditorID + ' is not an INFO');
+  if GetElementEditValues(InfoRecord, 'EDID') <> InfoEditorID then
+    raise Exception.Create(
+      IntToHex(InfoObjectID, 6) + ' is not ' + InfoEditorID
+    );
+
+  SetElementEditValues(InfoRecord, 'RNAM', PromptText);
+  Links := ElementByPath(InfoRecord, 'Link To');
+  if Assigned(Links) then
+    RemoveElement(InfoRecord, 'Link To');
+  ConfigureOwnedResponse(
+    InfoRecord,
+    InfoEditorID,
+    ResponseText,
+    $000C819B
+  );
+  SetElementNativeValues(
+    InfoRecord,
+    'ENAM\Response Flags',
+    SilentDirectResponseFlagsMask
+  );
+  ReadBackFlags := GetElementNativeValues(
+    InfoRecord,
+    'ENAM\Response Flags'
+  );
+  if ReadBackFlags <> SilentDirectResponseFlagsMask then
+    raise Exception.Create(
+      InfoEditorID + ' response flags did not read back'
+    );
+
+  Mirabelle := RequireSkyrimRecord(
+    $0001C1A0,
+    'NPC_',
+    'MirabelleErvine'
+  );
+  ConfigureExactSpeaker(InfoRecord, Mirabelle);
+  ValidateFragmentProperties(
+    InfoRecord,
+    InfoEditorID,
+    DestinationID
+  );
+
+  AddMessage(
+    '[DNT] ' + InfoEditorID + ' -> ' + DestinationID +
+    '; Mirabelle subtitle response; OnBegin fragment; flags=0x' +
     IntToHex(ReadBackFlags, 4)
   );
 end;
@@ -632,6 +900,7 @@ begin
     RemoveElement(HubInfo, 'VMAD');
   if Assigned(ElementByPath(HubInfo, 'VMAD')) then
     raise Exception.Create('Phinis hub still has a travel VMAD');
+  ConfigureCollegeFacultySpeaker(HubInfo, False);
 
   TargetLinks := ElementByPath(HubInfo, 'Link To');
   if Assigned(TargetLinks) and (ElementCount(TargetLinks) = 2) then begin
@@ -689,8 +958,9 @@ begin
     raise Exception.Create('Phinis second hub link is not Riften');
 
   AddMessage(
-    '[DNT] DNT_WG_Request_Phinis hub -> whiterun,riften; ' +
-    'owned unvoiced response; flags=0x' + IntToHex(ReadBackFlags, 4)
+    '[DNT] DNT_WG_Request_Phinis faculty hub -> whiterun,riften; ' +
+    'owned unvoiced response; rank>=3; flags=0x' +
+    IntToHex(ReadBackFlags, 4)
   );
 end;
 
@@ -765,6 +1035,22 @@ begin
       'riften',
       $000DBA22,
       $0001F319
+    );
+    ConfigureMirabelleTravelInfo(
+      $00080B,
+      'DNT_WG_Whiterun_FromPhinis',
+      $00080D,
+      'DNT_WG_Whiterun_FromMirabelle',
+      'Send me to Whiterun. (250 gold)',
+      'whiterun'
+    );
+    ConfigureMirabelleTravelInfo(
+      $00080C,
+      'DNT_WG_Riften_FromPhinis',
+      $00080E,
+      'DNT_WG_Riften_FromMirabelle',
+      'Send me to Riften. (250 gold)',
+      'riften'
     );
 
     SavePatchedPlugin;
