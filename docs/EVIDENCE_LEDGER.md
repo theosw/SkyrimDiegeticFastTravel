@@ -19,9 +19,12 @@ monitored gameplay test on the `UltraDiegeticTravel` profile.
 
 ## Current decision
 
-The latest fully proven three-node wizard star is commit `ed004f2`, whose ESP
-is SHA-256
-`9402ED91A1207A4BB94D0778FD359FD0B477DA24C745F42BD611CBBD3B6185B5`.
+The latest fully proven faculty-access wizard star includes the Solitude spoke;
+its ESP is SHA-256
+`3F5C3BEBCBBD26DC70517A7943CF36E918942C57240736A3BFD3731EAB2D9550`.
+Commit `4dfb646`, whose ESP is SHA-256
+`4EEAED7C6556ADC159A128C9D95FB66124C3C90FC3FB9200D4CF7CC797567E89`, is the
+previous Whiterun/Riften faculty-access checkpoint.
 The earlier `9aa25ef` checkpoint is the all-owned-response fallback. One failed
 voice experiment pointed the Phinis destination `DNAM` fields at ordinary
 `Favor258` dialogue rather than a real SharedInfo record.
@@ -44,9 +47,16 @@ subtitle-only Mirabelle fallbacks. Its ESP is byte-idempotent at SHA-256
 the workspace and deployed copies pass the strengthened structural and voice
 asset audits. A monitored gameplay pass verified the new eligibility
 conditions and promoted DLG-008 to Proven.
-The exact tested payload was packaged without recompilation at
+
+The proven Solitude extension adds Sybille as an inbound guide, Solitude as a
+third faculty destination, and `BluePalaceAudienceMarker` as the arrival. Its
+ESP is byte-idempotent at SHA-256
+`3F5C3BEBCBBD26DC70517A7943CF36E918942C57240736A3BFD3731EAB2D9550` and passes
+the independent structural/service and voice-asset audits. The monitored
+2026-07-31 gameplay matrix in DLG-009 and RUN-004 passed in full.
+The exact tested Solitude payload was packaged without recompilation at
 `dist\DiegeticTravelWizardGuides-phase1.zip`, SHA-256
-`DDE03EB1B0E7BA3F964E67B4417F598B97F091F3A32F1390A9EAD89DA803995D`.
+`9D8004F580DB5FBE15DDA5F83FC594D6250C1DF56F06DAE175C41D3E0566A8A2`.
 
 ## Dialogue and voice claims
 
@@ -181,6 +191,29 @@ subtitle-only `Of course.` and completed travel. Papyrus recorded nine
 destinations and both court-wizard returns, with a source actor on every trace
 and no wizard-script warning.
 
+### DLG-009 — Solitude court-wizard spoke
+
+**Status:** Proven
+
+**Claim:** Sybille Stentor can use a direct voiced College route, while the
+existing faculty hub can expose Solitude as a third child topic without
+regressing Whiterun or Riften.
+
+**Evidence:** Skyrim.esm identifies Sybille as `FemaleSultry`; the selected
+genuine `000DBA22` SharedInfo has the matching vanilla FUZ/LIP already audited
+for Faralda. The generated plugin adds exact-Sybille INFO `000812`, Solitude
+DIAL `00080F`, voiced faculty INFO `000810`, and Mirabelle subtitle fallback
+`000811`. The independent xEdit audit verifies the exact speaker, response
+contracts, three hub links, topic membership, OnBegin fragments, and
+destination IDs. A second generator pass is byte-identical.
+
+The monitored 2026-07-31 pass displayed the three-choice faculty menu and
+completed Mirabelle-to-Solitude with her intentional subtitle-only response.
+Sybille's `Of course.` was audible and lip-synced before the return to the
+College. A subsequent faculty-to-Riften and Wylandriah-to-College pair proved
+the earlier spokes still worked. Papyrus recorded four starts and four matching
+completions, with source references on every trace.
+
 ## Runtime claims
 
 ### RUN-001 — Travel fragment timing
@@ -211,6 +244,23 @@ when fare gold is removed is unrelated to wizard travel completion.
 
 **Evidence:** The warning appeared during successful trips and was followed by
 `WIZARD_TRAVEL_COMPLETE`.
+
+### RUN-004 — Blue Palace audience marker arrival
+
+**Status:** Proven
+
+**Claim:** Persistent reference `0002C194:Skyrim.esm`
+(`BluePalaceAudienceMarker`) is a safe Solitude arrival point in the installed
+Blue Palace interior.
+
+**Evidence:** A focused xEdit inventory confirms the reference is persistent,
+uses `XMarkerHeading`, and is won and repositioned by
+`JK's Blue Palace.esp`. The service's `SolitudeMarker` property resolves to the
+exact reference in the independent plugin audit.
+
+The monitored 2026-07-31 pass moved the player from Mirabelle to this marker;
+the player reported that the arrival looked correct before continuing to
+Sybille and returning to the College.
 
 ## Workflow claims
 
@@ -259,7 +309,7 @@ Promote a dialogue candidate to **Proven** only after all applicable checks:
 
 - Trust, faction, disposition, and quest-based service gates.
 - Map-based destination selection and Better Carriage Destinations integration.
-- More College spokes beyond Whiterun and Riften.
+- More College spokes beyond Whiterun, Riften, and Solitude.
 - Travel-time passage, rest/recovery behavior, and intervention/recall magic.
 
 These remain design goals, not implementation assumptions.

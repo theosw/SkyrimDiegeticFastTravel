@@ -30,6 +30,15 @@ $expected.Add(
         )
     }
 )
+$expected.Add(
+    [pscustomobject]@{
+        Label = "Sybille Stentor: Of course."
+        Path = (
+            "sound\voice\skyrim.esm\femalesultry\" +
+            "dialoguege_dialoguegeneric_000dba22_1.fuz"
+        )
+    }
+)
 
 $facultyVoiceTypes = [ordered]@{
     "Sergius Turrianus" = "MaleOldGrumpy"

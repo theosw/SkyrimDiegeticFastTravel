@@ -9,13 +9,16 @@ Destinations dependency.
 - The College of Winterhold is the permanent hub.
 - Farengar Secret-Fire offers a direct trip to the College.
 - Wylandriah offers a direct trip to the College.
-- Permanent College faculty offer Whiterun or Riften from the College.
+- Sybille Stentor offers a direct trip to the College.
+- Permanent College faculty offer Whiterun, Riften, or Solitude from the
+  College.
 - Every hop costs 250 gold.
 - Travel is an immediate teleport. It does not advance time, count as rest, or
   restore health, magicka, or stamina.
 - There are no faction, relationship, quest, or trust gates in Phase 1.
 
-This three-node star proves the route pattern intended for every later court:
+The proven three-node star established the route pattern used by the proven
+four-node extension:
 each court wizard reaches only the College, while any permanent College faculty
 member can provide the same outward destination menu.
 
@@ -42,6 +45,7 @@ vanilla INFO whose FUZ/LIP exists for the speaker's exact voice type:
 
 - Farengar: `Yes.`
 - Wylandriah: `Of course.`
+- Sybille Stentor: `Of course.`
 - College faculty destination confirmation: `Of course.`
 
 The branching faculty hub owns the unvoiced forced-subtitle response
@@ -67,6 +71,8 @@ installed JK interior overhauls where necessary:
 - College: `MGPhinisSleepMarker` (`036A67:Skyrim.esm`)
 - Whiterun: `FarengarLabMARKER` (`0B7AA5:Skyrim.esm`)
 - Riften: `RiftenKeepWizardLabMarker` (`044A4A:Skyrim.esm`)
+- Solitude: `BluePalaceAudienceMarker` (`02C194:Skyrim.esm`), whose installed
+  winner is `JK's Blue Palace.esp`
 
 Their spatial safety passed the controlled 2026-07-31 in-game regression.
 Structural validation alone still cannot prove marker safety after future
@@ -91,6 +97,13 @@ The expanded faculty access passed a monitored gameplay regression on
 faculty encountered by the player did. Phinis retained both choices, and
 Mirabelle's subtitle-only fallback displayed and completed travel. Nine trips
 produced nine matching start/completion pairs with no wizard-script warning.
+
+The Solitude spoke is generated, byte-idempotent, compiled without warnings,
+and passes the independent dialogue/service and voice-asset audits. Its
+monitored 2026-07-31 gameplay pass verified Mirabelle's subtitle-only journey
+to Solitude, safe arrival on the remodeled Blue Palace court floor, Sybille's
+audible lip-synced `Of course.` and return to the College, plus a Riften and
+Wylandriah regression. Four starts produced four matching completions.
 
 Do not launch Skyrim as part of the build. Run the gameplay pass only after
 explicit approval.

@@ -7,11 +7,11 @@ Updated: 2026-07-31
 Use `docs\EVIDENCE_LEDGER.md` as the source of truth for working assumptions,
 rejected approaches, live-proven behavior, and the next candidate test. In
 particular, do not treat xEdit accepting a dialogue field as runtime proof.
-Commit `ed004f2`, whose ESP is SHA-256
-`9402ED91A1207A4BB94D0778FD359FD0B477DA24C745F42BD611CBBD3B6185B5`, is the
-rollback checkpoint for the fully voiced three-node star. The newer deployed
-faculty-access build is also live-proven; its ESP is SHA-256
-`4EEAED7C6556ADC159A128C9D95FB66124C3C90FC3FB9200D4CF7CC797567E89`.
+Commit `4dfb646`, whose ESP is SHA-256
+`4EEAED7C6556ADC159A128C9D95FB66124C3C90FC3FB9200D4CF7CC797567E89`, is the
+previous live-proven faculty-access checkpoint. The Solitude-spoke build is
+now the latest live-proven gameplay checkpoint; its ESP is SHA-256
+`3F5C3BEBCBBD26DC70517A7943CF36E918942C57240736A3BFD3731EAB2D9550`.
 
 ## Wizard-guide Phase 1
 
@@ -24,8 +24,9 @@ Network:
 - The College of Winterhold is the permanent hub.
 - Farengar Secret-Fire (`013BBB:Skyrim.esm`) offers the College.
 - Wylandriah (`019DEF:Skyrim.esm`) offers the College.
-- Permanent College faculty at faction rank 3 or higher offer Whiterun or
-  Riften from the College; students remain ineligible.
+- Sybille Stentor (`0132AA:Skyrim.esm`) offers the College.
+- Permanent College faculty at faction rank 3 or higher offer Whiterun,
+  Riften, or Solitude from the College; students remain ineligible.
 - All services are immediately available; faction, relationship, quest, and
   trust gates are deliberately deferred.
 - Every hop costs 250 gold.
@@ -38,9 +39,9 @@ service through `DNT_WizardTravelFragment`; a future BCD/Shazdeh adapter can
 call the same service without duplicating travel logic.
 
 The generated plugin is `DiegeticTravelWizardGuides.esp`. It defines one
-start-game-enabled quest, one top-level player branch, four custom topics, and
-nine speaker-gated INFOs. It overrides no existing records. Its SEQ and two
-compiled PEX files live beside it in the module.
+start-game-enabled quest, one top-level player branch, five custom topics, and
+twelve INFOs. It overrides no existing records. Its SEQ and two compiled PEX
+files live beside it in the module.
 
 The three-node star passed its monitored gameplay test. INFO `000806` presents
 `Can you teleport me to the College of Winterhold? (250 gold)` to Farengar and
@@ -57,14 +58,16 @@ explicit, genuine vanilla Shared Response Data donor:
 
 - Farengar (`MaleEvenTonedAccented`): `Yes.` from `000730FA:Skyrim.esm`
 - Wylandriah (`FemaleEvenToned`): `Of course.` from `000DBA22:Skyrim.esm`
-- both general faculty destinations: `Of course.` from `000DBA22:Skyrim.esm`
-- Mirabelle's two exact-speaker fallbacks: owned subtitle-only `Of course.`
+- Sybille (`FemaleSultry`): `Of course.` from `000DBA22:Skyrim.esm`
+- all three general faculty destinations: `Of course.` from
+  `000DBA22:Skyrim.esm`
+- Mirabelle's three exact-speaker fallbacks: owned subtitle-only `Of course.`
 
 Voiced travel INFOs retain only the vanilla `Goodbye` response flag, have no
 `LinkTo`, and run `DNT_WizardTravelFragment` on `OnBegin`. Mirabelle's terminal
 INFOs additionally force subtitles and have no LIP file. The branching hub
 owns the unvoiced response `Where do you need to go?`, has
-`Force Subtitle + No LIP File`, no VMAD, and exactly two `LinkTo` entries.
+`Force Subtitle + No LIP File`, no VMAD, and exactly three `LinkTo` entries.
 This experiment exposed a semantic hole in the original audit. `000730FA` and
 `000DBA22` are genuine SharedInfo records, but `00079AD7` is ordinary dialogue
 from `Favor258Reject` in the Thane of Falkreath quest. xEdit permits that INFO
@@ -93,6 +96,8 @@ already reflect the installed JK interiors:
 - Whiterun: `0B7AA5:Skyrim.esm` (`FarengarLabMARKER`), vanilla winner
 - Riften: `044A4A:Skyrim.esm` (`RiftenKeepWizardLabMarker`), winner
   `JK's Mistveil Keep.esp`
+- Solitude: `02C194:Skyrim.esm` (`BluePalaceAudienceMarker`), winner
+  `JK's Blue Palace.esp`
 
 Both scripts compile with 0 errors and 0 warnings. The workspace plugin parses
 successfully off-order and has zero dangling references or missing masters.
@@ -139,6 +144,7 @@ gold removal but does not interrupt travel.
 Rollback commit `a03262d` checkpoints the proven two-way build. Commit
 `9aa25ef` checkpoints the live-proven three-node star before voice changes, and
 commit `ed004f2` checkpoints the fully proven voiced Phase 1 build.
+Commit `4dfb646` checkpoints the live-proven permanent-faculty expansion.
 `tools/Audit-WizardGuideStar.ps1` checks the seven visible INFOs, while
 `tools/Audit-WizardVoiceAssets.ps1` checks the exact FUZ paths. The voice
 patcher produces byte-identical output on a second run. Both the generator and
@@ -151,12 +157,12 @@ promoted live evidence and the gate future dialogue changes must pass.
 xEdit at `build/xedit-patched/SSEEdit64.exe`, patches the workspace copy only,
 and deploys to LoreRim only when passed `-Deploy`; deployment is refused while
 `SkyrimSE` is running. `-Deploy` copies the complete owned module payload so
-the ESP, SEQ, and newly compiled PEX files stay in sync. The last fully proven
+the ESP, SEQ, and newly compiled PEX files stay in sync. The latest fully proven
 ESP is SHA-256
-`9402ED91A1207A4BB94D0778FD359FD0B477DA24C745F42BD611CBBD3B6185B5`.
+`3F5C3BEBCBBD26DC70517A7943CF36E918942C57240736A3BFD3731EAB2D9550`.
 The exact live-tested payload was packaged with `-PackageOnly` as
 `dist\DiegeticTravelWizardGuides-phase1.zip`, SHA-256
-`DDE03EB1B0E7BA3F964E67B4417F598B97F091F3A32F1390A9EAD89DA803995D`.
+`9D8004F580DB5FBE15DDA5F83FC594D6250C1DF56F06DAE175C41D3E0566A8A2`.
 A normal package build recompiles the PEX files and changes their binary hashes;
 use `-PackageOnly` when checkpointing already-tested artifacts, or require a
 new live pass after recompilation.
@@ -184,17 +190,49 @@ The fragment now passes `akSpeakerRef` into the service, and every denial,
 start, and completion trace includes `source=<actor reference>` so the monitor
 can distinguish faculty members that share the same destination INFO.
 
+### Solitude-spoke proof
+
+The proven build adds Sybille Stentor as the Solitude court wizard and a
+third outward faculty choice, preserving the College hub topology. Sybille's
+direct route uses the same genuine `Of course.` SharedInfo proven for
+`FemaleSultry`; the BSA audit confirms her exact FUZ/LIP. General faculty use
+the existing voiced response and Mirabelle receives a third owned
+subtitle-only fallback.
+
+The service binds `SolitudeMarker` to persistent Skyrim reference `0002C194`,
+`BluePalaceAudienceMarker`. A focused xEdit inventory loaded JK's Blue Palace
+and confirmed that it wins this reference and moves it to the remodeled court
+floor. The generator adds DIAL `00080F`, child INFOs `000810` and `000811`, and
+Sybille root INFO `000812`; it is byte-idempotent at ESP SHA-256
+`3F5C3BEBCBBD26DC70517A7943CF36E918942C57240736A3BFD3731EAB2D9550`.
+The independent audit verifies the three-link hub, all new speaker/response
+conditions and fragments, and the service marker property. The monitored
+2026-07-31 pass verified the three-choice menu, Mirabelle-to-Solitude travel,
+safe Blue Palace arrival, Sybille's audible lip-synced response and return to
+the College, and a Riften/Wylandriah regression.
+
 At this checkpoint MO2's active profile is `UltraDiegeticTravel`. The complete
 workspace payload has been deployed to
 `D:\Lorerim\mods\houseCARL - DiegeticTravelWizardGuides`, and the installed
 ESP, README, SEQ, PEX, and PSC files hash-match the workspace copies. Direct
 reads of the MO2 profile files confirm the mod is enabled in the left pane and
 `DiegeticTravelWizardGuides.esp` is checked in the right pane. The installed
-build passes the strengthened seven-record structural audit and the monitored
-faculty gameplay regression. Do not launch Skyrim without coordinating with
+build passes the strengthened structural audit and the monitored faculty
+gameplay regression; the Solitude extension is live-proven. Do not launch
+Skyrim without coordinating with
 the user; a parallel PickUpAsJunk task may also use MO2.
 
 ## Wizard-guide live tests
+
+### Solitude-spoke regression
+
+The monitored 2026-07-31 Solitude pass recorded four trips and four matching
+completions. Mirabelle (`0001C1B9`) reached Solitude using her intentional
+subtitle-only fallback; the player reported a safe Blue Palace arrival.
+Sybille (`000198C5`) audibly delivered the lip-synced `Of course.` and returned
+the player to the College. A faculty member (`0001C1A8`) then reached Riften,
+and Wylandriah (`00019DF0`) returned the player to the College. Skyrim exited
+normally with no wizard-travel denial or unpaired start.
 
 ### Faculty-access regression
 

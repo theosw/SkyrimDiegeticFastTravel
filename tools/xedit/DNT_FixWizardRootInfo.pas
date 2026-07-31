@@ -3,7 +3,8 @@
 
     Farengar Secret-Fire -> College of Winterhold
     Wylandriah           -> College of Winterhold
-    College faculty      -> Whiterun or Riften
+    Sybille Stentor      -> College of Winterhold
+    College faculty      -> Whiterun, Riften, or Solitude
 
   Terminal travel INFOs deliberately share response data from short vanilla
   INFOs for which the speaker's exact voice type has shipped FUZ/LIP data.
@@ -130,6 +131,136 @@ begin
       GetElementEditValues(Result, 'EDID') + '", expected "' +
       ExpectedEditorID + '"'
     );
+end;
+
+function AddInfoFromTemplate(
+  TopicRecord, TemplateInfo: IInterface
+): IInterface;
+var
+  SourceVMAD, TargetVMAD: IInterface;
+begin
+  Result := Add(TopicRecord, 'INFO', True);
+  if not Assigned(Result) then
+    raise Exception.Create('Could not create INFO under destination topic');
+  Add(Result, 'ENAM', True);
+  Add(Result, 'CNAM', True);
+
+  SourceVMAD := ElementByPath(TemplateInfo, 'VMAD');
+  if not Assigned(SourceVMAD) then
+    raise Exception.Create('Template INFO has no travel VMAD');
+  Add(Result, 'VMAD', True);
+  TargetVMAD := ElementByPath(Result, 'VMAD');
+  if not Assigned(TargetVMAD) then
+    raise Exception.Create('Could not create destination INFO VMAD');
+  ElementAssign(TargetVMAD, LowInteger, SourceVMAD, False);
+  if not Assigned(ElementByPath(Result, 'VMAD')) then
+    raise Exception.Create('Destination INFO VMAD disappeared');
+end;
+
+function EnsureClonedInfo(
+  TemplateObjectID: Cardinal;
+  const TemplateEditorID: string;
+  InfoObjectID: Cardinal;
+  const InfoEditorID: string
+): IInterface;
+var
+  TemplateInfo: IInterface;
+begin
+  Result := DefinedRecordByObjectID(TargetFile, InfoObjectID);
+  if not Assigned(Result) then begin
+    TemplateInfo := RequireInfo(TemplateObjectID, TemplateEditorID);
+    Result := wbCopyElementToFile(
+      TemplateInfo,
+      TargetFile,
+      True,
+      True
+    );
+    if not Assigned(Result) then
+      raise Exception.Create('Could not create INFO ' + InfoEditorID);
+    if (FormID(Result) and $00FFFFFF) <> InfoObjectID then
+      raise Exception.Create(
+        InfoEditorID + ' received object ID ' +
+        IntToHex(FormID(Result) and $00FFFFFF, 6) +
+        ', expected ' + IntToHex(InfoObjectID, 6)
+      );
+    SetElementEditValues(Result, 'EDID', InfoEditorID);
+  end;
+
+  if Signature(Result) <> 'INFO' then
+    raise Exception.Create(InfoEditorID + ' is not an INFO');
+  if GetElementEditValues(Result, 'EDID') <> InfoEditorID then
+    raise Exception.Create(
+      IntToHex(InfoObjectID, 6) + ' is not ' + InfoEditorID
+    );
+end;
+
+procedure EnsureSolitudeTopic;
+var
+  TemplateTopic, SolitudeTopic, InfoGroup, GeneralInfo,
+    MirabelleInfo: IInterface;
+begin
+  SolitudeTopic := DefinedRecordByObjectID(TargetFile, $00080F);
+  if not Assigned(SolitudeTopic) then begin
+    TemplateTopic := RequireTopic($000804, 'DNT_WG_ToRiften');
+    SolitudeTopic := wbCopyElementToFile(
+      TemplateTopic,
+      TargetFile,
+      True,
+      True
+    );
+    if not Assigned(SolitudeTopic) then
+      raise Exception.Create('Could not create Solitude destination topic');
+    if (FormID(SolitudeTopic) and $00FFFFFF) <> $00080F then
+      raise Exception.Create(
+        'Solitude topic received object ID ' +
+        IntToHex(FormID(SolitudeTopic) and $00FFFFFF, 6) +
+        ', expected 00080F'
+      );
+    SetElementEditValues(SolitudeTopic, 'EDID', 'DNT_WG_ToSolitude');
+  end;
+
+  if Signature(SolitudeTopic) <> 'DIAL' then
+    raise Exception.Create('DNT_WG_ToSolitude is not a DIAL');
+  if GetElementEditValues(SolitudeTopic, 'EDID') <> 'DNT_WG_ToSolitude' then
+    raise Exception.Create('00080F is not DNT_WG_ToSolitude');
+
+  InfoGroup := ChildGroup(SolitudeTopic);
+  if not Assigned(InfoGroup) or (ElementCount(InfoGroup) = 0) then begin
+    GeneralInfo := AddInfoFromTemplate(
+      SolitudeTopic,
+      RequireInfo($00080C, 'DNT_WG_Riften_FromPhinis')
+    );
+    MirabelleInfo := AddInfoFromTemplate(
+      SolitudeTopic,
+      RequireInfo($00080E, 'DNT_WG_Riften_FromMirabelle')
+    );
+    InfoGroup := ChildGroup(SolitudeTopic);
+    SetElementNativeValues(
+      SolitudeTopic,
+      'TIFC',
+      ElementCount(InfoGroup)
+    );
+  end;
+  if not Assigned(InfoGroup) or (ElementCount(InfoGroup) <> 2) then
+    raise Exception.Create(
+      'DNT_WG_ToSolitude must contain exactly two cloned INFO records'
+    );
+  GeneralInfo := ElementByIndex(InfoGroup, 0);
+  MirabelleInfo := ElementByIndex(InfoGroup, 1);
+  if (FormID(GeneralInfo) and $00FFFFFF) <> $000810 then
+    raise Exception.Create('Solitude general INFO is not object 000810');
+  if (FormID(MirabelleInfo) and $00FFFFFF) <> $000811 then
+    raise Exception.Create('Solitude Mirabelle INFO is not object 000811');
+  SetElementEditValues(
+    GeneralInfo,
+    'EDID',
+    'DNT_WG_Solitude_FromPhinis'
+  );
+  SetElementEditValues(
+    MirabelleInfo,
+    'EDID',
+    'DNT_WG_Solitude_FromMirabelle'
+  );
 end;
 
 function RequireSkyrimRecord(
@@ -615,6 +746,117 @@ begin
     );
 end;
 
+procedure SetFragmentDestinationID(
+  InfoRecord: IInterface;
+  const ExpectedEditorID, DestinationID: string
+);
+var
+  TargetVMAD, Scripts, ScriptEntry, Properties, PropertyEntry: IInterface;
+  i: Integer;
+begin
+  TargetVMAD := ElementByPath(InfoRecord, 'VMAD');
+  if not Assigned(TargetVMAD) then
+    raise Exception.Create(ExpectedEditorID + ' has no VMAD');
+  Scripts := ElementByPath(TargetVMAD, 'Scripts');
+  if not Assigned(Scripts) or (ElementCount(Scripts) <> 1) then
+    raise Exception.Create(
+      ExpectedEditorID + ' VMAD does not have exactly one script'
+    );
+  ScriptEntry := ElementByIndex(Scripts, 0);
+  Properties := ElementByPath(ScriptEntry, 'Properties');
+  if not Assigned(Properties) then
+    raise Exception.Create(ExpectedEditorID + ' has no fragment properties');
+
+  for i := 0 to Pred(ElementCount(Properties)) do begin
+    PropertyEntry := ElementByIndex(Properties, i);
+    if GetElementEditValues(PropertyEntry, 'propertyName') =
+      'DestinationId' then begin
+      SetElementEditValues(PropertyEntry, 'String', DestinationID);
+      if GetElementEditValues(PropertyEntry, 'String') <> DestinationID then
+        raise Exception.Create(
+          ExpectedEditorID + ' DestinationId did not read back'
+        );
+      Exit;
+    end;
+  end;
+  raise Exception.Create(ExpectedEditorID + ' DestinationId is missing');
+end;
+
+procedure ConfigureServiceSolitudeMarker;
+var
+  ServiceQuest, TargetVMAD, Scripts, ScriptEntry, Properties, PropertyEntry,
+    MarkerRecord, PropertyObject, ReadBackObject: IInterface;
+  PropertyName: string;
+  i: Integer;
+begin
+  ServiceQuest := DefinedRecordByObjectID(TargetFile, $000800);
+  if not Assigned(ServiceQuest) or (Signature(ServiceQuest) <> 'QUST') or
+    (GetElementEditValues(ServiceQuest, 'EDID') <>
+      'DNT_WizardTravelQuest') then
+    raise Exception.Create('Could not resolve DNT_WizardTravelQuest');
+  MarkerRecord := RequireSkyrimRecord(
+    $0002C194,
+    'REFR',
+    'BluePalaceAudienceMarker'
+  );
+
+  TargetVMAD := ElementByPath(ServiceQuest, 'VMAD');
+  Scripts := ElementByPath(TargetVMAD, 'Scripts');
+  if not Assigned(Scripts) then
+    raise Exception.Create('Wizard travel service quest has no scripts');
+  ScriptEntry := nil;
+  for i := 0 to Pred(ElementCount(Scripts)) do
+    if GetElementEditValues(
+      ElementByIndex(Scripts, i),
+      'ScriptName'
+    ) = 'DNT_WizardTravelService' then begin
+      ScriptEntry := ElementByIndex(Scripts, i);
+      Break;
+    end;
+  if not Assigned(ScriptEntry) then
+    raise Exception.Create('DNT_WizardTravelService is not bound to its quest');
+
+  Properties := ElementByPath(ScriptEntry, 'Properties');
+  if not Assigned(Properties) then
+    raise Exception.Create('Wizard travel service has no properties');
+  PropertyEntry := nil;
+  for i := 0 to Pred(ElementCount(Properties)) do begin
+    PropertyName := GetElementEditValues(
+      ElementByIndex(Properties, i),
+      'propertyName'
+    );
+    if PropertyName = 'SolitudeMarker' then begin
+      PropertyEntry := ElementByIndex(Properties, i);
+      Break;
+    end;
+  end;
+  if not Assigned(PropertyEntry) then begin
+    PropertyEntry := ElementAssign(Properties, HighInteger, nil, False);
+    if not Assigned(PropertyEntry) then
+      raise Exception.Create('Could not create SolitudeMarker property');
+    SetElementEditValues(PropertyEntry, 'propertyName', 'SolitudeMarker');
+    SetElementEditValues(PropertyEntry, 'Type', 'Object');
+  end;
+
+  SetElementEditValues(PropertyEntry, 'Type', 'Object');
+  PropertyObject := ElementByPath(
+    PropertyEntry,
+    'Value\Object Union\Object v2\FormID'
+  );
+  if not Assigned(PropertyObject) then
+    raise Exception.Create('SolitudeMarker has no object value');
+  SetEditValue(PropertyObject, Name(MarkerRecord));
+  ReadBackObject := LinksTo(PropertyObject);
+  if not Assigned(ReadBackObject) or
+    (FormID(ReadBackObject) <> FormID(MarkerRecord)) then
+    raise Exception.Create('SolitudeMarker did not read back');
+
+  AddMessage(
+    '[DNT] DNT_WizardTravelService SolitudeMarker -> ' +
+    'BluePalaceAudienceMarker [REFR:0002C194]'
+  );
+end;
+
 procedure ConfigureDirectRoute(
   RootObjectID: Cardinal;
   const RootEditorID: string;
@@ -694,6 +936,7 @@ begin
     'Script Fragments\Flags',
     OnBeginFragmentMask
   );
+  SetFragmentDestinationID(RootInfo, RootEditorID, DestinationID);
   ValidateFragmentProperties(
     RootInfo,
     RootEditorID,
@@ -759,6 +1002,7 @@ begin
     'Script Fragments\Flags',
     OnBeginFragmentMask
   );
+  SetFragmentDestinationID(InfoRecord, InfoEditorID, DestinationID);
   ValidateFragmentProperties(
     InfoRecord,
     InfoEditorID,
@@ -844,6 +1088,7 @@ begin
     'MirabelleErvine'
   );
   ConfigureExactSpeaker(InfoRecord, Mirabelle);
+  SetFragmentDestinationID(InfoRecord, InfoEditorID, DestinationID);
   ValidateFragmentProperties(
     InfoRecord,
     InfoEditorID,
@@ -862,17 +1107,14 @@ const
   HubPrompt = 'Can you teleport me somewhere? (250 gold per trip)';
   HubResponse = 'Where do you need to go?';
 var
-  HubInfo, LinkTemplateInfo, WhiterunTopic, RiftenTopic, SourceLinks,
-    SourceLink, TargetLinks, FirstLink, SecondLink: IInterface;
+  HubInfo, WhiterunTopic, RiftenTopic, SolitudeTopic, TargetLinks,
+    FirstLink, SecondLink, ThirdLink: IInterface;
   ReadBackFlags: Cardinal;
 begin
   HubInfo := RequireInfo($000808, 'DNT_WG_Request_Phinis');
-  LinkTemplateInfo := RequireInfo(
-    $000807,
-    'DNT_WG_Request_Wylandriah'
-  );
   WhiterunTopic := RequireTopic($000803, 'DNT_WG_ToWhiterun');
   RiftenTopic := RequireTopic($000804, 'DNT_WG_ToRiften');
+  SolitudeTopic := RequireTopic($00080F, 'DNT_WG_ToSolitude');
 
   SetElementEditValues(HubInfo, 'RNAM', HubPrompt);
   if GetElementEditValues(HubInfo, 'RNAM') <> HubPrompt then
@@ -903,62 +1145,50 @@ begin
   ConfigureCollegeFacultySpeaker(HubInfo, False);
 
   TargetLinks := ElementByPath(HubInfo, 'Link To');
-  if Assigned(TargetLinks) and (ElementCount(TargetLinks) = 2) then begin
-    FirstLink := ElementByIndex(TargetLinks, 0);
-    SecondLink := ElementByIndex(TargetLinks, 1);
-  end else begin
-    SourceLinks := ElementByPath(LinkTemplateInfo, 'Link To');
-    if not Assigned(SourceLinks) or (ElementCount(SourceLinks) <> 1) then
-      raise Exception.Create(
-        'No reusable Link To structure exists for the Phinis hub'
-      );
-    SourceLink := ElementByIndex(SourceLinks, 0);
-
-    if Assigned(TargetLinks) then
-      RemoveElement(HubInfo, 'Link To');
-    Add(HubInfo, 'Link To', True);
-    TargetLinks := ElementByPath(HubInfo, 'Link To');
-    if not Assigned(TargetLinks) then
-      raise Exception.Create('Could not create Phinis hub Link To array');
-
-    FirstLink := ElementAssign(
+  if not Assigned(TargetLinks) or (ElementCount(TargetLinks) < 1) then
+    raise Exception.Create('Phinis hub has no reusable Link To entry');
+  while ElementCount(TargetLinks) > 3 do
+    RemoveElement(TargetLinks, Pred(ElementCount(TargetLinks)));
+  while ElementCount(TargetLinks) < 3 do begin
+    ThirdLink := ElementAssign(
       TargetLinks,
       HighInteger,
-      SourceLink,
+      ElementByIndex(TargetLinks, 0),
       False
     );
-    if not Assigned(FirstLink) then
-      raise Exception.Create('Could not create Whiterun hub link');
-
-    SecondLink := ElementAssign(
-      TargetLinks,
-      HighInteger,
-      SourceLink,
-      False
-    );
-    if not Assigned(SecondLink) then
-      raise Exception.Create('Could not create Riften hub link');
+    if not Assigned(ThirdLink) then
+      raise Exception.Create('Could not extend Phinis hub links');
   end;
+
+  FirstLink := ElementByIndex(TargetLinks, 0);
+  SecondLink := ElementByIndex(TargetLinks, 1);
+  ThirdLink := ElementByIndex(TargetLinks, 2);
 
   SetEditValue(FirstLink, Name(WhiterunTopic));
   SetEditValue(SecondLink, Name(RiftenTopic));
+  SetEditValue(ThirdLink, Name(SolitudeTopic));
 
   TargetLinks := ElementByPath(HubInfo, 'Link To');
-  if not Assigned(TargetLinks) or (ElementCount(TargetLinks) <> 2) then
+  if not Assigned(TargetLinks) or (ElementCount(TargetLinks) <> 3) then
     raise Exception.Create(
-      'Phinis hub does not have exactly two Link To entries'
+      'Phinis hub does not have exactly three Link To entries'
     );
   FirstLink := LinksTo(ElementByIndex(TargetLinks, 0));
   SecondLink := LinksTo(ElementByIndex(TargetLinks, 1));
+  ThirdLink := LinksTo(ElementByIndex(TargetLinks, 2));
   if not Assigned(FirstLink) or
     (FormID(FirstLink) <> FormID(WhiterunTopic)) then
     raise Exception.Create('Phinis first hub link is not Whiterun');
   if not Assigned(SecondLink) or
     (FormID(SecondLink) <> FormID(RiftenTopic)) then
     raise Exception.Create('Phinis second hub link is not Riften');
+  if not Assigned(ThirdLink) or
+    (FormID(ThirdLink) <> FormID(SolitudeTopic)) then
+    raise Exception.Create('Phinis third hub link is not Solitude');
 
   AddMessage(
-    '[DNT] DNT_WG_Request_Phinis faculty hub -> whiterun,riften; ' +
+    '[DNT] DNT_WG_Request_Phinis faculty hub -> ' +
+    'whiterun,riften,solitude; ' +
     'owned unvoiced response; rank>=3; flags=0x' +
     IntToHex(ReadBackFlags, 4)
   );
@@ -977,6 +1207,8 @@ begin
 end;
 
 function Initialize: Integer;
+var
+  SybilleRoot, Sybille: IInterface;
 begin
   Result := 1;
   StatusPath :=
@@ -995,6 +1227,14 @@ begin
         'DiegeticTravelWizardGuides.esp is not loaded'
       );
 
+    EnsureSolitudeTopic;
+    SybilleRoot := EnsureClonedInfo(
+      $000807,
+      'DNT_WG_Request_Wylandriah',
+      $000812,
+      'DNT_WG_Request_Sybille'
+    );
+    ConfigureServiceSolitudeMarker;
     ConfigureHubMenu;
     ConfigureDirectRoute(
       $000806,
@@ -1018,6 +1258,23 @@ begin
       $000DBA22,
       $0001F319
     );
+    ConfigureDirectRoute(
+      $000812,
+      'DNT_WG_Request_Sybille',
+      $00080A,
+      'DNT_WG_College_FromWylandriah',
+      'Can you teleport me to the College of Winterhold? (250 gold)',
+      'Of course.',
+      'college',
+      $000DBA22,
+      $0001F319
+    );
+    Sybille := RequireSkyrimRecord(
+      $000132AA,
+      'NPC_',
+      'SybilleStentor'
+    );
+    ConfigureExactSpeaker(SybilleRoot, Sybille);
     ConfigureTravelInfo(
       $00080B,
       'DNT_WG_Whiterun_FromPhinis',
@@ -1051,6 +1308,23 @@ begin
       'DNT_WG_Riften_FromMirabelle',
       'Send me to Riften. (250 gold)',
       'riften'
+    );
+    ConfigureTravelInfo(
+      $000810,
+      'DNT_WG_Solitude_FromPhinis',
+      'Send me to Solitude. (250 gold)',
+      'Of course.',
+      'solitude',
+      $000DBA22,
+      $0001F319
+    );
+    ConfigureMirabelleTravelInfo(
+      $000810,
+      'DNT_WG_Solitude_FromPhinis',
+      $000811,
+      'DNT_WG_Solitude_FromMirabelle',
+      'Send me to Solitude. (250 gold)',
+      'solitude'
     );
 
     SavePatchedPlugin;

@@ -24,9 +24,9 @@ starts the Morrowind-style mage-guide pillar without depending on CFTO or
 overriding the carriage prototype: Phinis Gestor is the hub, Farengar and
 the court wizards are spokes, and the travel service is UI-independent so a
 later map adapter can call the same fare, payment, and teleport functions. The
-current vertical slice exposes a three-node star: Farengar and Wylandriah each
-travel directly to the College, while permanent College faculty link to
-Whiterun and Riften destination topics. Voiced INFOs use an explicitly audited
+live-proven vertical slice exposes a four-node star: Farengar, Wylandriah, and
+Sybille travel directly to the College, while permanent College faculty link
+to Whiterun, Riften, and Solitude destination topics. Voiced INFOs use an explicitly audited
 short vanilla response whose FUZ exists for each eligible voice type. The
 branching faculty hub owns a forced-subtitle response so its custom `LinkTo`
 submenu advances reliably; Mirabelle uses subtitle-only terminal fallbacks
@@ -36,9 +36,9 @@ infrastructure before more spokes or a map picker are added.
 
 Dialogue hypotheses and their actual evidence level are tracked in
 [`docs/EVIDENCE_LEDGER.md`](docs/EVIDENCE_LEDGER.md). Commit `ed004f2` is the
-rollback checkpoint for the fully voiced three-node build. The currently
-deployed faculty-access expansion has also passed its monitored gameplay
-matrix, including student exclusion and Mirabelle's subtitle-only fallback.
+rollback checkpoint for the fully voiced three-node build. Commit `4dfb646`
+is the previous live-proven faculty-access checkpoint. The Solitude spoke is
+now live-proven in the four-node star.
 
 ## Implementation status
 

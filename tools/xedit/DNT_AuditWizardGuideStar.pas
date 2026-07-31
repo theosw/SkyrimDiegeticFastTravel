@@ -1,8 +1,8 @@
 {
   Read-only, exact-record audit for the College-centred wizard-guide star.
-  It checks the two inbound court-wizard routes, the shared College faculty
-  hub, both voiced faculty destinations, and Mirabelle's two subtitle-only
-  fallbacks.
+  It checks the three inbound court-wizard routes, the shared College faculty
+  hub, all three voiced faculty destinations, Mirabelle's three subtitle-only
+  fallbacks, and the Solitude service-marker binding.
 }
 unit DNT_AuditWizardGuideStar;
 
@@ -371,6 +371,63 @@ begin
     raise Exception.Create(EditorID + ' Service is missing');
 end;
 
+procedure AuditSolitudeServiceMarker;
+var
+  ServiceQuest, VMAD, Scripts, ScriptEntry, Properties, PropertyEntry,
+    MarkerRecord: IInterface;
+  PropertyName: string;
+  i, MatchCount: Integer;
+begin
+  ServiceQuest := RequireRecord(
+    $000800,
+    'QUST',
+    'DNT_WizardTravelQuest'
+  );
+  VMAD := ElementByPath(ServiceQuest, 'VMAD');
+  Scripts := ElementByPath(VMAD, 'Scripts');
+  if not Assigned(Scripts) then
+    raise Exception.Create('Wizard travel service quest has no scripts');
+  ScriptEntry := nil;
+  for i := 0 to Pred(ElementCount(Scripts)) do
+    if GetElementEditValues(
+      ElementByIndex(Scripts, i),
+      'ScriptName'
+    ) = 'DNT_WizardTravelService' then begin
+      ScriptEntry := ElementByIndex(Scripts, i);
+      Break;
+    end;
+  if not Assigned(ScriptEntry) then
+    raise Exception.Create('Wizard travel service script is not bound');
+
+  Properties := ElementByPath(ScriptEntry, 'Properties');
+  if not Assigned(Properties) then
+    raise Exception.Create('Wizard travel service has no properties');
+  MatchCount := 0;
+  for i := 0 to Pred(ElementCount(Properties)) do begin
+    PropertyEntry := ElementByIndex(Properties, i);
+    PropertyName := GetElementEditValues(PropertyEntry, 'propertyName');
+    if PropertyName = 'SolitudeMarker' then begin
+      Inc(MatchCount);
+      MarkerRecord := LinksTo(
+        ElementByPath(
+          PropertyEntry,
+          'Value\Object Union\Object v2\FormID'
+        )
+      );
+      if not Assigned(MarkerRecord) or
+        (FormID(MarkerRecord) <> $0002C194) then
+        raise Exception.Create('SolitudeMarker does not point to 0002C194');
+    end;
+  end;
+  if MatchCount <> 1 then
+    raise Exception.Create(
+      'Wizard travel service SolitudeMarker count=' + IntToStr(MatchCount)
+    );
+  ReportLines.Add(
+    'PASS service SolitudeMarker -> BluePalaceAudienceMarker 0002C194'
+  );
+end;
+
 procedure AuditDirect(
   ObjectID: Cardinal;
   const EditorID, PromptText, ResponseText, DestinationID: string;
@@ -470,8 +527,8 @@ end;
 
 procedure AuditHub;
 var
-  HubInfo, Links, FirstTarget, SecondTarget, WhiterunTopic,
-    RiftenTopic: IInterface;
+  HubInfo, Links, FirstTarget, SecondTarget, ThirdTarget, WhiterunTopic,
+    RiftenTopic, SolitudeTopic: IInterface;
 begin
   HubInfo := RequireRecord($000808, 'INFO', 'DNT_WG_Request_Phinis');
   WhiterunTopic := RequireRecord(
@@ -480,6 +537,7 @@ begin
     'DNT_WG_ToWhiterun'
   );
   RiftenTopic := RequireRecord($000804, 'DIAL', 'DNT_WG_ToRiften');
+  SolitudeTopic := RequireRecord($00080F, 'DIAL', 'DNT_WG_ToSolitude');
 
   if GetElementEditValues(HubInfo, 'RNAM') <>
     'Can you teleport me somewhere? (250 gold per trip)' then
@@ -499,23 +557,29 @@ begin
     raise Exception.Create('Phinis hub unexpectedly has a travel VMAD');
 
   Links := ElementByPath(HubInfo, 'Link To');
-  if not Assigned(Links) or (ElementCount(Links) <> 2) then
-    raise Exception.Create('Phinis hub must have exactly two Link To entries');
+  if not Assigned(Links) or (ElementCount(Links) <> 3) then
+    raise Exception.Create('Phinis hub must have exactly three Link To entries');
   FirstTarget := LinksTo(ElementByIndex(Links, 0));
   SecondTarget := LinksTo(ElementByIndex(Links, 1));
+  ThirdTarget := LinksTo(ElementByIndex(Links, 2));
   if not Assigned(FirstTarget) or
     (FormID(FirstTarget) <> FormID(WhiterunTopic)) then
     raise Exception.Create('Phinis first hub target is not Whiterun');
   if not Assigned(SecondTarget) or
     (FormID(SecondTarget) <> FormID(RiftenTopic)) then
     raise Exception.Create('Phinis second hub target is not Riften');
+  if not Assigned(ThirdTarget) or
+    (FormID(ThirdTarget) <> FormID(SolitudeTopic)) then
+    raise Exception.Create('Phinis third hub target is not Solitude');
 
-  ReportLines.Add('PASS hub DNT_WG_Request_Phinis -> whiterun,riften');
+  ReportLines.Add(
+    'PASS hub DNT_WG_Request_Phinis -> whiterun,riften,solitude'
+  );
 end;
 
 function Initialize: Integer;
 var
-  WhiterunTopic, RiftenTopic: IInterface;
+  WhiterunTopic, RiftenTopic, SolitudeTopic, SolitudeInfoGroup: IInterface;
 begin
   Result := 1;
   StatusPath :=
@@ -552,6 +616,17 @@ begin
       $000DBA22,
       $0001F319
     );
+    AuditDirect(
+      $000812,
+      'DNT_WG_Request_Sybille',
+      'Can you teleport me to the College of Winterhold? (250 gold)',
+      'Of course.',
+      'college',
+      $000132AA,
+      $000DBA22,
+      $0001F319
+    );
+    AuditSolitudeServiceMarker;
     AuditHub;
     WhiterunTopic := RequireRecord(
       $000803,
@@ -563,6 +638,17 @@ begin
       'DIAL',
       'DNT_WG_ToRiften'
     );
+    SolitudeTopic := RequireRecord(
+      $00080F,
+      'DIAL',
+      'DNT_WG_ToSolitude'
+    );
+    SolitudeInfoGroup := ChildGroup(SolitudeTopic);
+    if not Assigned(SolitudeInfoGroup) or
+      (ElementCount(SolitudeInfoGroup) <> 2) then
+      raise Exception.Create(
+        'DNT_WG_ToSolitude must contain exactly two INFO records'
+      );
     AuditFacultyVoicedDestination(
       $00080B,
       'DNT_WG_Whiterun_FromPhinis',
@@ -590,6 +676,20 @@ begin
       'Send me to Riften. (250 gold)',
       'riften',
       RiftenTopic
+    );
+    AuditFacultyVoicedDestination(
+      $000810,
+      'DNT_WG_Solitude_FromPhinis',
+      'Send me to Solitude. (250 gold)',
+      'solitude',
+      SolitudeTopic
+    );
+    AuditMirabelleDestination(
+      $000811,
+      'DNT_WG_Solitude_FromMirabelle',
+      'Send me to Solitude. (250 gold)',
+      'solitude',
+      SolitudeTopic
     );
 
     ReportLines.Add('PASS wizard-guide star audit complete');

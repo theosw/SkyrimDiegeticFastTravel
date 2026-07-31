@@ -6,6 +6,7 @@ MiscObject Property Gold001 Auto
 ObjectReference Property CollegeMarker Auto
 ObjectReference Property WhiterunMarker Auto
 ObjectReference Property RiftenMarker Auto
+ObjectReference Property SolitudeMarker Auto
 
 Int Property FarePerHop = 250 Auto
 
@@ -57,6 +58,8 @@ ObjectReference Function GetDestinationMarker(String DestinationId)
         Return WhiterunMarker
     ElseIf DestinationId == "riften"
         Return RiftenMarker
+    ElseIf DestinationId == "solitude"
+        Return SolitudeMarker
     EndIf
 
     Return None

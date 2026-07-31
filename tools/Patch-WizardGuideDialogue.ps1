@@ -189,9 +189,9 @@ $beforeHash = (Get-FileHash -LiteralPath $beforePlugin -Algorithm SHA256).Hash
 $afterHash = (Get-FileHash -LiteralPath $outputPlugin -Algorithm SHA256).Hash
 
 Write-Host (
-    "Patched the College-centred wizard star: direct court-wizard routes, " +
-    "a rank-gated faculty hub, voiced terminal responses, and Mirabelle " +
-    "subtitle fallbacks."
+    "Patched the College-centred wizard star: direct court-wizard routes " +
+    "from Whiterun, Riften, and Solitude; a rank-gated faculty hub; voiced " +
+    "terminal responses; and Mirabelle subtitle fallbacks."
 )
 Write-Host "Before SHA-256: $beforeHash"
 Write-Host "After SHA-256:  $afterHash"

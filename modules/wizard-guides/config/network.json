@@ -10,7 +10,8 @@
       "arrival_marker": "036A67:Skyrim.esm",
       "links": [
         "whiterun",
-        "riften"
+        "riften",
+        "solitude"
       ]
     },
     {
@@ -29,6 +30,16 @@
       "service_npc": "019DEF:Skyrim.esm",
       "service_reference": "019DF0:Skyrim.esm",
       "arrival_marker": "044A4A:Skyrim.esm",
+      "links": [
+        "college"
+      ]
+    },
+    {
+      "id": "solitude",
+      "name": "Solitude",
+      "service_npc": "0132AA:Skyrim.esm",
+      "service_reference": "0198C5:Skyrim.esm",
+      "arrival_marker": "02C194:Skyrim.esm",
       "links": [
         "college"
       ]
