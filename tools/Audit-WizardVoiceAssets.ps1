@@ -1,0 +1,123 @@
+param(
+    [string]$LoreRimRoot = "D:\Lorerim"
+)
+
+$ErrorActionPreference = "Stop"
+
+$voiceArchive = Join-Path (
+    Join-Path $LoreRimRoot "Stock Game\Data"
+) "Skyrim - Voices_en0.bsa"
+if (-not (Test-Path -LiteralPath $voiceArchive -PathType Leaf)) {
+    throw "Required vanilla voice archive not found: $voiceArchive"
+}
+
+$expected = @(
+    [pscustomobject]@{
+        Label = "Farengar: Yes."
+        Path = (
+            "sound\voice\skyrim.esm\maleeventonedaccented\" +
+            "wisharedin_wisharedinfosto_000730fa_1.fuz"
+        )
+    },
+    [pscustomobject]@{
+        Label = "Wylandriah: Of course."
+        Path = (
+            "sound\voice\skyrim.esm\femaleeventoned\" +
+            "dialoguege_dialoguegeneric_000dba22_1.fuz"
+        )
+    },
+    [pscustomobject]@{
+        Label = "Phinis travel: Of course."
+        Path = (
+            "sound\voice\skyrim.esm\malecondescending\" +
+            "dialoguege_dialoguegeneric_000dba22_1.fuz"
+        )
+    }
+)
+$wantedPaths = @{}
+foreach ($entry in $expected) {
+    $wantedPaths[$entry.Path.ToLowerInvariant()] = $false
+}
+
+$stream = [System.IO.File]::OpenRead($voiceArchive)
+$reader = [System.IO.BinaryReader]::new(
+    $stream,
+    [System.Text.Encoding]::ASCII
+)
+try {
+    $magic = [System.Text.Encoding]::ASCII.GetString($reader.ReadBytes(4))
+    $version = $reader.ReadUInt32()
+    $null = $reader.ReadUInt32() # Folder-record offset
+    $null = $reader.ReadUInt32() # Archive flags
+    $folderCount = $reader.ReadUInt32()
+    $fileCount = $reader.ReadUInt32()
+    $null = $reader.ReadUInt32() # Total folder-name bytes
+    $fileNameBytes = $reader.ReadUInt32()
+    $null = $reader.ReadUInt32() # File flags
+
+    if ($magic -ne "BSA`0" -or $version -ne 105) {
+        throw (
+            "Unexpected voice archive header: magic='$magic', " +
+            "version=$version"
+        )
+    }
+
+    $folderFileCounts = [System.Collections.Generic.List[int]]::new()
+    for ($i = 0; $i -lt $folderCount; $i++) {
+        $null = $reader.ReadUInt64() # Folder hash
+        $count = $reader.ReadUInt32()
+        $null = $reader.ReadUInt32() # SSE padding
+        $null = $reader.ReadUInt64() # Folder offset
+        $folderFileCounts.Add([int]$count)
+    }
+
+    $foldersByFile = [System.Collections.Generic.List[string]]::new(
+        [int]$fileCount
+    )
+    foreach ($count in $folderFileCounts) {
+        $length = $reader.ReadByte()
+        $folder = [System.Text.Encoding]::ASCII.GetString(
+            $reader.ReadBytes($length)
+        ).TrimEnd([char]0).ToLowerInvariant()
+        for ($i = 0; $i -lt $count; $i++) {
+            $foldersByFile.Add($folder)
+        }
+        $stream.Position += 16L * $count # BSA file records
+    }
+
+    $fileNameBlob = [System.Text.Encoding]::ASCII.GetString(
+        $reader.ReadBytes($fileNameBytes)
+    )
+    $fileNames = $fileNameBlob.Split(
+        [char]0,
+        [System.StringSplitOptions]::RemoveEmptyEntries
+    )
+    if ($fileNames.Count -ne $fileCount) {
+        throw (
+            "Voice archive filename count mismatch: " +
+            "$($fileNames.Count) != $fileCount"
+        )
+    }
+
+    for ($i = 0; $i -lt $fileCount; $i++) {
+        $fullPath = (
+            $foldersByFile[$i] + "\" + $fileNames[$i]
+        ).ToLowerInvariant()
+        if ($wantedPaths.ContainsKey($fullPath)) {
+            $wantedPaths[$fullPath] = $true
+        }
+    }
+}
+finally {
+    $reader.Dispose()
+    $stream.Dispose()
+}
+
+foreach ($entry in $expected) {
+    $key = $entry.Path.ToLowerInvariant()
+    if (-not $wantedPaths[$key]) {
+        throw "Missing vanilla voice asset for $($entry.Label): $($entry.Path)"
+    }
+    Write-Host "PASS voice asset $($entry.Label)"
+}
+Write-Host "PASS wizard voice asset audit complete"

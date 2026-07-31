@@ -8,8 +8,9 @@ unit DNT_AuditWizardGuideStar;
 const
   TargetPluginName = 'DiegeticTravelWizardGuides.esp';
   OnBeginFragmentMask = $01;
-  DirectResponseFlagsMask = $0A01;
+  DirectResponseFlagsMask = $0001;
   HubResponseFlagsMask = $0A00;
+  MiscDialogueCategory = 7;
 
 var
   TargetFile: IInterface;
@@ -77,6 +78,71 @@ begin
     );
 end;
 
+procedure AssertSharedResponse(
+  InfoRecord: IInterface;
+  const EditorID, ExpectedText: string;
+  ExpectedSharedInfoFormID, ExpectedSharedInfoTopicFormID: Cardinal
+);
+var
+  SkyrimFile, Responses, SharedInfo, SharedInfoTopic, SharedInfoGroup,
+    CandidateInfo: IInterface;
+  i: Integer;
+  DonorIsTopicChild: Boolean;
+begin
+  SkyrimFile := FileByPluginName('Skyrim.esm');
+  if not Assigned(SkyrimFile) then
+    raise Exception.Create('Skyrim.esm is not loaded');
+  SharedInfo := LinksTo(ElementByPath(InfoRecord, 'DNAM'));
+  if not Assigned(SharedInfo) then
+    raise Exception.Create(EditorID + ' has no Shared Info donor');
+  if FormID(SharedInfo) <> ExpectedSharedInfoFormID then
+    raise Exception.Create(EditorID + ' Shared Info donor does not match');
+  if Trim(GetElementEditValues(SharedInfo, 'EDID')) = '' then
+    raise Exception.Create(EditorID + ' Shared Info donor has no EditorID');
+
+  SharedInfoTopic := RecordByFormID(
+    SkyrimFile,
+    ExpectedSharedInfoTopicFormID,
+    True
+  );
+  if not Assigned(SharedInfoTopic) or
+    (Signature(SharedInfoTopic) <> 'DIAL') then
+    raise Exception.Create(EditorID + ' SharedInfo topic does not resolve');
+  if GetElementNativeValues(
+    SharedInfoTopic,
+    'DATA\Category'
+  ) <> MiscDialogueCategory then
+    raise Exception.Create(EditorID + ' donor topic is not Misc dialogue');
+  if GetElementEditValues(SharedInfoTopic, 'SNAM') <> 'SharedInfo' then
+    raise Exception.Create(
+      EditorID + ' donor topic subtype name is not SharedInfo'
+    );
+
+  SharedInfoGroup := ChildGroup(SharedInfoTopic);
+  DonorIsTopicChild := False;
+  if Assigned(SharedInfoGroup) then
+    for i := 0 to Pred(ElementCount(SharedInfoGroup)) do begin
+      CandidateInfo := ElementByIndex(SharedInfoGroup, i);
+      if (Signature(CandidateInfo) = 'INFO') and
+        (FormID(CandidateInfo) = ExpectedSharedInfoFormID) then begin
+        DonorIsTopicChild := True;
+        Break;
+      end;
+    end;
+  if not DonorIsTopicChild then
+    raise Exception.Create(
+      EditorID + ' donor is not a child of its SharedInfo topic'
+    );
+  Responses := ElementByPath(InfoRecord, 'Responses');
+  if Assigned(Responses) and (ElementCount(Responses) > 0) then
+    raise Exception.Create(EditorID + ' unexpectedly owns response data');
+  if GetElementEditValues(
+    SharedInfo,
+    'Responses\Response\NAM1'
+  ) <> ExpectedText then
+    raise Exception.Create(EditorID + ' shared response text does not match');
+end;
+
 procedure AssertOwnedResponse(
   InfoRecord: IInterface;
   const EditorID, ExpectedText: string
@@ -85,7 +151,7 @@ var
   Responses: IInterface;
 begin
   if Assigned(ElementByPath(InfoRecord, 'DNAM')) then
-    raise Exception.Create(EditorID + ' still uses Shared Info');
+    raise Exception.Create(EditorID + ' unexpectedly uses Shared Info');
   Responses := ElementByPath(InfoRecord, 'Responses');
   if not Assigned(Responses) or (ElementCount(Responses) <> 1) then
     raise Exception.Create(EditorID + ' must own exactly one response');
@@ -93,7 +159,7 @@ begin
     InfoRecord,
     'Responses\Response\NAM1'
   ) <> ExpectedText then
-    raise Exception.Create(EditorID + ' response text does not match');
+    raise Exception.Create(EditorID + ' owned response text does not match');
 end;
 
 procedure AssertSpeaker(
@@ -175,7 +241,7 @@ end;
 procedure AuditDirect(
   ObjectID: Cardinal;
   const EditorID, PromptText, ResponseText, DestinationID: string;
-  SpeakerFormID: Cardinal
+  SpeakerFormID, SharedInfoFormID, SharedInfoTopicFormID: Cardinal
 );
 var
   InfoRecord, Links: IInterface;
@@ -183,7 +249,13 @@ begin
   InfoRecord := RequireRecord(ObjectID, 'INFO', EditorID);
   if GetElementEditValues(InfoRecord, 'RNAM') <> PromptText then
     raise Exception.Create(EditorID + ' prompt does not match');
-  AssertOwnedResponse(InfoRecord, EditorID, ResponseText);
+  AssertSharedResponse(
+    InfoRecord,
+    EditorID,
+    ResponseText,
+    SharedInfoFormID,
+    SharedInfoTopicFormID
+  );
   AssertSpeaker(InfoRecord, EditorID, SpeakerFormID);
   if GetElementNativeValues(
     InfoRecord,
@@ -269,34 +341,42 @@ begin
       $000806,
       'DNT_WG_Request_Farengar',
       'Can you teleport me to the College of Winterhold? (250 gold)',
-      'Very well. The College, then.',
+      'Yes.',
       'college',
-      $00013BBB
+      $00013BBB,
+      $000730FA,
+      $00035B52
     );
     AuditDirect(
       $000807,
       'DNT_WG_Request_Wylandriah',
       'Can you teleport me to the College of Winterhold? (250 gold)',
-      'The College? Very well.',
+      'Of course.',
       'college',
-      $00019DEF
+      $00019DEF,
+      $000DBA22,
+      $0001F319
     );
     AuditHub;
     AuditDirect(
       $00080B,
       'DNT_WG_Whiterun_FromPhinis',
       'Send me to Whiterun. (250 gold)',
-      'Very well. Whiterun, then.',
+      'Of course.',
       'whiterun',
-      $0001C199
+      $0001C199,
+      $000DBA22,
+      $0001F319
     );
     AuditDirect(
       $00080C,
       'DNT_WG_Riften_FromPhinis',
       'Send me to Riften. (250 gold)',
-      'Very well. Riften, then.',
+      'Of course.',
       'riften',
-      $0001C199
+      $0001C199,
+      $000DBA22,
+      $0001F319
     );
 
     ReportLines.Add('PASS wizard-guide star audit complete');

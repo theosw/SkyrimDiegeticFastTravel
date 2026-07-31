@@ -2,6 +2,16 @@
 
 Updated: 2026-07-31
 
+## Evidence ledger
+
+Use `docs\EVIDENCE_LEDGER.md` as the source of truth for working assumptions,
+rejected approaches, live-proven behavior, and the next candidate test. In
+particular, do not treat xEdit accepting a dialogue field as runtime proof.
+The deployed build at SHA-256
+`9402ED91A1207A4BB94D0778FD359FD0B477DA24C745F42BD611CBBD3B6185B5` is the
+latest fully live-proven checkpoint, including voice and lip sync. Commit
+`9aa25ef` remains the last committed fallback from before the voice changes.
+
 ## Wizard-guide Phase 1
 
 Phase 1 of the separate wizard-guide pillar is implemented under
@@ -31,29 +41,46 @@ start-game-enabled quest, one top-level player branch, four custom topics, and
 seven speaker-gated INFOs. It overrides no existing records. Its SEQ and two
 compiled PEX files live beside it in the module.
 
-The first spoke was proven two-way. The next staged build expands it into a
-three-node star. INFO `000806` presents
+The three-node star passed its monitored gameplay test. INFO `000806` presents
 `Can you teleport me to the College of Winterhold? (250 gold)` to Farengar and
-binds `DestinationId=college`; INFO `000807` now provides the corresponding
+binds `DestinationId=college`; INFO `000807` provides the corresponding
 Wylandriah-to-College route. INFO `000808` is the College hub:
-`Can you teleport me somewhere? (250 gold per trip)`. It owns the response
-`Where do you need to go?`, carries no travel fragment, and links to exactly
-two destination topics:
+`Can you teleport me somewhere? (250 gold per trip)`. It carries no travel
+fragment and links to exactly two destination topics:
 
 - `000803` / INFO `00080B`: Whiterun (`DestinationId=whiterun`)
 - `000804` / INFO `00080C`: Riften (`DestinationId=riften`)
 
-All five visible INFOs own a single response instead of using Shared Info.
-Travel INFOs have `Goodbye + Force Subtitle + No LIP File`, no `LinkTo`, and
-run `DNT_WizardTravelFragment` on `OnBegin`. The hub has
-`Force Subtitle + No LIP File`, no VMAD, and exactly two `LinkTo` entries.
-The owned responses are currently unvoiced prototype subtitles:
+The currently deployed voiced build gives each terminal travel INFO an
+explicit, genuine vanilla Shared Response Data donor:
 
-- `Very well. The College, then.`
-- `The College? Very well.`
-- `Where do you need to go?`
-- `Very well. Whiterun, then.`
-- `Very well. Riften, then.`
+- Farengar (`MaleEvenTonedAccented`): `Yes.` from `000730FA:Skyrim.esm`
+- Wylandriah (`FemaleEvenToned`): `Of course.` from `000DBA22:Skyrim.esm`
+- both Phinis destinations: `Of course.` from `000DBA22:Skyrim.esm`
+
+Travel INFOs retain only the vanilla `Goodbye` response flag, have no
+`LinkTo`, and run `DNT_WizardTravelFragment` on `OnBegin`. The branching hub
+owns the unvoiced response `Where do you need to go?`, has
+`Force Subtitle + No LIP File`, no VMAD, and exactly two `LinkTo` entries.
+This experiment exposed a semantic hole in the original audit. `000730FA` and
+`000DBA22` are genuine SharedInfo records, but `00079AD7` is ordinary dialogue
+from `Favor258Reject` in the Thane of Falkreath quest. xEdit permits that INFO
+reference in `DNAM`, but Skyrim does not consider the two Phinis destination
+INFOs valid choices: the owned hub says `Where do you need to go?` and the
+dialogue closes with no travel trace. An earlier hub experiment similarly used
+ordinary generic Hello INFO `00087940`; it spoke `Yes?` and failed to expose
+the links. These tests reject arbitrary INFO donors, not SharedInfo on linked
+topics generally. A vanilla-data scan found 1,037 linked-topic INFOs using
+genuine Shared Response Data.
+
+That minimal build is now implemented: the owned Phinis hub is unchanged,
+while both child INFOs use genuine SharedInfo `000DBA22` (`OfCourse`). Skyrim
+ships its `MaleCondescending` FUZ for Phinis. The generator and independent
+audit now require a non-empty donor EditorID, Misc/SharedInfo topic identity,
+and actual parent-child membership. The statically validated build passed its
+monitored gameplay regression on 2026-07-31: the submenu, all four directed
+routes, and fare denial worked. A second monitored presentation pass confirmed
+audible, lip-synced replies for Farengar, Phinis, and Wylandriah.
 
 Arrival markers reuse stable Skyrim references whose effective positions
 already reflect the installed JK interiors:
@@ -66,12 +93,12 @@ already reflect the installed JK interiors:
 
 Both scripts compile with 0 errors and 0 warnings. The workspace plugin parses
 successfully off-order and has zero dangling references or missing masters.
-Raw binary reads confirm both root INFOs own one response, have no Shared Info
-or `LinkTo`, carry the correct speaker condition and destination property, and
-contain an `OnBegin` fragment. Arrival-marker geometry remains a gameplay-only
-check.
+The compact headless-xEdit audit confirms exact speakers, response donors,
+flags, hub links, fragment timing, bound service, and destination IDs. A
+separate BSA filename-table audit confirms all three selected vanilla FUZ files
+exist. Arrival-marker geometry and audio playback remain gameplay-only checks.
 
-The preceding live pass proved that Farengar's top-level option appears, but
+An earlier live pass proved that Farengar's top-level option appeared, but
 the borrowed response played and no `WIZARD_TRAVEL_*` trace was emitted. The
 fragment never entered the service. The new build removes both suspect layers:
 there is no Shared Info inheritance, and the fragment runs on `OnBegin` rather
@@ -94,34 +121,89 @@ The player confirmed arrival at the College and then back in Whiterun. This
 proves the full dialogue -> fragment -> fare -> delayed `MoveTo` path in both
 directions and establishes the College-centred star's first working spoke.
 
-Rollback commit `a03262d` checkpoints that proven two-way build. The subsequent
-workspace build adds the Riften spoke and Phinis hub without changing record
-count or masters. `tools/Audit-WizardGuideStar.ps1` is a read-only, compact
-headless-xEdit audit that checks only the five visible INFOs: owned responses,
-speakers, flags, exact hub links, fragment timing, bound service, and stable
-destination IDs. It currently reports all six PASS lines. The patcher also
-produces byte-identical output on a second run. This three-node build has not
-yet had its gameplay pass.
+The expanded star then completed three monitored trips:
+
+- Farengar -> College
+- Phinis -> Riften
+- Wylandriah -> College
+
+Every trip emitted one `WIZARD_TRAVEL_START` and one
+`WIZARD_TRAVEL_COMPLETE`, and Skyrim exited normally. The simultaneous
+`IsPoison()` errors belong to LoreRim's
+`Nox_WAR_ThrowingKnife_PoisonApply.OnItemRemoved`; its listener reacts to the
+gold removal but does not interrupt travel.
+
+Rollback commit `a03262d` checkpoints the proven two-way build. Commit
+`9aa25ef` checkpoints the live-proven three-node star before voice changes.
+`tools/Audit-WizardGuideStar.ps1` checks the five visible INFOs, while
+`tools/Audit-WizardVoiceAssets.ps1` checks the exact FUZ paths. The voice
+patcher produces byte-identical output on a second run. Both the generator and
+the independent audit now prove that every donor belongs to a special
+Misc/SharedInfo topic and has an EditorID; the separate archive audit proves
+the expected speaker-specific FUZ paths. See `docs\EVIDENCE_LEDGER.md` for the
+promoted live evidence and the gate future dialogue changes must pass.
 
 `tools/Patch-WizardGuideDialogue.ps1` now defaults to the patched headless
 xEdit at `build/xedit-patched/SSEEdit64.exe`, patches the workspace copy only,
 and deploys to LoreRim only when passed `-Deploy`; deployment is refused while
 `SkyrimSE` is running. `-Deploy` copies the complete owned module payload so
-the ESP, SEQ, and newly compiled PEX files stay in sync. The generated ESP is
+the ESP, SEQ, and newly compiled PEX files stay in sync. The current
+transport-proven ESP is
 byte-idempotent at SHA-256
-`4B63578E5AE7A501DCEA4CC4B696DF0B21F55E2BC3E354497FCD98CAFBABA130`.
-The rebuilt Phase 1 ZIP SHA-256 is
-`F12D768B3FF495B5F77AF136315854C0F85721E21A0461070866780F7E736F49`.
+`9402ED91A1207A4BB94D0778FD359FD0B477DA24C745F42BD611CBBD3B6185B5`.
+The exact live-tested payload was packaged with `-PackageOnly` as
+`dist\DiegeticTravelWizardGuides-phase1.zip`, SHA-256
+`E8734A56D725823B4402D1A06004AF0783C133EB753D15D7D0AC57F7C42A79C6`.
+A normal package build recompiles the PEX files and changes their binary hashes;
+use `-PackageOnly` when checkpointing already-tested artifacts, or require a
+new live pass after recompilation.
 
 At this checkpoint MO2's active profile is `UltraDiegeticTravel`. The complete
 workspace payload has been deployed to
 `D:\Lorerim\mods\houseCARL - DiegeticTravelWizardGuides`, and the installed
 ESP, SEQ, PEX, and PSC files hash-match the tested workspace copies. Direct
 reads of the MO2 profile files confirm the mod is enabled in the left pane and
-`DiegeticTravelWizardGuides.esp` is checked in the right pane. The installed
-ESP itself passes the compact six-line star audit. The new Riften/submenu build
-still requires its gameplay pass. Do not launch Skyrim without coordinating
-with the user; a parallel PickUpAsJunk task may also use MO2.
+`DiegeticTravelWizardGuides.esp` is checked in the right pane. The corrected
+voiced build is deployed, every installed file hash-matches the workspace, and
+the installed ESP passes the strengthened six-line structural audit. It passed
+both focused live regressions described below. Do not launch Skyrim without
+coordinating with the user; a parallel PickUpAsJunk task may also use MO2.
+
+## Wizard-guide live tests
+
+### Presentation regression
+
+The monitored 2026-07-31 presentation pass completed this sequence:
+
+- Phinis -> Whiterun at 12:17:14;
+- Farengar -> College at 12:17:46;
+- Phinis -> Riften at 12:18:01;
+- Wylandriah -> College at 12:18:31.
+
+Each trip emitted exactly one start and one completion one second apart. The
+player confirmed that Farengar's `Yes.` and Phinis's and Wylandriah's
+`Of course.` were audible, lip-synced, and finished as expected. Phinis's
+preceding custom `Where do you need to go?` remained silent and subtitled as
+designed. Skyrim exited after four completed trips.
+
+### Transport and fare regression
+
+The monitored 2026-07-31 run covered all four directed edges and the failure
+branch. Skyrim logged five successful trips, each with exactly one start and
+one completion:
+
+- College at 11:51:50, then Whiterun at 11:52:11;
+- College at 11:52:27, then Riften at 11:52:39;
+- College again at 11:53:12 after adding funds.
+
+At 11:52:59, a College trip with only 72 gold logged exactly one denial
+(`required=250 available=72`) and no start or completion. The player confirmed
+that the route dialogue and Phinis submenu worked. That earlier run did not
+check audio or lip sync. In particular, the owned hub response
+`Where do you need to go?` is intentionally subtitle-only; the subsequent
+destination response `Of course.` was verified in the later presentation pass.
+No DNT errors were present in Papyrus, and Skyrim was no longer running when
+the logs were collected.
 
 ## Safety and environment
 
@@ -137,7 +219,7 @@ with the user; a parallel PickUpAsJunk task may also use MO2.
 - Do not edit `C:\Users\Theo\Documents\PickUpAsJunk`; another Codex task may be
   using it.
 
-## Last live test
+## Last carriage live test
 
 - The fixed root fragment fired and matched the Whiterun driver.
 - The destination menu showed only its first generated entry, Darkwater

@@ -26,9 +26,17 @@ the court wizards are spokes, and the travel service is UI-independent so a
 later map adapter can call the same fare, payment, and teleport functions. The
 current vertical slice exposes a three-node star: Farengar and Wylandriah each
 travel directly to the College, while Phinis links to Whiterun and Riften
-destination topics. Every visible INFO owns its short forced-subtitle response,
-and only the selected destination runs a travel fragment. This proves the
-dialogue infrastructure before more spokes or a map picker are added.
+destination topics. Each visible INFO uses an explicitly audited short vanilla
+response whose FUZ exists for that wizard's voice type, except the branching
+Phinis hub, which owns a forced-subtitle response so its custom `LinkTo`
+submenu advances reliably. Only the selected destination runs a travel
+fragment. This proves the dialogue infrastructure before more spokes or a map
+picker are added.
+
+Dialogue hypotheses and their actual evidence level are tracked in
+[`docs/EVIDENCE_LEDGER.md`](docs/EVIDENCE_LEDGER.md). The last fully proven
+three-node build is commit `9aa25ef`; the currently deployed voice experiment
+is diagnostic and its Phinis branch is not a release checkpoint.
 
 ## Implementation status
 
@@ -123,6 +131,13 @@ The standalone wizard-guide Phase 1 package is built separately:
 This compiles the two wizard scripts and writes
 `dist\DiegeticTravelWizardGuides-phase1.zip`. It does not launch Skyrim or
 deploy/toggle the module in MO2.
+
+To package the exact already-compiled and already-tested module payload without
+changing PEX hashes, use:
+
+```powershell
+.\tools\Build-WizardGuides.ps1 -PackageOnly
+```
 
 For the SEQ artifact, the xEdit script mirrors xEdit's built-in eligibility
 rule and emits the fixed FormIDs of newly start-game-enabled quests. PowerShell

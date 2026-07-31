@@ -5,22 +5,25 @@
     Wylandriah           -> College of Winterhold
     Phinis Gestor        -> Whiterun or Riften
 
-  Every visible INFO owns its response text. Court wizards use direct
-  top-level routes to the College. Phinis uses an owned root response with
-  LinkTo entries for Whiterun and Riften; each destination INFO closes the
-  dialogue and runs its travel fragment on begin.
+  Terminal travel INFOs deliberately share response data from short vanilla
+  INFOs for which the speaker's exact voice type has shipped FUZ/LIP data.
+  Court wizards use direct top-level routes to the College. Phinis's branching
+  hub owns an unvoiced forced-subtitle response because gameplay proved that a
+  cross-topic Shared Info donor speaks but suppresses the custom LinkTo
+  transition. Each destination INFO closes the dialogue and runs its travel
+  fragment on begin.
 
-  This avoids Shared Info voice-data inheritance while proving the one submenu
-  transition needed before a future map-picker adapter. The script operates on
-  a staged DiegeticTravelWizardGuides.esp and writes a separate verified output
-  file.
+  The shared-response donor FormIDs are explicit and audited. The script
+  operates on a staged DiegeticTravelWizardGuides.esp and writes a separate
+  verified output file.
 }
 unit DNT_FixWizardRootInfo;
 
 const
   OnBeginFragmentMask = $01;
-  DirectResponseFlagsMask = $0A01; { Goodbye + Force Subtitle + No LIP File }
+  DirectResponseFlagsMask = $0001; { Goodbye }
   HubResponseFlagsMask = $0A00; { Force Subtitle + No LIP File }
+  MiscDialogueCategory = 7;
 
 var
   TargetFile: IInterface;
@@ -123,6 +126,124 @@ begin
       'Object ID ' + IntToHex(ObjectID, 6) + ' has EditorID "' +
       GetElementEditValues(Result, 'EDID') + '", expected "' +
       ExpectedEditorID + '"'
+    );
+end;
+
+procedure ConfigureSharedResponse(
+  InfoRecord: IInterface;
+  const ExpectedEditorID, ResponseText: string;
+  SharedInfoFormID, SharedInfoTopicFormID: Cardinal
+);
+var
+  SkyrimFile, SharedInfo, SharedInfoTopic, SharedInfoGroup, CandidateInfo,
+    SourceResponses, SharedInfoElement, SharedInfoTarget,
+    TargetResponses: IInterface;
+  i: Integer;
+  DonorIsTopicChild: Boolean;
+begin
+  SkyrimFile := FileByPluginName('Skyrim.esm');
+  if not Assigned(SkyrimFile) then
+    raise Exception.Create('Skyrim.esm is not loaded');
+
+  SharedInfo := RecordByFormID(
+    SkyrimFile,
+    SharedInfoFormID,
+    True
+  );
+  if not Assigned(SharedInfo) then
+    raise Exception.Create(
+      ExpectedEditorID + ' could not resolve shared response donor ' +
+      IntToHex(SharedInfoFormID, 8)
+    );
+  if Signature(SharedInfo) <> 'INFO' then
+    raise Exception.Create(
+      ExpectedEditorID + ' shared response donor resolved to ' +
+      Signature(SharedInfo) + ', expected INFO'
+    );
+  if Trim(GetElementEditValues(SharedInfo, 'EDID')) = '' then
+    raise Exception.Create(
+      ExpectedEditorID + ' shared response donor has no EditorID'
+    );
+
+  SharedInfoTopic := RecordByFormID(
+    SkyrimFile,
+    SharedInfoTopicFormID,
+    True
+  );
+  if not Assigned(SharedInfoTopic) or
+    (Signature(SharedInfoTopic) <> 'DIAL') then
+    raise Exception.Create(
+      ExpectedEditorID + ' could not resolve SharedInfo topic ' +
+      IntToHex(SharedInfoTopicFormID, 8)
+    );
+  if GetElementNativeValues(
+    SharedInfoTopic,
+    'DATA\Category'
+  ) <> MiscDialogueCategory then
+    raise Exception.Create(
+      ExpectedEditorID + ' donor topic is not Misc dialogue: category=' +
+      GetElementEditValues(SharedInfoTopic, 'DATA\Category')
+    );
+  if GetElementEditValues(SharedInfoTopic, 'SNAM') <> 'SharedInfo' then
+    raise Exception.Create(
+      ExpectedEditorID + ' donor topic subtype name is not SharedInfo: ' +
+      GetElementEditValues(SharedInfoTopic, 'SNAM')
+    );
+
+  SharedInfoGroup := ChildGroup(SharedInfoTopic);
+  DonorIsTopicChild := False;
+  if Assigned(SharedInfoGroup) then
+    for i := 0 to Pred(ElementCount(SharedInfoGroup)) do begin
+      CandidateInfo := ElementByIndex(SharedInfoGroup, i);
+      if (Signature(CandidateInfo) = 'INFO') and
+        (FormID(CandidateInfo) = SharedInfoFormID) then begin
+        DonorIsTopicChild := True;
+        Break;
+      end;
+    end;
+  if not DonorIsTopicChild then
+    raise Exception.Create(
+      ExpectedEditorID + ' donor is not a child of its SharedInfo topic'
+    );
+
+  SourceResponses := ElementByPath(SharedInfo, 'Responses');
+  if not Assigned(SourceResponses) or (ElementCount(SourceResponses) <> 1) then
+    raise Exception.Create(
+      ExpectedEditorID + ' shared response donor must own one response'
+    );
+  if GetElementEditValues(
+    SharedInfo,
+    'Responses\Response\NAM1'
+  ) <> ResponseText then
+    raise Exception.Create(
+      ExpectedEditorID + ' shared response donor text is not "' +
+      ResponseText + '"'
+    );
+
+  if Assigned(ElementByPath(InfoRecord, 'Responses')) then
+    RemoveElement(InfoRecord, 'Responses');
+
+  SharedInfoElement := ElementByPath(InfoRecord, 'DNAM');
+  if not Assigned(SharedInfoElement) then begin
+    Add(InfoRecord, 'DNAM', True);
+    SharedInfoElement := ElementByPath(InfoRecord, 'DNAM');
+  end;
+  if not Assigned(SharedInfoElement) then
+    raise Exception.Create(
+      ExpectedEditorID + ' could not create Shared Info'
+    );
+  SetEditValue(SharedInfoElement, Name(SharedInfo));
+  SharedInfoTarget := LinksTo(SharedInfoElement);
+  if not Assigned(SharedInfoTarget) or
+    (FormID(SharedInfoTarget) <> SharedInfoFormID) then
+    raise Exception.Create(
+      ExpectedEditorID + ' shared response donor did not read back'
+    );
+
+  TargetResponses := ElementByPath(InfoRecord, 'Responses');
+  if Assigned(TargetResponses) and (ElementCount(TargetResponses) > 0) then
+    raise Exception.Create(
+      ExpectedEditorID + ' still owns response data'
     );
 end;
 
@@ -316,7 +437,7 @@ procedure ConfigureDirectRoute(
   const RootEditorID: string;
   DestinationObjectID: Cardinal;
   const DestinationEditorID, PromptText, ResponseText, DestinationID: string;
-  ResponseTemplateFormID: Cardinal
+  SharedInfoFormID, SharedInfoTopicFormID: Cardinal
 );
 var
   RootInfo, DestinationInfo, SourceVMAD, TargetVMAD, Links: IInterface;
@@ -343,11 +464,12 @@ begin
       RootEditorID + ' direct route still has Link To entries'
     );
 
-  ConfigureOwnedResponse(
+  ConfigureSharedResponse(
     RootInfo,
     RootEditorID,
     ResponseText,
-    ResponseTemplateFormID
+    SharedInfoFormID,
+    SharedInfoTopicFormID
   );
 
   SetElementNativeValues(
@@ -397,7 +519,7 @@ begin
 
   AddMessage(
     '[DNT] ' + RootEditorID + ' -> ' + DestinationID +
-    '; owned response; OnBegin fragment; flags=0x' +
+    '; voiced shared response; OnBegin fragment; flags=0x' +
     IntToHex(ReadBackFlags, 4)
   );
 end;
@@ -405,7 +527,7 @@ end;
 procedure ConfigureTravelInfo(
   InfoObjectID: Cardinal;
   const InfoEditorID, PromptText, ResponseText, DestinationID: string;
-  ResponseTemplateFormID: Cardinal
+  SharedInfoFormID, SharedInfoTopicFormID: Cardinal
 );
 var
   InfoRecord, TargetVMAD, Links: IInterface;
@@ -423,11 +545,12 @@ begin
   if Assigned(Links) then
     RemoveElement(InfoRecord, 'Link To');
 
-  ConfigureOwnedResponse(
+  ConfigureSharedResponse(
     InfoRecord,
     InfoEditorID,
     ResponseText,
-    ResponseTemplateFormID
+    SharedInfoFormID,
+    SharedInfoTopicFormID
   );
   SetElementNativeValues(
     InfoRecord,
@@ -461,7 +584,7 @@ begin
 
   AddMessage(
     '[DNT] ' + InfoEditorID + ' -> ' + DestinationID +
-    '; owned response; OnBegin fragment; flags=0x' +
+    '; voiced shared response; OnBegin fragment; flags=0x' +
     IntToHex(ReadBackFlags, 4)
   );
 end;
@@ -567,7 +690,7 @@ begin
 
   AddMessage(
     '[DNT] DNT_WG_Request_Phinis hub -> whiterun,riften; ' +
-    'owned response; flags=0x' + IntToHex(ReadBackFlags, 4)
+    'owned unvoiced response; flags=0x' + IntToHex(ReadBackFlags, 4)
   );
 end;
 
@@ -609,9 +732,10 @@ begin
       $000809,
       'DNT_WG_College_FromFarengar',
       'Can you teleport me to the College of Winterhold? (250 gold)',
-      'Very well. The College, then.',
+      'Yes.',
       'college',
-      $000904FF
+      $000730FA,
+      $00035B52
     );
     ConfigureDirectRoute(
       $000807,
@@ -619,25 +743,28 @@ begin
       $00080A,
       'DNT_WG_College_FromWylandriah',
       'Can you teleport me to the College of Winterhold? (250 gold)',
-      'The College? Very well.',
+      'Of course.',
       'college',
-      $000904FF
+      $000DBA22,
+      $0001F319
     );
     ConfigureTravelInfo(
       $00080B,
       'DNT_WG_Whiterun_FromPhinis',
       'Send me to Whiterun. (250 gold)',
-      'Very well. Whiterun, then.',
+      'Of course.',
       'whiterun',
-      $000ADA1B
+      $000DBA22,
+      $0001F319
     );
     ConfigureTravelInfo(
       $00080C,
       'DNT_WG_Riften_FromPhinis',
       'Send me to Riften. (250 gold)',
-      'Very well. Riften, then.',
+      'Of course.',
       'riften',
-      $000ADA1B
+      $000DBA22,
+      $0001F319
     );
 
     SavePatchedPlugin;

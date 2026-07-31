@@ -28,14 +28,25 @@ duplicating travel behavior.
 
 Phase 1 deliberately uses new quest, branch, topic, and INFO records. It does
 not override vanilla or LoreRim dialogue topics. Farengar and Wylandriah have
-direct top-level transactions to the College. Phinis has one owned root
-response linking to the Whiterun and Riften destination topics.
+direct top-level transactions to the College. Phinis has one root response
+linking to the Whiterun and Riften destination topics.
 
-Every visible INFO owns its response text instead of inheriting a vanilla
-Shared Info. The current prototype uses short unvoiced, forced subtitles.
+Every terminal travel INFO deliberately shares response data from a short
+vanilla INFO whose FUZ/LIP exists for the speaker's exact voice type:
+
+- Farengar: `Yes.`
+- Wylandriah: `Of course.`
+- Phinis destination confirmation: `Of course.`
+
+Phinis's branching hub owns the unvoiced forced-subtitle response
+`Where do you need to go?`. Every terminal donor is now a genuine SharedInfo
+with an EditorID and a shipped FUZ for the speaker's exact voice type. Earlier
+failed builds pointed `DNAM` at ordinary Hello/Favor INFOs; xEdit accepted
+those records, but Skyrim did not consider the resulting Phinis choices valid.
+
 Travel INFOs have `Goodbye` and an `OnBegin` fragment that enters the central
-service, waits one second for dialogue to close, charges the fare, and moves the
-player. The hub INFO has no travel fragment and only opens the destination
+service, waits one second for dialogue to close, charges the fare, and moves
+the player. The hub INFO has no travel fragment and only opens the destination
 choices. Insufficient gold produces an explicit message box and no charge.
 
 ## Arrival markers
@@ -47,21 +58,23 @@ installed JK interior overhauls where necessary:
 - Whiterun: `FarengarLabMARKER` (`0B7AA5:Skyrim.esm`)
 - Riften: `RiftenKeepWizardLabMarker` (`044A4A:Skyrim.esm`)
 
-Their spatial safety still requires the controlled in-game test. Structural
-validation cannot prove that a marker is unobstructed in the rendered cell.
+Their spatial safety passed the controlled 2026-07-31 in-game regression.
+Structural validation alone still cannot prove marker safety after future
+load-order or interior changes.
 
 ## Test scope
 
-The next gameplay pass should verify:
+The three-node route flow passed monitored transport and presentation
+regressions on 2026-07-31. Together they verified:
 
-1. Farengar reaches the College for 250 gold;
-2. Phinis's root response opens exactly two choices: Whiterun and Riften;
-3. the Riften choice charges 250 gold and arrives unobstructed near Wylandriah;
-4. Wylandriah offers a direct 250-gold return to the College;
-5. Phinis can then return the player to Whiterun;
-6. selecting a route with insufficient gold shows the exact required and
-   available amounts, charges nothing, and does not move the player;
-7. no game time or recovery is added by the module.
+1. Farengar audibly says `Yes.` with lip sync before reaching the College;
+2. Phinis shows `Where do you need to go?` and opens exactly Whiterun and
+   Riften;
+3. Phinis audibly says `Of course.` before either destination trip;
+4. Wylandriah audibly says `Of course.` before returning to the College;
+5. the first Phinis line, `Where do you need to go?`, is visibly subtitled but
+   silent by design and is distinct from the voiced confirmation;
+6. no game time or recovery is added by the module.
 
 Do not launch Skyrim as part of the build. Run the gameplay pass only after
 explicit approval.

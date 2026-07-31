@@ -78,6 +78,14 @@ foreach ($master in @("Skyrim.esm", "Update.esm")) {
     Copy-Item -LiteralPath $masterPath `
         -Destination (Join-Path $stagingData $master) -Force
 }
+$interfaceArchive = Join-Path (
+    Join-Path $LoreRimRoot "Stock Game\Data"
+) "Skyrim - Interface.bsa"
+if (-not (Test-Path -LiteralPath $interfaceArchive -PathType Leaf)) {
+    throw "Required Skyrim interface archive not found: $interfaceArchive"
+}
+Copy-Item -LiteralPath $interfaceArchive `
+    -Destination (Join-Path $stagingData "Skyrim - Interface.bsa") -Force
 
 $stagedPlugin = Join-Path $stagingData "DiegeticTravelWizardGuides.esp"
 $beforePlugin = Join-Path $beforeRoot "DiegeticTravelWizardGuides.esp"
@@ -182,7 +190,7 @@ $afterHash = (Get-FileHash -LiteralPath $outputPlugin -Algorithm SHA256).Hash
 
 Write-Host (
     "Patched the College-centred wizard star: direct court-wizard routes, " +
-    "a Phinis destination hub, and owned OnBegin travel responses."
+    "an owned Phinis hub, and voiced terminal OnBegin responses."
 )
 Write-Host "Before SHA-256: $beforeHash"
 Write-Host "After SHA-256:  $afterHash"
