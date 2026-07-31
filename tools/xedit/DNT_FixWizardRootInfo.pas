@@ -1,26 +1,30 @@
 {
-  Build the first College-centred wizard-guide slice:
+  Build the first College-centred wizard-guide star:
 
     Farengar Secret-Fire -> College of Winterhold
-    Phinis Gestor        -> Whiterun
+    Wylandriah           -> College of Winterhold
+    Phinis Gestor        -> Whiterun or Riften
 
-  Each top-level INFO owns its response text, closes the dialogue, and runs the
-  travel fragment on begin. This avoids Shared Info voice-data inheritance and
-  avoids depending on a second dialogue menu for the first end-to-end test.
+  Every visible INFO owns its response text. Court wizards use direct
+  top-level routes to the College. Phinis uses an owned root response with
+  LinkTo entries for Whiterun and Riften; each destination INFO closes the
+  dialogue and runs its travel fragment on begin.
 
-  The existing destination INFOs remain as fragment donors and as scaffolding
-  for the later College destination menu. The script operates on a staged
-  DiegeticTravelWizardGuides.esp and writes a separate verified output file.
+  This avoids Shared Info voice-data inheritance while proving the one submenu
+  transition needed before a future map-picker adapter. The script operates on
+  a staged DiegeticTravelWizardGuides.esp and writes a separate verified output
+  file.
 }
 unit DNT_FixWizardRootInfo;
 
 const
   OnBeginFragmentMask = $01;
   DirectResponseFlagsMask = $0A01; { Goodbye + Force Subtitle + No LIP File }
+  HubResponseFlagsMask = $0A00; { Force Subtitle + No LIP File }
 
 var
   TargetFile: IInterface;
-  StatusPath, OutputPath: string;
+  StatusPath, ErrorPath, OutputPath: string;
 
 procedure WriteStatus(const Status: string);
 var
@@ -30,6 +34,19 @@ begin
   try
     Lines.Add(Status);
     Lines.SaveToFile(StatusPath);
+  finally
+    Lines.Free;
+  end;
+end;
+
+procedure WriteError(const ErrorText: string);
+var
+  Lines: TStringList;
+begin
+  Lines := TStringList.Create;
+  try
+    Lines.Add(ErrorText);
+    Lines.SaveToFile(ErrorPath);
   finally
     Lines.Free;
   end;
@@ -77,6 +94,29 @@ begin
     raise Exception.Create(
       ExpectedEditorID + ' resolved to ' + Signature(Result) +
       ', expected INFO'
+    );
+  if GetElementEditValues(Result, 'EDID') <> ExpectedEditorID then
+    raise Exception.Create(
+      'Object ID ' + IntToHex(ObjectID, 6) + ' has EditorID "' +
+      GetElementEditValues(Result, 'EDID') + '", expected "' +
+      ExpectedEditorID + '"'
+    );
+end;
+
+function RequireTopic(
+  ObjectID: Cardinal;
+  const ExpectedEditorID: string
+): IInterface;
+begin
+  Result := DefinedRecordByObjectID(TargetFile, ObjectID);
+  if not Assigned(Result) then
+    raise Exception.Create(
+      'Could not resolve DIAL object ID ' + IntToHex(ObjectID, 6)
+    );
+  if Signature(Result) <> 'DIAL' then
+    raise Exception.Create(
+      ExpectedEditorID + ' resolved to ' + Signature(Result) +
+      ', expected DIAL'
     );
   if GetElementEditValues(Result, 'EDID') <> ExpectedEditorID then
     raise Exception.Create(
@@ -362,6 +402,175 @@ begin
   );
 end;
 
+procedure ConfigureTravelInfo(
+  InfoObjectID: Cardinal;
+  const InfoEditorID, PromptText, ResponseText, DestinationID: string;
+  ResponseTemplateFormID: Cardinal
+);
+var
+  InfoRecord, TargetVMAD, Links: IInterface;
+  ReadBackFlags: Cardinal;
+begin
+  InfoRecord := RequireInfo(InfoObjectID, InfoEditorID);
+
+  SetElementEditValues(InfoRecord, 'RNAM', PromptText);
+  if GetElementEditValues(InfoRecord, 'RNAM') <> PromptText then
+    raise Exception.Create(
+      InfoEditorID + ' destination prompt did not read back'
+    );
+
+  Links := ElementByPath(InfoRecord, 'Link To');
+  if Assigned(Links) then
+    RemoveElement(InfoRecord, 'Link To');
+
+  ConfigureOwnedResponse(
+    InfoRecord,
+    InfoEditorID,
+    ResponseText,
+    ResponseTemplateFormID
+  );
+  SetElementNativeValues(
+    InfoRecord,
+    'ENAM\Response Flags',
+    DirectResponseFlagsMask
+  );
+  ReadBackFlags := GetElementNativeValues(
+    InfoRecord,
+    'ENAM\Response Flags'
+  );
+  if ReadBackFlags <> DirectResponseFlagsMask then
+    raise Exception.Create(
+      InfoEditorID + ' response flags did not read back'
+    );
+
+  TargetVMAD := ElementByPath(InfoRecord, 'VMAD');
+  if not Assigned(TargetVMAD) then
+    raise Exception.Create(
+      InfoEditorID + ' has no travel fragment VMAD'
+    );
+  SetElementNativeValues(
+    TargetVMAD,
+    'Script Fragments\Flags',
+    OnBeginFragmentMask
+  );
+  ValidateFragmentProperties(
+    InfoRecord,
+    InfoEditorID,
+    DestinationID
+  );
+
+  AddMessage(
+    '[DNT] ' + InfoEditorID + ' -> ' + DestinationID +
+    '; owned response; OnBegin fragment; flags=0x' +
+    IntToHex(ReadBackFlags, 4)
+  );
+end;
+
+procedure ConfigureHubMenu;
+const
+  HubPrompt = 'Can you teleport me somewhere? (250 gold per trip)';
+  HubResponse = 'Where do you need to go?';
+var
+  HubInfo, LinkTemplateInfo, WhiterunTopic, RiftenTopic, SourceLinks,
+    SourceLink, TargetLinks, FirstLink, SecondLink: IInterface;
+  ReadBackFlags: Cardinal;
+begin
+  HubInfo := RequireInfo($000808, 'DNT_WG_Request_Phinis');
+  LinkTemplateInfo := RequireInfo(
+    $000807,
+    'DNT_WG_Request_Wylandriah'
+  );
+  WhiterunTopic := RequireTopic($000803, 'DNT_WG_ToWhiterun');
+  RiftenTopic := RequireTopic($000804, 'DNT_WG_ToRiften');
+
+  SetElementEditValues(HubInfo, 'RNAM', HubPrompt);
+  if GetElementEditValues(HubInfo, 'RNAM') <> HubPrompt then
+    raise Exception.Create('Phinis hub prompt did not read back');
+
+  ConfigureOwnedResponse(
+    HubInfo,
+    'DNT_WG_Request_Phinis',
+    HubResponse,
+    $000C819B
+  );
+  SetElementNativeValues(
+    HubInfo,
+    'ENAM\Response Flags',
+    HubResponseFlagsMask
+  );
+  ReadBackFlags := GetElementNativeValues(
+    HubInfo,
+    'ENAM\Response Flags'
+  );
+  if ReadBackFlags <> HubResponseFlagsMask then
+    raise Exception.Create('Phinis hub response flags did not read back');
+
+  if Assigned(ElementByPath(HubInfo, 'VMAD')) then
+    RemoveElement(HubInfo, 'VMAD');
+  if Assigned(ElementByPath(HubInfo, 'VMAD')) then
+    raise Exception.Create('Phinis hub still has a travel VMAD');
+
+  TargetLinks := ElementByPath(HubInfo, 'Link To');
+  if Assigned(TargetLinks) and (ElementCount(TargetLinks) = 2) then begin
+    FirstLink := ElementByIndex(TargetLinks, 0);
+    SecondLink := ElementByIndex(TargetLinks, 1);
+  end else begin
+    SourceLinks := ElementByPath(LinkTemplateInfo, 'Link To');
+    if not Assigned(SourceLinks) or (ElementCount(SourceLinks) <> 1) then
+      raise Exception.Create(
+        'No reusable Link To structure exists for the Phinis hub'
+      );
+    SourceLink := ElementByIndex(SourceLinks, 0);
+
+    if Assigned(TargetLinks) then
+      RemoveElement(HubInfo, 'Link To');
+    Add(HubInfo, 'Link To', True);
+    TargetLinks := ElementByPath(HubInfo, 'Link To');
+    if not Assigned(TargetLinks) then
+      raise Exception.Create('Could not create Phinis hub Link To array');
+
+    FirstLink := ElementAssign(
+      TargetLinks,
+      HighInteger,
+      SourceLink,
+      False
+    );
+    if not Assigned(FirstLink) then
+      raise Exception.Create('Could not create Whiterun hub link');
+
+    SecondLink := ElementAssign(
+      TargetLinks,
+      HighInteger,
+      SourceLink,
+      False
+    );
+    if not Assigned(SecondLink) then
+      raise Exception.Create('Could not create Riften hub link');
+  end;
+
+  SetEditValue(FirstLink, Name(WhiterunTopic));
+  SetEditValue(SecondLink, Name(RiftenTopic));
+
+  TargetLinks := ElementByPath(HubInfo, 'Link To');
+  if not Assigned(TargetLinks) or (ElementCount(TargetLinks) <> 2) then
+    raise Exception.Create(
+      'Phinis hub does not have exactly two Link To entries'
+    );
+  FirstLink := LinksTo(ElementByIndex(TargetLinks, 0));
+  SecondLink := LinksTo(ElementByIndex(TargetLinks, 1));
+  if not Assigned(FirstLink) or
+    (FormID(FirstLink) <> FormID(WhiterunTopic)) then
+    raise Exception.Create('Phinis first hub link is not Whiterun');
+  if not Assigned(SecondLink) or
+    (FormID(SecondLink) <> FormID(RiftenTopic)) then
+    raise Exception.Create('Phinis second hub link is not Riften');
+
+  AddMessage(
+    '[DNT] DNT_WG_Request_Phinis hub -> whiterun,riften; ' +
+    'owned response; flags=0x' + IntToHex(ReadBackFlags, 4)
+  );
+end;
+
 procedure SavePatchedPlugin;
 var
   OutputStream: TFileStream;
@@ -379,6 +588,8 @@ begin
   Result := 1;
   StatusPath :=
     ScriptsPath + '..\..\build\wizard-guide-fix.status';
+  ErrorPath :=
+    ScriptsPath + '..\..\build\wizard-guide-fix.error';
   OutputPath :=
     ScriptsPath + '..\..\build\wizard-guide-fix\' +
     'DiegeticTravelWizardGuides.esp';
@@ -391,6 +602,7 @@ begin
         'DiegeticTravelWizardGuides.esp is not loaded'
       );
 
+    ConfigureHubMenu;
     ConfigureDirectRoute(
       $000806,
       'DNT_WG_Request_Farengar',
@@ -402,21 +614,40 @@ begin
       $000904FF
     );
     ConfigureDirectRoute(
-      $000808,
-      'DNT_WG_Request_Phinis',
+      $000807,
+      'DNT_WG_Request_Wylandriah',
+      $00080A,
+      'DNT_WG_College_FromWylandriah',
+      'Can you teleport me to the College of Winterhold? (250 gold)',
+      'The College? Very well.',
+      'college',
+      $000904FF
+    );
+    ConfigureTravelInfo(
       $00080B,
       'DNT_WG_Whiterun_FromPhinis',
-      'Can you teleport me to Whiterun? (250 gold)',
+      'Send me to Whiterun. (250 gold)',
       'Very well. Whiterun, then.',
       'whiterun',
-      $000C819B
+      $000ADA1B
+    );
+    ConfigureTravelInfo(
+      $00080C,
+      'DNT_WG_Riften_FromPhinis',
+      'Send me to Riften. (250 gold)',
+      'Very well. Riften, then.',
+      'riften',
+      $000ADA1B
     );
 
     SavePatchedPlugin;
     WriteStatus('success');
   except
-    WriteStatus('failed');
-    raise;
+    on E: Exception do begin
+      WriteError(E.Message);
+      WriteStatus('failed');
+      raise;
+    end;
   end;
 end;
 

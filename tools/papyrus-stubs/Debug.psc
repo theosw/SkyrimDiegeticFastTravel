@@ -2,5 +2,5 @@
 Scriptname Debug Hidden
 
 Function Notification(String message) Global Native
+Function MessageBox(String message) Global Native
 Function Trace(String textToPrint, Int severity = 0) Global Native
-

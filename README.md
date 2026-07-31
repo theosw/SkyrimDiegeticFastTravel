@@ -24,11 +24,11 @@ starts the Morrowind-style mage-guide pillar without depending on CFTO or
 overriding the carriage prototype: Phinis Gestor is the hub, Farengar and
 the court wizards are spokes, and the travel service is UI-independent so a
 later map adapter can call the same fare, payment, and teleport functions. The
-current vertical slice exposes Farengar to College and Phinis to Whiterun as
-direct top-level transactions. Their INFOs own short forced-subtitle responses
-and run their travel fragments on begin, allowing the complete two-hop
-Whiterun-to-College-to-Whiterun loop to be proven before more spokes or a map
-picker are added.
+current vertical slice exposes a three-node star: Farengar and Wylandriah each
+travel directly to the College, while Phinis links to Whiterun and Riften
+destination topics. Every visible INFO owns its short forced-subtitle response,
+and only the selected destination runs a travel fragment. This proves the
+dialogue infrastructure before more spokes or a map picker are added.
 
 ## Implementation status
 

@@ -24,6 +24,7 @@ $outputPlugin = Join-Path $fixRoot "DiegeticTravelWizardGuides.esp"
 $pluginsList = Join-Path $fixRoot "plugins.txt"
 $xeditLog = Join-Path $fixRoot "xedit.log"
 $statusPath = Join-Path $buildRoot "wizard-guide-fix.status"
+$errorPath = Join-Path $buildRoot "wizard-guide-fix.error"
 $scriptPath = Join-Path $PSScriptRoot "xedit\DNT_FixWizardRootInfo.pas"
 $workspacePlugin = Join-Path (
     Join-Path $projectRoot "modules\wizard-guides\mod"
@@ -61,6 +62,9 @@ if (Test-Path -LiteralPath $fixRoot) {
 }
 if (Test-Path -LiteralPath $statusPath -PathType Leaf) {
     Remove-Item -LiteralPath $statusPath -Force
+}
+if (Test-Path -LiteralPath $errorPath -PathType Leaf) {
+    Remove-Item -LiteralPath $errorPath -Force
 }
 
 New-Item -ItemType Directory -Force -Path $stagingData | Out-Null
@@ -117,13 +121,20 @@ while (-not $xeditProcess.HasExited -and [DateTime]::UtcNow -lt $deadline) {
     $xeditProcess.Refresh()
 }
 
-if ($terminalStatus -eq "success" -and -not $xeditProcess.HasExited) {
+if (
+    $terminalStatus -in @("success", "failed") -and
+    -not $xeditProcess.HasExited
+) {
     $null = $xeditProcess.WaitForExit(15000)
     $xeditProcess.Refresh()
 }
 
 if (-not $xeditProcess.HasExited) {
     Stop-Process -Id $xeditProcess.Id -Force
+    if (Test-Path -LiteralPath $errorPath -PathType Leaf) {
+        $scriptError = (Get-Content -LiteralPath $errorPath -Raw).Trim()
+        throw "xEdit wizard-guide patch failed: $scriptError"
+    }
     throw (
         "xEdit did not finish automatically. The staged source and original " +
         "plugin were left unchanged."
@@ -170,8 +181,8 @@ $beforeHash = (Get-FileHash -LiteralPath $beforePlugin -Algorithm SHA256).Hash
 $afterHash = (Get-FileHash -LiteralPath $outputPlugin -Algorithm SHA256).Hash
 
 Write-Host (
-    "Patched the Farengar <-> Phinis vertical slice with owned response text " +
-    "and OnBegin travel fragments."
+    "Patched the College-centred wizard star: direct court-wizard routes, " +
+    "a Phinis destination hub, and owned OnBegin travel responses."
 )
 Write-Host "Before SHA-256: $beforeHash"
 Write-Host "After SHA-256:  $afterHash"

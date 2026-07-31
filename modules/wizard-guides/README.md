@@ -8,15 +8,16 @@ Destinations dependency.
 
 - The College of Winterhold is the permanent hub.
 - Farengar Secret-Fire offers a direct trip to the College.
-- Phinis Gestor offers the return trip to Whiterun.
+- Wylandriah offers a direct trip to the College.
+- Phinis Gestor offers Whiterun or Riften from the College.
 - Every hop costs 250 gold.
 - Travel is an immediate teleport. It does not advance time, count as rest, or
   restore health, magicka, or stamina.
 - There are no faction, relationship, quest, or trust gates in Phase 1.
 
-This two-node slice proves a complete spoke-to-hub-to-spoke journey before more
-court wizards are exposed. The existing Riften/Wylandriah records remain
-scaffolding only and are not part of the supported gameplay checkpoint.
+This three-node star proves the route pattern intended for every later court:
+each court wizard reaches only the College, while the College guide provides
+the outward destination menu.
 
 ## Runtime boundary
 
@@ -26,14 +27,16 @@ can call the same `GetFare`, `CanTravel`, and `RequestTravel` functions without
 duplicating travel behavior.
 
 Phase 1 deliberately uses new quest, branch, topic, and INFO records. It does
-not override vanilla or LoreRim dialogue topics. Farengar and Phinis each have
-a direct top-level transaction with an explicit destination and fare.
+not override vanilla or LoreRim dialogue topics. Farengar and Wylandriah have
+direct top-level transactions to the College. Phinis has one owned root
+response linking to the Whiterun and Riften destination topics.
 
-Both INFOs own their response text instead of inheriting a vanilla Shared Info.
-They use `Goodbye`, `Force Subtitle`, and `No LIP File`; the current prototype
-therefore shows a short unvoiced subtitle. Its `OnBegin` fragment enters the
-central service, waits one second for dialogue to close, charges the fare, and
-moves the player. Insufficient gold is rejected by the service with no charge.
+Every visible INFO owns its response text instead of inheriting a vanilla
+Shared Info. The current prototype uses short unvoiced, forced subtitles.
+Travel INFOs have `Goodbye` and an `OnBegin` fragment that enters the central
+service, waits one second for dialogue to close, charges the fare, and moves the
+player. The hub INFO has no travel fragment and only opens the destination
+choices. Insufficient gold produces an explicit message box and no charge.
 
 ## Arrival markers
 
@@ -42,6 +45,7 @@ installed JK interior overhauls where necessary:
 
 - College: `MGPhinisSleepMarker` (`036A67:Skyrim.esm`)
 - Whiterun: `FarengarLabMARKER` (`0B7AA5:Skyrim.esm`)
+- Riften: `RiftenKeepWizardLabMarker` (`044A4A:Skyrim.esm`)
 
 Their spatial safety still requires the controlled in-game test. Structural
 validation cannot prove that a marker is unobstructed in the rendered cell.
@@ -50,15 +54,14 @@ validation cannot prove that a marker is unobstructed in the rendered cell.
 
 The next gameplay pass should verify:
 
-1. Farengar shows the direct College option with its 250-gold fare;
-2. selecting it shows `Very well. The College, then.` and emits a
-   `WIZARD_TRAVEL_START` trace;
-3. successful travel charges exactly 250 gold and arrives unobstructed near the
-   College service area;
-4. Phinis shows the direct Whiterun option and returns the player to
-   `FarengarLabMARKER`, charging one additional hop;
-5. insufficient gold shows a notification and charges nothing;
-6. no game time or recovery is added by the module.
+1. Farengar reaches the College for 250 gold;
+2. Phinis's root response opens exactly two choices: Whiterun and Riften;
+3. the Riften choice charges 250 gold and arrives unobstructed near Wylandriah;
+4. Wylandriah offers a direct 250-gold return to the College;
+5. Phinis can then return the player to Whiterun;
+6. selecting a route with insufficient gold shows the exact required and
+   available amounts, charges nothing, and does not move the player;
+7. no game time or recovery is added by the module.
 
 Do not launch Skyrim as part of the build. Run the gameplay pass only after
 explicit approval.

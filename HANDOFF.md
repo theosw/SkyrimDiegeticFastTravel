@@ -12,9 +12,9 @@ Network:
 
 - The College of Winterhold is the permanent hub.
 - Farengar Secret-Fire (`013BBB:Skyrim.esm`) offers the College.
-- Phinis Gestor (`01C199:Skyrim.esm`) offers the return trip to Whiterun.
-- Riften/Wylandriah records remain only as scaffolding for a later spoke and
-  are outside the supported gameplay checkpoint.
+- Wylandriah (`019DEF:Skyrim.esm`) offers the College.
+- Phinis Gestor (`01C199:Skyrim.esm`) offers Whiterun or Riften from the
+  College.
 - All services are immediately available; faction, relationship, quest, and
   trust gates are deliberately deferred.
 - Every hop costs 250 gold.
@@ -31,17 +31,29 @@ start-game-enabled quest, one top-level player branch, four custom topics, and
 seven speaker-gated INFOs. It overrides no existing records. Its SEQ and two
 compiled PEX files live beside it in the module.
 
-The supported slice is now two-way. INFO `000806` presents
+The first spoke was proven two-way. The next staged build expands it into a
+three-node star. INFO `000806` presents
 `Can you teleport me to the College of Winterhold? (250 gold)` to Farengar and
-binds `DestinationId=college`. INFO `000808` presents
-`Can you teleport me to Whiterun? (250 gold)` to Phinis and binds
-`DestinationId=whiterun`. Both own a single response instead of using Shared
-Info, have `Goodbye + Force Subtitle + No LIP File`, have no `LinkTo`, and run
-`DNT_WizardTravelFragment` on `OnBegin`. The owned responses are currently
-unvoiced prototype subtitles:
+binds `DestinationId=college`; INFO `000807` now provides the corresponding
+Wylandriah-to-College route. INFO `000808` is the College hub:
+`Can you teleport me somewhere? (250 gold per trip)`. It owns the response
+`Where do you need to go?`, carries no travel fragment, and links to exactly
+two destination topics:
+
+- `000803` / INFO `00080B`: Whiterun (`DestinationId=whiterun`)
+- `000804` / INFO `00080C`: Riften (`DestinationId=riften`)
+
+All five visible INFOs own a single response instead of using Shared Info.
+Travel INFOs have `Goodbye + Force Subtitle + No LIP File`, no `LinkTo`, and
+run `DNT_WizardTravelFragment` on `OnBegin`. The hub has
+`Force Subtitle + No LIP File`, no VMAD, and exactly two `LinkTo` entries.
+The owned responses are currently unvoiced prototype subtitles:
 
 - `Very well. The College, then.`
+- `The College? Very well.`
+- `Where do you need to go?`
 - `Very well. Whiterun, then.`
+- `Very well. Riften, then.`
 
 Arrival markers reuse stable Skyrim references whose effective positions
 already reflect the installed JK interiors:
@@ -49,6 +61,8 @@ already reflect the installed JK interiors:
 - College: `036A67:Skyrim.esm` (`MGPhinisSleepMarker`), winner
   `JK's College of Winterhold.esp`
 - Whiterun: `0B7AA5:Skyrim.esm` (`FarengarLabMARKER`), vanilla winner
+- Riften: `044A4A:Skyrim.esm` (`RiftenKeepWizardLabMarker`), winner
+  `JK's Mistveil Keep.esp`
 
 Both scripts compile with 0 errors and 0 warnings. The workspace plugin parses
 successfully off-order and has zero dangling references or missing masters.
@@ -80,25 +94,34 @@ The player confirmed arrival at the College and then back in Whiterun. This
 proves the full dialogue -> fragment -> fare -> delayed `MoveTo` path in both
 directions and establishes the College-centred star's first working spoke.
 
+Rollback commit `a03262d` checkpoints that proven two-way build. The subsequent
+workspace build adds the Riften spoke and Phinis hub without changing record
+count or masters. `tools/Audit-WizardGuideStar.ps1` is a read-only, compact
+headless-xEdit audit that checks only the five visible INFOs: owned responses,
+speakers, flags, exact hub links, fragment timing, bound service, and stable
+destination IDs. It currently reports all six PASS lines. The patcher also
+produces byte-identical output on a second run. This three-node build has not
+yet had its gameplay pass.
+
 `tools/Patch-WizardGuideDialogue.ps1` now defaults to the patched headless
 xEdit at `build/xedit-patched/SSEEdit64.exe`, patches the workspace copy only,
 and deploys to LoreRim only when passed `-Deploy`; deployment is refused while
 `SkyrimSE` is running. `-Deploy` copies the complete owned module payload so
 the ESP, SEQ, and newly compiled PEX files stay in sync. The generated ESP is
 byte-idempotent at SHA-256
-`91B1C5E7ECAB0664E007E3A39CF59FB03142508143C5095C3599C3058B6AABF5`.
+`4B63578E5AE7A501DCEA4CC4B696DF0B21F55E2BC3E354497FCD98CAFBABA130`.
 The rebuilt Phase 1 ZIP SHA-256 is
-`66682A3A61131EFE2CB4159F0266827F2FD7B3C1AE95D4D0B3F4C98FF1AADB58`.
+`F12D768B3FF495B5F77AF136315854C0F85721E21A0461070866780F7E736F49`.
 
 At this checkpoint MO2's active profile is `UltraDiegeticTravel`. The complete
 workspace payload has been deployed to
 `D:\Lorerim\mods\houseCARL - DiegeticTravelWizardGuides`, and the installed
-ESP, SEQ, PEX, and PSC files hash-match the tested workspace copies. houseCARL
-sees the mod enabled in the left pane, but
-`DiegeticTravelWizardGuides.esp` is not yet present/checked in the profile's
-right-pane load order. Enable that plugin before active-load-order dialogue
-validation or the next gameplay test. Do not launch Skyrim without
-coordinating with the user; a parallel PickUpAsJunk task may also use MO2.
+ESP, SEQ, PEX, and PSC files hash-match the tested workspace copies. Direct
+reads of the MO2 profile files confirm the mod is enabled in the left pane and
+`DiegeticTravelWizardGuides.esp` is checked in the right pane. The installed
+ESP itself passes the compact six-line star audit. The new Riften/submenu build
+still requires its gameplay pass. Do not launch Skyrim without coordinating
+with the user; a parallel PickUpAsJunk task may also use MO2.
 
 ## Safety and environment
 

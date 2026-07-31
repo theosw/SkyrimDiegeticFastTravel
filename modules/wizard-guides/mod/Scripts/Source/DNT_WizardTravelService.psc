@@ -29,14 +29,14 @@ Bool Function RequestTravel(String DestinationId)
     ObjectReference DestinationMarker = GetDestinationMarker(DestinationId)
     If DestinationMarker == None
         Debug.Trace("[DNT] WIZARD_TRAVEL_DENIED destination=" + DestinationId + " reason=unknown_destination", 1)
-        Debug.Notification("Wizard travel is unavailable.")
+        Debug.MessageBox("Wizard travel is unavailable.")
         Return False
     EndIf
 
     Int AvailableGold = PlayerRef.GetItemCount(Gold001)
     If AvailableGold < FarePerHop
         Debug.Trace("[DNT] WIZARD_TRAVEL_DENIED destination=" + DestinationId + " reason=gold required=" + FarePerHop + " available=" + AvailableGold)
-        Debug.Notification("You need " + FarePerHop + " gold for this journey.")
+        Debug.MessageBox("You need " + FarePerHop + " gold for this journey. You have " + AvailableGold + ".")
         Return False
     EndIf
 
