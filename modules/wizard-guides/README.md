@@ -163,8 +163,12 @@ Workspace and deployed exact-record audits, the affirmative/denial FUZ audit,
 and the independent map-adapter audit pass. The candidate package is
 `dist\DiegeticTravelWizardGuides-fare-denials-candidate.zip`, SHA-256
 `45219F0C475EF0EAE020F6BE332F761E44E3376BC0E332F6A5B017D55EBFB793`.
-It remains a candidate until the insufficient-funds responses and funded
-regressions pass monitored gameplay.
+The monitored 2026-07-31 pass proved Farengar's Skyrim refusal and Sybille's
+HearthFires refusal, direct denials with no movement, funded direct regressions,
+College destination-level subtitle denials, silent map denials, and funded map
+travel. The listener observed four successful trips and no wizard-script
+warning. Wylandriah and Calcelmo still need focused live voice spot-checks;
+Wuunferth is intentionally subtitle-only.
 
 Do not launch Skyrim as part of the build. Run the gameplay pass only after
 explicit approval.

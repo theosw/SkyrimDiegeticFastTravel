@@ -306,7 +306,7 @@ reuse of the core branch and require the two-way branch/topic links.
 
 ### DLG-013 — Insufficient-funds dialogue responses
 
-**Status:** Static-pass implementation candidate; live test pending
+**Status:** Proven architecture; remaining direct voice spot-checks pending
 
 **Claim:** Mutually exclusive player-gold conditions can prevent an affirmative
 terminal response from playing before the service denies a fare, while genuine
@@ -336,7 +336,22 @@ affirmative and denial FUZ, and the independent map-adapter audit still passes.
 The separately named candidate package is
 `dist\DiegeticTravelWizardGuides-fare-denials-candidate.zip`, SHA-256
 `45219F0C475EF0EAE020F6BE332F761E44E3376BC0E332F6A5B017D55EBFB793`.
-These are static claims only until the monitored gameplay checks pass.
+The monitored 2026-07-31 candidate pass then proved the implemented split in
+gameplay. Farengar denied College travel at 22 gold with the intended voiced
+Skyrim refusal; the user described the line as great. Sybille denied at zero
+gold with the intended voiced HearthFires refusal and the user confirmed it
+worked. Each denial emitted one `WIZARD_TRAVEL_DENIED` and no start/completion;
+after funding, both speakers produced a normal 250-gold start/completion pair.
+
+College text-submenu denials from Mirabelle and multiple faculty emitted direct
+denial traces with no preceding map trace and no later start/completion. Tolfdir,
+Nirya, and Sergius were silent as designed because the current College branch
+uses one destination-level forced-subtitle fallback. Map selections at 22 and
+zero gold were likewise silent/notification-only and denied cleanly. Funded map
+trips to Whiterun and Solitude completed normally. The listener observed four
+successful trips and no wizard-script warning. Wylandriah and Calcelmo retain
+statically verified exact FUZ coverage but were not voice-checked in this pass;
+Wuunferth remains intentionally subtitle-only.
 
 **Implemented candidate decision:** Gold-condition only terminal INFOs, not the
 College hub.
