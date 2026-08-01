@@ -70,7 +70,7 @@ if (Test-Path -LiteralPath $errorPath -PathType Leaf) {
 New-Item -ItemType Directory -Force -Path $stagingData | Out-Null
 New-Item -ItemType Directory -Force -Path $beforeRoot | Out-Null
 
-foreach ($master in @("Skyrim.esm", "Update.esm")) {
+foreach ($master in @("Skyrim.esm", "Update.esm", "HearthFires.esm")) {
     $masterPath = Join-Path $LoreRimRoot "Stock Game\Data\$master"
     if (-not (Test-Path -LiteralPath $masterPath -PathType Leaf)) {
         throw "Required Skyrim master not found: $masterPath"
@@ -94,7 +94,7 @@ Copy-Item -LiteralPath $sourcePluginPath -Destination $beforePlugin -Force
 
 [System.IO.File]::WriteAllText(
     $pluginsList,
-    "*DiegeticTravelWizardGuides.esp`r`n",
+    "*HearthFires.esm`r`n*DiegeticTravelWizardGuides.esp`r`n",
     [System.Text.UTF8Encoding]::new($false)
 )
 

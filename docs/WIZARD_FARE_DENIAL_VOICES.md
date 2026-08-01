@@ -76,3 +76,14 @@ The existing carriage generator already proves the required CTDA encoding for
 inverse player `GetItemCount Gold001` conditions. Static audits must verify the
 two condition ranges, the genuine SharedInfo/topic membership, exact FUZ paths,
 the subtitle fallbacks, and that every denial INFO still calls the service.
+
+## Implementation status
+
+The candidate is generated, deployed, and awaiting live gameplay validation.
+The second generator pass was byte-identical at ESP SHA-256
+`3D469B2441FFEBCC0AF57D4F77ADB3FE49B940C56707C0B027133EE6799A2CA5`.
+The exact-record audit passes against the deployed copy, the vanilla archive
+audit confirms every used FUZ, and the independent map-adapter audit remains
+green. Candidate package:
+`dist\DiegeticTravelWizardGuides-fare-denials-candidate.zip`, SHA-256
+`45219F0C475EF0EAE020F6BE332F761E44E3376BC0E332F6A5B017D55EBFB793`.

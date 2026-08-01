@@ -31,6 +31,8 @@ const
   EqualConditionType = $00;
   GreaterThanOrEqualConditionType = $60;
   NotEqualConditionType = $20;
+  LessThanConditionType = $80;
+  FareGoldAmount = 250.0;
 
 var
   TargetFile: IInterface;
@@ -87,6 +89,19 @@ begin
     FileElement,
     FileFormID
   );
+  Result := RecordByFormID(FileElement, LoadOrderFormID, True);
+end;
+
+function RecordByPluginLocalFormID(
+  FileElement: IInterface;
+  LocalFormID: Cardinal
+): IInterface;
+var
+  FileFormID, LoadOrderFormID: Cardinal;
+begin
+  FileFormID :=
+    (MasterCount(FileElement) shl 24) or (LocalFormID and $00FFFFFF);
+  LoadOrderFormID := FileFormIDtoLoadOrderFormID(FileElement, FileFormID);
   Result := RecordByFormID(FileElement, LoadOrderFormID, True);
 end;
 
@@ -255,9 +270,12 @@ begin
       ElementCount(InfoGroup)
     );
   end;
-  if not Assigned(InfoGroup) or (ElementCount(InfoGroup) <> 2) then
+  if not Assigned(InfoGroup) or
+    ((ElementCount(InfoGroup) <> 2) and
+    (ElementCount(InfoGroup) <> 3)) then
     raise Exception.Create(
-      TopicEditorID + ' must contain exactly two cloned INFO records'
+      TopicEditorID + ' must contain two funded INFO records and ' +
+      'optionally one denial INFO record'
     );
   GeneralInfo := ElementByIndex(InfoGroup, 0);
   MirabelleInfo := ElementByIndex(InfoGroup, 1);
@@ -281,22 +299,29 @@ begin
     'EDID',
     MirabelleInfoEditorID
   );
+  SetElementNativeValues(
+    DestinationTopic,
+    'TIFC',
+    ElementCount(InfoGroup)
+  );
 end;
 
-function RequireSkyrimRecord(
+function RequirePluginRecord(
+  const PluginName: string;
   FormIDValue: Cardinal;
   const ExpectedSignature, ExpectedEditorID: string
 ): IInterface;
 var
-  SkyrimFile: IInterface;
+  PluginFile: IInterface;
 begin
-  SkyrimFile := FileByPluginName('Skyrim.esm');
-  if not Assigned(SkyrimFile) then
-    raise Exception.Create('Skyrim.esm is not loaded');
-  Result := RecordByFormID(SkyrimFile, FormIDValue, True);
+  PluginFile := FileByPluginName(PluginName);
+  if not Assigned(PluginFile) then
+    raise Exception.Create(PluginName + ' is not loaded');
+  Result := RecordByPluginLocalFormID(PluginFile, FormIDValue);
   if not Assigned(Result) then
     raise Exception.Create(
-      'Could not resolve Skyrim record ' + IntToHex(FormIDValue, 8)
+      'Could not resolve ' + PluginName + ' record ' +
+      IntToHex(FormIDValue, 8)
     );
   if Signature(Result) <> ExpectedSignature then
     raise Exception.Create(
@@ -305,8 +330,22 @@ begin
     );
   if GetElementEditValues(Result, 'EDID') <> ExpectedEditorID then
     raise Exception.Create(
-      IntToHex(FormIDValue, 8) + ' is not ' + ExpectedEditorID
+      PluginName + ':' + IntToHex(FormIDValue, 8) + ' is not ' +
+      ExpectedEditorID
     );
+end;
+
+function RequireSkyrimRecord(
+  FormIDValue: Cardinal;
+  const ExpectedSignature, ExpectedEditorID: string
+): IInterface;
+begin
+  Result := RequirePluginRecord(
+    'Skyrim.esm',
+    FormIDValue,
+    ExpectedSignature,
+    ExpectedEditorID
+  );
 end;
 
 procedure AddSubjectCondition(
@@ -373,6 +412,84 @@ begin
     raise Exception.Create(
       FunctionName + ' condition parameter did not read back'
     );
+end;
+
+procedure RemoveGoldConditions(InfoRecord: IInterface);
+var
+  Conditions, ConditionEntry: IInterface;
+  i: Integer;
+begin
+  Conditions := ElementByPath(InfoRecord, 'Conditions');
+  if not Assigned(Conditions) then
+    Exit;
+  for i := Pred(ElementCount(Conditions)) downto 0 do begin
+    ConditionEntry := ElementByIndex(Conditions, i);
+    if GetElementEditValues(
+      ConditionEntry,
+      'CTDA\Function'
+    ) = 'GetItemCount' then
+      RemoveElement(Conditions, i);
+  end;
+end;
+
+procedure AddPlayerGoldCondition(
+  InfoRecord: IInterface;
+  HasEnoughGold: Boolean
+);
+var
+  Conditions, ConditionEntry, ConditionData, GoldElement, PlayerElement,
+    GoldRecord, PlayerRef, ReadBackRecord: IInterface;
+  ConditionType: Cardinal;
+begin
+  GoldRecord := RequireSkyrimRecord($0000000F, 'MISC', 'Gold001');
+  PlayerRef := RequireSkyrimRecord($00000014, 'PLYR', 'PlayerRef');
+  RemoveGoldConditions(InfoRecord);
+
+  Conditions := ElementByPath(InfoRecord, 'Conditions');
+  if not Assigned(Conditions) then begin
+    Add(InfoRecord, 'Conditions', True);
+    Conditions := ElementByPath(InfoRecord, 'Conditions');
+  end;
+  if not Assigned(Conditions) then
+    raise Exception.Create('Could not create gold conditions');
+
+  ConditionEntry := ElementAssign(Conditions, HighInteger, nil, False);
+  if not Assigned(ConditionEntry) then
+    raise Exception.Create('Could not create gold condition entry');
+  ConditionData := ElementByPath(ConditionEntry, 'CTDA');
+  if not Assigned(ConditionData) then
+    raise Exception.Create('Gold condition has no CTDA');
+
+  if HasEnoughGold then
+    ConditionType := GreaterThanOrEqualConditionType
+  else
+    ConditionType := LessThanConditionType;
+  SetElementEditValues(ConditionData, 'Function', 'GetItemCount');
+  SetElementNativeValues(ConditionData, 'Type', ConditionType);
+  SetElementNativeValues(
+    ConditionData,
+    'Comparison Value - Float',
+    FareGoldAmount
+  );
+  SetElementEditValues(ConditionData, 'Inventory Object', Name(GoldRecord));
+  SetElementEditValues(ConditionData, 'Run On', 'Reference');
+  SetElementEditValues(ConditionData, 'Reference', Name(PlayerRef));
+  SetElementEditValues(ConditionData, 'Parameter #3', '-1');
+
+  GoldElement := ElementByPath(ConditionData, 'Inventory Object');
+  if not Assigned(GoldElement) then
+    GoldElement := ElementByPath(ConditionData, 'Parameter #1');
+  ReadBackRecord := LinksTo(GoldElement);
+  if not Assigned(ReadBackRecord) or
+    (FormID(ReadBackRecord) <> FormID(GoldRecord)) then
+    raise Exception.Create('Gold condition inventory object did not read back');
+  PlayerElement := ElementByPath(ConditionData, 'Reference');
+  ReadBackRecord := LinksTo(PlayerElement);
+  if not Assigned(ReadBackRecord) or
+    (FormID(ReadBackRecord) <> FormID(PlayerRef)) then
+    raise Exception.Create('Gold condition player reference did not read back');
+  if GetElementEditValues(ConditionData, 'Run On') <> 'Reference' then
+    raise Exception.Create('Gold condition does not run on Reference');
 end;
 
 procedure ConfigureCollegeFacultySpeaker(
@@ -472,24 +589,23 @@ end;
 
 procedure ConfigureSharedResponse(
   InfoRecord: IInterface;
-  const ExpectedEditorID, ResponseText: string;
+  const ExpectedEditorID, ResponseText, SharedPluginName: string;
   SharedInfoFormID, SharedInfoTopicFormID: Cardinal
 );
 var
-  SkyrimFile, SharedInfo, SharedInfoTopic, SharedInfoGroup, CandidateInfo,
+  SharedPluginFile, SharedInfo, SharedInfoTopic, SharedInfoGroup, CandidateInfo,
     SourceResponses, SharedInfoElement, SharedInfoTarget,
     TargetResponses: IInterface;
   i: Integer;
   DonorIsTopicChild: Boolean;
 begin
-  SkyrimFile := FileByPluginName('Skyrim.esm');
-  if not Assigned(SkyrimFile) then
-    raise Exception.Create('Skyrim.esm is not loaded');
+  SharedPluginFile := FileByPluginName(SharedPluginName);
+  if not Assigned(SharedPluginFile) then
+    raise Exception.Create(SharedPluginName + ' is not loaded');
 
-  SharedInfo := RecordByFormID(
-    SkyrimFile,
-    SharedInfoFormID,
-    True
+  SharedInfo := RecordByPluginLocalFormID(
+    SharedPluginFile,
+    SharedInfoFormID
   );
   if not Assigned(SharedInfo) then
     raise Exception.Create(
@@ -506,10 +622,9 @@ begin
       ExpectedEditorID + ' shared response donor has no EditorID'
     );
 
-  SharedInfoTopic := RecordByFormID(
-    SkyrimFile,
-    SharedInfoTopicFormID,
-    True
+  SharedInfoTopic := RecordByPluginLocalFormID(
+    SharedPluginFile,
+    SharedInfoTopicFormID
   );
   if not Assigned(SharedInfoTopic) or
     (Signature(SharedInfoTopic) <> 'DIAL') then
@@ -537,7 +652,7 @@ begin
     for i := 0 to Pred(ElementCount(SharedInfoGroup)) do begin
       CandidateInfo := ElementByIndex(SharedInfoGroup, i);
       if (Signature(CandidateInfo) = 'INFO') and
-        (FormID(CandidateInfo) = SharedInfoFormID) then begin
+        (FormID(CandidateInfo) = FormID(SharedInfo)) then begin
         DonorIsTopicChild := True;
         Break;
       end;
@@ -561,6 +676,8 @@ begin
       ResponseText + '"'
     );
 
+  AddMasterIfMissing(TargetFile, SharedPluginName);
+
   if Assigned(ElementByPath(InfoRecord, 'Responses')) then
     RemoveElement(InfoRecord, 'Responses');
 
@@ -576,7 +693,7 @@ begin
   SetEditValue(SharedInfoElement, Name(SharedInfo));
   SharedInfoTarget := LinksTo(SharedInfoElement);
   if not Assigned(SharedInfoTarget) or
-    (FormID(SharedInfoTarget) <> SharedInfoFormID) then
+    (FormID(SharedInfoTarget) <> FormID(SharedInfo)) then
     raise Exception.Create(
       ExpectedEditorID + ' shared response donor did not read back'
     );
@@ -895,7 +1012,8 @@ procedure ConfigureDirectRoute(
   RootObjectID: Cardinal;
   const RootEditorID: string;
   DestinationObjectID: Cardinal;
-  const DestinationEditorID, PromptText, ResponseText, DestinationID: string;
+  const DestinationEditorID, PromptText, ResponseText, DestinationID,
+    SharedPluginName: string;
   SharedInfoFormID, SharedInfoTopicFormID: Cardinal
 );
 var
@@ -927,6 +1045,7 @@ begin
     RootInfo,
     RootEditorID,
     ResponseText,
+    SharedPluginName,
     SharedInfoFormID,
     SharedInfoTopicFormID
   );
@@ -976,6 +1095,7 @@ begin
     RootEditorID,
     DestinationID
   );
+  AddPlayerGoldCondition(RootInfo, True);
 
   AddMessage(
     '[DNT] ' + RootEditorID + ' -> ' + DestinationID +
@@ -986,7 +1106,8 @@ end;
 
 procedure ConfigureTravelInfo(
   InfoObjectID: Cardinal;
-  const InfoEditorID, PromptText, ResponseText, DestinationID: string;
+  const InfoEditorID, PromptText, ResponseText, DestinationID,
+    SharedPluginName: string;
   SharedInfoFormID, SharedInfoTopicFormID: Cardinal
 );
 var
@@ -1009,6 +1130,7 @@ begin
     InfoRecord,
     InfoEditorID,
     ResponseText,
+    SharedPluginName,
     SharedInfoFormID,
     SharedInfoTopicFormID
   );
@@ -1043,6 +1165,7 @@ begin
     DestinationID
   );
   ConfigureCollegeFacultySpeaker(InfoRecord, True);
+  AddPlayerGoldCondition(InfoRecord, True);
 
   AddMessage(
     '[DNT] ' + InfoEditorID + ' -> ' + DestinationID +
@@ -1122,6 +1245,7 @@ begin
     'MirabelleErvine'
   );
   ConfigureExactSpeaker(InfoRecord, Mirabelle);
+  AddPlayerGoldCondition(InfoRecord, True);
   SetFragmentDestinationID(InfoRecord, InfoEditorID, DestinationID);
   ValidateFragmentProperties(
     InfoRecord,
@@ -1134,6 +1258,144 @@ begin
     '; Mirabelle subtitle response; OnBegin fragment; flags=0x' +
     IntToHex(ReadBackFlags, 4)
   );
+end;
+
+procedure ConfigureDirectDenial(
+  InfoObjectID: Cardinal;
+  const InfoEditorID, PromptText, ResponseText, DestinationID,
+    SharedPluginName: string;
+  SharedInfoFormID, SharedInfoTopicFormID: Cardinal;
+  SpeakerRecord: IInterface;
+  UseOwnedResponse: Boolean
+);
+var
+  InfoRecord, Links: IInterface;
+  ReadBackFlags, ExpectedFlags: Cardinal;
+begin
+  InfoRecord := RequireInfo(InfoObjectID, InfoEditorID);
+  SetElementEditValues(InfoRecord, 'RNAM', PromptText);
+  if GetElementEditValues(InfoRecord, 'RNAM') <> PromptText then
+    raise Exception.Create(InfoEditorID + ' denial prompt did not read back');
+
+  Links := ElementByPath(InfoRecord, 'Link To');
+  if Assigned(Links) then
+    RemoveElement(InfoRecord, 'Link To');
+  ConfigureExactSpeaker(InfoRecord, SpeakerRecord);
+  if UseOwnedResponse then begin
+    ConfigureOwnedResponse(
+      InfoRecord,
+      InfoEditorID,
+      ResponseText,
+      $000C819B
+    );
+    ExpectedFlags := SilentDirectResponseFlagsMask;
+  end else begin
+    ConfigureSharedResponse(
+      InfoRecord,
+      InfoEditorID,
+      ResponseText,
+      SharedPluginName,
+      SharedInfoFormID,
+      SharedInfoTopicFormID
+    );
+    ExpectedFlags := DirectResponseFlagsMask;
+  end;
+  SetElementNativeValues(
+    InfoRecord,
+    'ENAM\Response Flags',
+    ExpectedFlags
+  );
+  ReadBackFlags := GetElementNativeValues(
+    InfoRecord,
+    'ENAM\Response Flags'
+  );
+  if ReadBackFlags <> ExpectedFlags then
+    raise Exception.Create(InfoEditorID + ' denial flags did not read back');
+
+  SetElementNativeValues(
+    ElementByPath(InfoRecord, 'VMAD'),
+    'Script Fragments\Flags',
+    OnBeginFragmentMask
+  );
+  SetFragmentDestinationID(InfoRecord, InfoEditorID, DestinationID);
+  ValidateFragmentProperties(InfoRecord, InfoEditorID, DestinationID);
+  AddPlayerGoldCondition(InfoRecord, False);
+
+  AddMessage(
+    '[DNT] ' + InfoEditorID + ' insufficient-funds response; ' +
+    'authoritative service denial fragment; flags=0x' +
+    IntToHex(ReadBackFlags, 4)
+  );
+end;
+
+procedure ConfigureFacultyDenial(
+  InfoObjectID: Cardinal;
+  const InfoEditorID, PromptText, DestinationID: string
+);
+const
+  DenialResponse = 'I''m sorry, but you can''t afford that right now.';
+var
+  InfoRecord, Links: IInterface;
+  ReadBackFlags: Cardinal;
+begin
+  InfoRecord := RequireInfo(InfoObjectID, InfoEditorID);
+  SetElementEditValues(InfoRecord, 'RNAM', PromptText);
+  if GetElementEditValues(InfoRecord, 'RNAM') <> PromptText then
+    raise Exception.Create(InfoEditorID + ' denial prompt did not read back');
+  Links := ElementByPath(InfoRecord, 'Link To');
+  if Assigned(Links) then
+    RemoveElement(InfoRecord, 'Link To');
+  ConfigureOwnedResponse(
+    InfoRecord,
+    InfoEditorID,
+    DenialResponse,
+    $000C819B
+  );
+  SetElementNativeValues(
+    InfoRecord,
+    'ENAM\Response Flags',
+    SilentDirectResponseFlagsMask
+  );
+  ReadBackFlags := GetElementNativeValues(
+    InfoRecord,
+    'ENAM\Response Flags'
+  );
+  if ReadBackFlags <> SilentDirectResponseFlagsMask then
+    raise Exception.Create(InfoEditorID + ' denial flags did not read back');
+
+  SetElementNativeValues(
+    ElementByPath(InfoRecord, 'VMAD'),
+    'Script Fragments\Flags',
+    OnBeginFragmentMask
+  );
+  SetFragmentDestinationID(InfoRecord, InfoEditorID, DestinationID);
+  ValidateFragmentProperties(InfoRecord, InfoEditorID, DestinationID);
+  ConfigureCollegeFacultySpeaker(InfoRecord, False);
+  AddPlayerGoldCondition(InfoRecord, False);
+
+  AddMessage(
+    '[DNT] ' + InfoEditorID + ' faculty insufficient-funds subtitle; ' +
+    'authoritative service denial fragment; flags=0x' +
+    IntToHex(ReadBackFlags, 4)
+  );
+end;
+
+procedure UpdateDestinationTopicCount(
+  TopicObjectID: Cardinal;
+  const TopicEditorID: string
+);
+var
+  TopicRecord, InfoGroup: IInterface;
+begin
+  TopicRecord := RequireTopic(TopicObjectID, TopicEditorID);
+  InfoGroup := ChildGroup(TopicRecord);
+  if not Assigned(InfoGroup) or (ElementCount(InfoGroup) <> 3) then
+    raise Exception.Create(
+      TopicEditorID + ' must contain exactly three terminal INFO records'
+    );
+  SetElementNativeValues(TopicRecord, 'TIFC', ElementCount(InfoGroup));
+  if GetElementNativeValues(TopicRecord, 'TIFC') <> 3 then
+    raise Exception.Create(TopicEditorID + ' TIFC did not read back as 3');
 end;
 
 procedure ConfigureHubMenu;
@@ -1257,8 +1519,8 @@ end;
 
 function Initialize: Integer;
 var
-  SybilleRoot, WuunferthRoot, CalcelmoRoot, Sybille, Wuunferth,
-    Calcelmo: IInterface;
+  FarengarRoot, WylandriahRoot, SybilleRoot, WuunferthRoot, CalcelmoRoot,
+    Farengar, Wylandriah, Sybille, Wuunferth, Calcelmo: IInterface;
 begin
   Result := 1;
   StatusPath :=
@@ -1322,6 +1584,66 @@ begin
       $00081A,
       'DNT_WG_Request_Calcelmo'
     );
+    EnsureClonedInfo(
+      $000806,
+      'DNT_WG_Request_Farengar',
+      $00081B,
+      'DNT_WG_Request_Farengar_NoGold'
+    );
+    EnsureClonedInfo(
+      $000807,
+      'DNT_WG_Request_Wylandriah',
+      $00081C,
+      'DNT_WG_Request_Wylandriah_NoGold'
+    );
+    EnsureClonedInfo(
+      $000812,
+      'DNT_WG_Request_Sybille',
+      $00081D,
+      'DNT_WG_Request_Sybille_NoGold'
+    );
+    EnsureClonedInfo(
+      $000816,
+      'DNT_WG_Request_Wuunferth',
+      $00081E,
+      'DNT_WG_Request_Wuunferth_NoGold'
+    );
+    EnsureClonedInfo(
+      $00081A,
+      'DNT_WG_Request_Calcelmo',
+      $00081F,
+      'DNT_WG_Request_Calcelmo_NoGold'
+    );
+    EnsureClonedInfo(
+      $00080B,
+      'DNT_WG_Whiterun_FromPhinis',
+      $000820,
+      'DNT_WG_Whiterun_NoGold'
+    );
+    EnsureClonedInfo(
+      $00080C,
+      'DNT_WG_Riften_FromPhinis',
+      $000821,
+      'DNT_WG_Riften_NoGold'
+    );
+    EnsureClonedInfo(
+      $000810,
+      'DNT_WG_Solitude_FromPhinis',
+      $000822,
+      'DNT_WG_Solitude_NoGold'
+    );
+    EnsureClonedInfo(
+      $000814,
+      'DNT_WG_Windhelm_FromPhinis',
+      $000823,
+      'DNT_WG_Windhelm_NoGold'
+    );
+    EnsureClonedInfo(
+      $000818,
+      'DNT_WG_Markarth_FromPhinis',
+      $000824,
+      'DNT_WG_Markarth_NoGold'
+    );
     ConfigureServiceObjectProperty(
       'FarePaymentSound',
       $000334AB,
@@ -1353,6 +1675,13 @@ begin
       'MarkarthCastleWizardVendorMarkerREF'
     );
     ConfigureHubMenu;
+    FarengarRoot := RequireInfo($000806, 'DNT_WG_Request_Farengar');
+    Farengar := RequireSkyrimRecord(
+      $00013BBB,
+      'NPC_',
+      'FarengarSecretFire'
+    );
+    ConfigureExactSpeaker(FarengarRoot, Farengar);
     ConfigureDirectRoute(
       $000806,
       'DNT_WG_Request_Farengar',
@@ -1361,9 +1690,17 @@ begin
       'Can you teleport me to the College of Winterhold? (250 gold)',
       'Yes.',
       'college',
+      'Skyrim.esm',
       $000730FA,
       $00035B52
     );
+    WylandriahRoot := RequireInfo($000807, 'DNT_WG_Request_Wylandriah');
+    Wylandriah := RequireSkyrimRecord(
+      $00019DEF,
+      'NPC_',
+      'Wylandriah'
+    );
+    ConfigureExactSpeaker(WylandriahRoot, Wylandriah);
     ConfigureDirectRoute(
       $000807,
       'DNT_WG_Request_Wylandriah',
@@ -1372,17 +1709,7 @@ begin
       'Can you teleport me to the College of Winterhold? (250 gold)',
       'Of course.',
       'college',
-      $000DBA22,
-      $0001F319
-    );
-    ConfigureDirectRoute(
-      $000812,
-      'DNT_WG_Request_Sybille',
-      $00080A,
-      'DNT_WG_College_FromWylandriah',
-      'Can you teleport me to the College of Winterhold? (250 gold)',
-      'Of course.',
-      'college',
+      'Skyrim.esm',
       $000DBA22,
       $0001F319
     );
@@ -1393,13 +1720,14 @@ begin
     );
     ConfigureExactSpeaker(SybilleRoot, Sybille);
     ConfigureDirectRoute(
-      $000816,
-      'DNT_WG_Request_Wuunferth',
+      $000812,
+      'DNT_WG_Request_Sybille',
       $00080A,
       'DNT_WG_College_FromWylandriah',
       'Can you teleport me to the College of Winterhold? (250 gold)',
       'Of course.',
       'college',
+      'Skyrim.esm',
       $000DBA22,
       $0001F319
     );
@@ -1410,13 +1738,14 @@ begin
     );
     ConfigureExactSpeaker(WuunferthRoot, Wuunferth);
     ConfigureDirectRoute(
-      $00081A,
-      'DNT_WG_Request_Calcelmo',
+      $000816,
+      'DNT_WG_Request_Wuunferth',
       $00080A,
       'DNT_WG_College_FromWylandriah',
       'Can you teleport me to the College of Winterhold? (250 gold)',
       'Of course.',
       'college',
+      'Skyrim.esm',
       $000DBA22,
       $0001F319
     );
@@ -1426,12 +1755,85 @@ begin
       'Calcelmo'
     );
     ConfigureExactSpeaker(CalcelmoRoot, Calcelmo);
+    ConfigureDirectRoute(
+      $00081A,
+      'DNT_WG_Request_Calcelmo',
+      $00080A,
+      'DNT_WG_College_FromWylandriah',
+      'Can you teleport me to the College of Winterhold? (250 gold)',
+      'Of course.',
+      'college',
+      'Skyrim.esm',
+      $000DBA22,
+      $0001F319
+    );
+    ConfigureDirectDenial(
+      $00081B,
+      'DNT_WG_Request_Farengar_NoGold',
+      'Can you teleport me to the College of Winterhold? (250 gold)',
+      'I''m sorry, but you don''t seem to have enough gold to pay for that.',
+      'college',
+      'Skyrim.esm',
+      $000C6E2D,
+      $000C6E04,
+      Farengar,
+      False
+    );
+    ConfigureDirectDenial(
+      $00081C,
+      'DNT_WG_Request_Wylandriah_NoGold',
+      'Can you teleport me to the College of Winterhold? (250 gold)',
+      'I''m sorry, but you don''t seem to have enough gold to pay for that.',
+      'college',
+      'Skyrim.esm',
+      $000C6E2D,
+      $000C6E04,
+      Wylandriah,
+      False
+    );
+    ConfigureDirectDenial(
+      $00081D,
+      'DNT_WG_Request_Sybille_NoGold',
+      'Can you teleport me to the College of Winterhold? (250 gold)',
+      'I''m sorry, but you can''t afford that right now.',
+      'college',
+      'HearthFires.esm',
+      $0000B0B2,
+      $00007016,
+      Sybille,
+      False
+    );
+    ConfigureDirectDenial(
+      $00081E,
+      'DNT_WG_Request_Wuunferth_NoGold',
+      'Can you teleport me to the College of Winterhold? (250 gold)',
+      'I''m sorry, but you can''t afford that right now.',
+      'college',
+      'Skyrim.esm',
+      $00000000,
+      $00000000,
+      Wuunferth,
+      True
+    );
+    ConfigureDirectDenial(
+      $00081F,
+      'DNT_WG_Request_Calcelmo_NoGold',
+      'Can you teleport me to the College of Winterhold? (250 gold)',
+      'I''m sorry, but you don''t seem to have enough gold to pay for that.',
+      'college',
+      'Skyrim.esm',
+      $000C6E2D,
+      $000C6E04,
+      Calcelmo,
+      False
+    );
     ConfigureTravelInfo(
       $00080B,
       'DNT_WG_Whiterun_FromPhinis',
       'Send me to Whiterun. (250 gold)',
       'Of course.',
       'whiterun',
+      'Skyrim.esm',
       $000DBA22,
       $0001F319
     );
@@ -1441,6 +1843,7 @@ begin
       'Send me to Riften. (250 gold)',
       'Of course.',
       'riften',
+      'Skyrim.esm',
       $000DBA22,
       $0001F319
     );
@@ -1466,6 +1869,7 @@ begin
       'Send me to Solitude. (250 gold)',
       'Of course.',
       'solitude',
+      'Skyrim.esm',
       $000DBA22,
       $0001F319
     );
@@ -1483,6 +1887,7 @@ begin
       'Send me to Windhelm. (250 gold)',
       'Of course.',
       'windhelm',
+      'Skyrim.esm',
       $000DBA22,
       $0001F319
     );
@@ -1500,6 +1905,7 @@ begin
       'Send me to Markarth. (250 gold)',
       'Of course.',
       'markarth',
+      'Skyrim.esm',
       $000DBA22,
       $0001F319
     );
@@ -1511,6 +1917,41 @@ begin
       'Send me to Markarth. (250 gold)',
       'markarth'
     );
+    ConfigureFacultyDenial(
+      $000820,
+      'DNT_WG_Whiterun_NoGold',
+      'Send me to Whiterun. (250 gold)',
+      'whiterun'
+    );
+    ConfigureFacultyDenial(
+      $000821,
+      'DNT_WG_Riften_NoGold',
+      'Send me to Riften. (250 gold)',
+      'riften'
+    );
+    ConfigureFacultyDenial(
+      $000822,
+      'DNT_WG_Solitude_NoGold',
+      'Send me to Solitude. (250 gold)',
+      'solitude'
+    );
+    ConfigureFacultyDenial(
+      $000823,
+      'DNT_WG_Windhelm_NoGold',
+      'Send me to Windhelm. (250 gold)',
+      'windhelm'
+    );
+    ConfigureFacultyDenial(
+      $000824,
+      'DNT_WG_Markarth_NoGold',
+      'Send me to Markarth. (250 gold)',
+      'markarth'
+    );
+    UpdateDestinationTopicCount($000803, 'DNT_WG_ToWhiterun');
+    UpdateDestinationTopicCount($000804, 'DNT_WG_ToRiften');
+    UpdateDestinationTopicCount($00080F, 'DNT_WG_ToSolitude');
+    UpdateDestinationTopicCount($000813, 'DNT_WG_ToWindhelm');
+    UpdateDestinationTopicCount($000817, 'DNT_WG_ToMarkarth');
 
     SavePatchedPlugin;
     WriteStatus('success');

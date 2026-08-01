@@ -148,10 +148,23 @@ trips. The exact promoted package is
 `dist\DiegeticTravelWizardGuides-phase1.zip`, SHA-256
 `0029CC61CE6A9D94A900033BA1BACB341F9756F2E8F611F57F534DC4F3DDE759`.
 
-Dialogue-initiated denial still has one semantic rough edge: the terminal INFO
-can play its affirmative vanilla response before the authoritative service
-check rejects the fare. Denial-specific SharedInfo research is the next voice
-task; the service-side check remains mandatory.
+The live-proven phase-1 checkpoint had one semantic rough edge: its terminal
+INFO could play an affirmative vanilla response before the authoritative
+service rejected the fare. The service-side check remains mandatory.
+
+The current fare-denial candidate addresses that rough edge with mutually
+exclusive terminal INFOs: funded responses require at least 250 gold and denial
+responses require less than 250 gold, while both still call the authoritative
+service fragment. Farengar, Wylandriah, Sybille, and Calcelmo use verified
+vanilla SharedInfo refusals; Wuunferth and the five College destinations use
+forced-subtitle fallbacks. The generator is byte-idempotent at ESP SHA-256
+`3D469B2441FFEBCC0AF57D4F77ADB3FE49B940C56707C0B027133EE6799A2CA5`.
+Workspace and deployed exact-record audits, the affirmative/denial FUZ audit,
+and the independent map-adapter audit pass. The candidate package is
+`dist\DiegeticTravelWizardGuides-fare-denials-candidate.zip`, SHA-256
+`45219F0C475EF0EAE020F6BE332F761E44E3376BC0E332F6A5B017D55EBFB793`.
+It remains a candidate until the insufficient-funds responses and funded
+regressions pass monitored gameplay.
 
 Do not launch Skyrim as part of the build. Run the gameplay pass only after
 explicit approval.

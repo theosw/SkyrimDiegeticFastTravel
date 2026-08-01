@@ -57,6 +57,42 @@ $expected.Add(
         )
     }
 )
+$expected.Add(
+    [pscustomobject]@{
+        Label = "Farengar: insufficient funds"
+        Path = (
+            "sound\voice\skyrim.esm\maleeventonedaccented\" +
+            "housepurch_housepurchasesh_000c6e2d_1.fuz"
+        )
+    }
+)
+$expected.Add(
+    [pscustomobject]@{
+        Label = "Wylandriah: insufficient funds"
+        Path = (
+            "sound\voice\skyrim.esm\femaleeventoned\" +
+            "housepurch_housepurchasesh_000c6e2d_1.fuz"
+        )
+    }
+)
+$expected.Add(
+    [pscustomobject]@{
+        Label = "Sybille Stentor: insufficient funds"
+        Path = (
+            "sound\voice\hearthfires.esm\femalesultry\" +
+            "byohhousebuilding__0000b0b2_1.fuz"
+        )
+    }
+)
+$expected.Add(
+    [pscustomobject]@{
+        Label = "Calcelmo: insufficient funds"
+        Path = (
+            "sound\voice\skyrim.esm\maleoldkindly\" +
+            "housepurch_housepurchasesh_000c6e2d_1.fuz"
+        )
+    }
+)
 
 $facultyVoiceTypes = [ordered]@{
     "Sergius Turrianus" = "MaleOldGrumpy"

@@ -306,7 +306,7 @@ reuse of the core branch and require the two-way branch/topic links.
 
 ### DLG-013 — Insufficient-funds dialogue responses
 
-**Status:** Supported; implementation candidate not yet live-tested
+**Status:** Static-pass implementation candidate; live test pending
 
 **Claim:** Mutually exclusive player-gold conditions can prevent an affirmative
 terminal response from playing before the service denies a fare, while genuine
@@ -325,7 +325,21 @@ faculty. No semantically suitable genuine SharedInfo covers `MaleOldGrumpy`,
 voice. The existing carriage generator already authors inverse player
 `GetItemCount Gold001` conditions with a server-side payment recheck.
 
-**Candidate decision:** Gold-condition only terminal INFOs, not the College hub.
+The generated candidate now implements all ten denial INFOs. A second generator
+pass was byte-identical at ESP SHA-256
+`3D469B2441FFEBCC0AF57D4F77ADB3FE49B940C56707C0B027133EE6799A2CA5`.
+The exact-record xEdit audit passes against both the workspace and deployed
+LoreRim copies, including the inverse gold ranges, PlayerRef execution, genuine
+SharedInfo topic membership, three-INFO destination topics, terminal fragments,
+and unchanged service bindings. The vanilla archive audit passes every used
+affirmative and denial FUZ, and the independent map-adapter audit still passes.
+The separately named candidate package is
+`dist\DiegeticTravelWizardGuides-fare-denials-candidate.zip`, SHA-256
+`45219F0C475EF0EAE020F6BE332F761E44E3376BC0E332F6A5B017D55EBFB793`.
+These are static claims only until the monitored gameplay checks pass.
+
+**Implemented candidate decision:** Gold-condition only terminal INFOs, not the
+College hub.
 Keep funded affirmative INFOs at `>= 250`; add denial INFOs at `< 250` that call
 the same service. Voice Farengar, Wylandriah, Sybille, and Calcelmo through the
 verified donors; use an owned forced-subtitle denial for Wuunferth and one
@@ -549,12 +563,12 @@ start or completion. The user confirmed that denials displayed the top-left
 notification, removed no gold, played no payment cue, and caused no movement;
 successful payment played vanilla `ITMGoldDown` and travel completed.
 
-**Known UX debt:** Dialogue responses are chosen before the service performs
-its authoritative fare check, so a court wizard may say an affirmative vanilla
-line immediately before the notification denies travel. Keep the service check
-as the authority. A future dialogue-only refinement may add inverse player-gold
-conditions and genuine SharedInfo denial donors; the map path should remain
-notification-only because selection occurs after dialogue closes.
+**Candidate under test:** Dialogue terminal INFOs now use mutually exclusive
+player-gold conditions, with genuine voiced refusal SharedInfos where exact FUZ
+coverage exists and forced-subtitle fallbacks elsewhere. The service remains the
+authority and the map path remains notification-only because selection occurs
+after dialogue closes. Do not call the semantic mismatch fixed until the new
+candidate passes the monitored denial and funded-regression checks.
 
 ## Promotion gate for future claims
 
@@ -573,8 +587,8 @@ Promote a dialogue candidate to **Proven** only after all applicable checks:
 ## Deferred Phase 1 ideas
 
 - Trust, faction, disposition, and quest-based service gates.
-- Voice-semantic polish for dialogue-initiated insufficient funds, using
-  genuine SharedInfo donors with verified speaker-specific FUZ assets.
+- Per-voice College fare denials beyond the current destination-level subtitle
+  fallback, if the added record complexity proves worthwhile.
 - More College spokes beyond Whiterun, Riften, Solitude, Windhelm, and Markarth.
 - Travel-time passage, rest/recovery behavior, and intervention/recall magic.
 

@@ -16,6 +16,11 @@ const
   EqualConditionType = $00;
   GreaterThanOrEqualConditionType = $60;
   NotEqualConditionType = $20;
+  LessThanConditionType = $80;
+  GoldConditionNone = -1;
+  GoldConditionDenied = 0;
+  GoldConditionFunded = 1;
+  FareGoldAmount = 250.0;
 
 var
   TargetFile: IInterface;
@@ -60,6 +65,19 @@ begin
   Result := RecordByFormID(TargetFile, LoadOrderFormID, True);
 end;
 
+function RecordByPluginLocalFormID(
+  FileElement: IInterface;
+  LocalFormID: Cardinal
+): IInterface;
+var
+  FileFormID, LoadOrderFormID: Cardinal;
+begin
+  FileFormID :=
+    (MasterCount(FileElement) shl 24) or (LocalFormID and $00FFFFFF);
+  LoadOrderFormID := FileFormIDtoLoadOrderFormID(FileElement, FileFormID);
+  Result := RecordByFormID(FileElement, LoadOrderFormID, True);
+end;
+
 function RequireRecord(
   ObjectID: Cardinal;
   const ExpectedSignature, ExpectedEditorID: string
@@ -85,30 +103,36 @@ end;
 
 procedure AssertSharedResponse(
   InfoRecord: IInterface;
-  const EditorID, ExpectedText: string;
+  const EditorID, ExpectedText, SharedPluginName: string;
   ExpectedSharedInfoFormID, ExpectedSharedInfoTopicFormID: Cardinal
 );
 var
-  SkyrimFile, Responses, SharedInfo, SharedInfoTopic, SharedInfoGroup,
-    CandidateInfo: IInterface;
+  SharedPluginFile, ExpectedSharedInfo, Responses, SharedInfo,
+    SharedInfoTopic, SharedInfoGroup, CandidateInfo: IInterface;
   i: Integer;
   DonorIsTopicChild: Boolean;
 begin
-  SkyrimFile := FileByPluginName('Skyrim.esm');
-  if not Assigned(SkyrimFile) then
-    raise Exception.Create('Skyrim.esm is not loaded');
+  SharedPluginFile := FileByPluginName(SharedPluginName);
+  if not Assigned(SharedPluginFile) then
+    raise Exception.Create(SharedPluginName + ' is not loaded');
+  ExpectedSharedInfo := RecordByPluginLocalFormID(
+    SharedPluginFile,
+    ExpectedSharedInfoFormID
+  );
+  if not Assigned(ExpectedSharedInfo) or
+    (Signature(ExpectedSharedInfo) <> 'INFO') then
+    raise Exception.Create(EditorID + ' expected Shared Info does not resolve');
   SharedInfo := LinksTo(ElementByPath(InfoRecord, 'DNAM'));
   if not Assigned(SharedInfo) then
     raise Exception.Create(EditorID + ' has no Shared Info donor');
-  if FormID(SharedInfo) <> ExpectedSharedInfoFormID then
+  if FormID(SharedInfo) <> FormID(ExpectedSharedInfo) then
     raise Exception.Create(EditorID + ' Shared Info donor does not match');
   if Trim(GetElementEditValues(SharedInfo, 'EDID')) = '' then
     raise Exception.Create(EditorID + ' Shared Info donor has no EditorID');
 
-  SharedInfoTopic := RecordByFormID(
-    SkyrimFile,
-    ExpectedSharedInfoTopicFormID,
-    True
+  SharedInfoTopic := RecordByPluginLocalFormID(
+    SharedPluginFile,
+    ExpectedSharedInfoTopicFormID
   );
   if not Assigned(SharedInfoTopic) or
     (Signature(SharedInfoTopic) <> 'DIAL') then
@@ -129,7 +153,7 @@ begin
     for i := 0 to Pred(ElementCount(SharedInfoGroup)) do begin
       CandidateInfo := ElementByIndex(SharedInfoGroup, i);
       if (Signature(CandidateInfo) = 'INFO') and
-        (FormID(CandidateInfo) = ExpectedSharedInfoFormID) then begin
+        (FormID(CandidateInfo) = FormID(ExpectedSharedInfo)) then begin
         DonorIsTopicChild := True;
         Break;
       end;
@@ -146,6 +170,63 @@ begin
     'Responses\Response\NAM1'
   ) <> ExpectedText then
     raise Exception.Create(EditorID + ' shared response text does not match');
+end;
+
+procedure AssertPlayerGoldCondition(
+  InfoRecord: IInterface;
+  const EditorID: string;
+  HasEnoughGold: Boolean
+);
+var
+  Conditions, ConditionEntry, ConditionData, InventoryObject, PlayerRef:
+    IInterface;
+  i, MatchCount: Integer;
+  ExpectedType: Cardinal;
+  ActualComparisonValue: Double;
+begin
+  Conditions := ElementByPath(InfoRecord, 'Conditions');
+  if not Assigned(Conditions) then
+    raise Exception.Create(EditorID + ' has no gold condition');
+  MatchCount := 0;
+  for i := 0 to Pred(ElementCount(Conditions)) do begin
+    ConditionEntry := ElementByIndex(Conditions, i);
+    ConditionData := ElementByPath(ConditionEntry, 'CTDA');
+    if Assigned(ConditionData) and
+      (GetElementEditValues(ConditionData, 'Function') = 'GetItemCount') then begin
+      Inc(MatchCount);
+      if HasEnoughGold then
+        ExpectedType := GreaterThanOrEqualConditionType
+      else
+        ExpectedType := LessThanConditionType;
+      if GetElementNativeValues(ConditionData, 'Type') <> ExpectedType then
+        raise Exception.Create(EditorID + ' gold operator does not match');
+      ActualComparisonValue := GetElementNativeValues(
+        ConditionData,
+        'Comparison Value - Float'
+      );
+      if Abs(ActualComparisonValue - FareGoldAmount) > 0.001 then
+        raise Exception.Create(EditorID + ' gold amount does not match');
+      InventoryObject := LinksTo(
+        ElementByPath(ConditionData, 'Inventory Object')
+      );
+      if not Assigned(InventoryObject) then
+        InventoryObject := LinksTo(
+          ElementByPath(ConditionData, 'Parameter #1')
+        );
+      if not Assigned(InventoryObject) or
+        (FormID(InventoryObject) <> $0000000F) then
+        raise Exception.Create(EditorID + ' gold object does not match');
+      if GetElementEditValues(ConditionData, 'Run On') <> 'Reference' then
+        raise Exception.Create(EditorID + ' gold condition is not player-run');
+      PlayerRef := LinksTo(ElementByPath(ConditionData, 'Reference'));
+      if not Assigned(PlayerRef) or (FormID(PlayerRef) <> $00000014) then
+        raise Exception.Create(EditorID + ' gold reference is not PlayerRef');
+    end;
+  end;
+  if MatchCount <> 1 then
+    raise Exception.Create(
+      EditorID + ' GetItemCount condition count=' + IntToStr(MatchCount)
+    );
 end;
 
 procedure AssertOwnedResponse(
@@ -224,19 +305,27 @@ end;
 procedure AssertDirectSpeakerGate(
   InfoRecord: IInterface;
   const EditorID: string;
-  ExpectedFormID: Cardinal
+  ExpectedFormID: Cardinal;
+  GoldConditionMode: Integer
 );
 var
   Conditions: IInterface;
+  ExpectedConditionCount: Integer;
 begin
   Conditions := ElementByPath(InfoRecord, 'Conditions');
-  if not Assigned(Conditions) or (ElementCount(Conditions) <> 1) then
+  if GoldConditionMode = GoldConditionNone then
+    ExpectedConditionCount := 1
+  else
+    ExpectedConditionCount := 2;
+  if not Assigned(Conditions) or
+    (ElementCount(Conditions) <> ExpectedConditionCount) then
     if not Assigned(Conditions) then
       raise Exception.Create(EditorID + ' has no exact-speaker condition')
     else
       raise Exception.Create(
         EditorID + ' exact-speaker condition count=' +
-        IntToStr(ElementCount(Conditions)) + ', expected=1'
+        IntToStr(ElementCount(Conditions)) + ', expected=' +
+        IntToStr(ExpectedConditionCount)
       );
   AssertConditionAt(
     InfoRecord,
@@ -247,12 +336,17 @@ begin
     EqualConditionType,
     1.0
   );
+  if GoldConditionMode = GoldConditionFunded then
+    AssertPlayerGoldCondition(InfoRecord, EditorID, True)
+  else if GoldConditionMode = GoldConditionDenied then
+    AssertPlayerGoldCondition(InfoRecord, EditorID, False);
 end;
 
 procedure AssertCollegeFacultySpeaker(
   InfoRecord: IInterface;
   const EditorID: string;
-  ExcludeMirabelle: Boolean
+  ExcludeMirabelle: Boolean;
+  GoldConditionMode: Integer
 );
 var
   Conditions, Speaker: IInterface;
@@ -266,6 +360,8 @@ begin
     ExpectedConditionCount := 4
   else
     ExpectedConditionCount := 3;
+  if GoldConditionMode <> GoldConditionNone then
+    Inc(ExpectedConditionCount);
   if not Assigned(Conditions) or
     (ElementCount(Conditions) <> ExpectedConditionCount) then
     if not Assigned(Conditions) then
@@ -314,6 +410,10 @@ begin
       NotEqualConditionType,
       1.0
     );
+  if GoldConditionMode = GoldConditionFunded then
+    AssertPlayerGoldCondition(InfoRecord, EditorID, True)
+  else if GoldConditionMode = GoldConditionDenied then
+    AssertPlayerGoldCondition(InfoRecord, EditorID, False);
 end;
 
 procedure AssertTopicChild(
@@ -478,7 +578,8 @@ end;
 
 procedure AuditDirect(
   ObjectID: Cardinal;
-  const EditorID, PromptText, ResponseText, DestinationID: string;
+  const EditorID, PromptText, ResponseText, DestinationID,
+    SharedPluginName: string;
   SpeakerFormID, SharedInfoFormID, SharedInfoTopicFormID: Cardinal
 );
 var
@@ -491,11 +592,17 @@ begin
     InfoRecord,
     EditorID,
     ResponseText,
+    SharedPluginName,
     SharedInfoFormID,
     SharedInfoTopicFormID
   );
   AssertSpeaker(InfoRecord, EditorID, SpeakerFormID);
-  AssertDirectSpeakerGate(InfoRecord, EditorID, SpeakerFormID);
+  AssertDirectSpeakerGate(
+    InfoRecord,
+    EditorID,
+    SpeakerFormID,
+    GoldConditionFunded
+  );
   if GetElementNativeValues(
     InfoRecord,
     'ENAM\Response Flags'
@@ -525,10 +632,16 @@ begin
     InfoRecord,
     EditorID,
     'Of course.',
+    'Skyrim.esm',
     $000DBA22,
     $0001F319
   );
-  AssertCollegeFacultySpeaker(InfoRecord, EditorID, True);
+  AssertCollegeFacultySpeaker(
+    InfoRecord,
+    EditorID,
+    True,
+    GoldConditionFunded
+  );
   if GetElementNativeValues(
     InfoRecord,
     'ENAM\Response Flags'
@@ -557,7 +670,12 @@ begin
     raise Exception.Create(EditorID + ' prompt does not match');
   AssertOwnedResponse(InfoRecord, EditorID, 'Of course.');
   AssertSpeaker(InfoRecord, EditorID, $0001C1A0);
-  AssertDirectSpeakerGate(InfoRecord, EditorID, $0001C1A0);
+  AssertDirectSpeakerGate(
+    InfoRecord,
+    EditorID,
+    $0001C1A0,
+    GoldConditionFunded
+  );
   if GetElementNativeValues(
     InfoRecord,
     'ENAM\Response Flags'
@@ -571,6 +689,100 @@ begin
   ReportLines.Add(
     'PASS Mirabelle subtitle ' + EditorID + ' -> ' + DestinationID
   );
+end;
+
+procedure AuditDirectDenial(
+  ObjectID: Cardinal;
+  const EditorID, PromptText, ResponseText, DestinationID,
+    SharedPluginName: string;
+  SpeakerFormID, SharedInfoFormID, SharedInfoTopicFormID: Cardinal;
+  UsesOwnedResponse: Boolean
+);
+var
+  InfoRecord, Links: IInterface;
+  ExpectedFlags: Cardinal;
+begin
+  InfoRecord := RequireRecord(ObjectID, 'INFO', EditorID);
+  if GetElementEditValues(InfoRecord, 'RNAM') <> PromptText then
+    raise Exception.Create(EditorID + ' denial prompt does not match');
+  if UsesOwnedResponse then begin
+    AssertOwnedResponse(InfoRecord, EditorID, ResponseText);
+    ExpectedFlags := SilentDirectResponseFlagsMask;
+  end else begin
+    AssertSharedResponse(
+      InfoRecord,
+      EditorID,
+      ResponseText,
+      SharedPluginName,
+      SharedInfoFormID,
+      SharedInfoTopicFormID
+    );
+    ExpectedFlags := DirectResponseFlagsMask;
+  end;
+  AssertSpeaker(InfoRecord, EditorID, SpeakerFormID);
+  AssertDirectSpeakerGate(
+    InfoRecord,
+    EditorID,
+    SpeakerFormID,
+    GoldConditionDenied
+  );
+  if GetElementNativeValues(
+    InfoRecord,
+    'ENAM\Response Flags'
+  ) <> ExpectedFlags then
+    raise Exception.Create(EditorID + ' denial response flags do not match');
+  Links := ElementByPath(InfoRecord, 'Link To');
+  if Assigned(Links) and (ElementCount(Links) > 0) then
+    raise Exception.Create(EditorID + ' unexpectedly has Link To entries');
+  AssertTravelFragment(InfoRecord, EditorID, DestinationID);
+  ReportLines.Add('PASS direct denial ' + EditorID);
+end;
+
+procedure AuditFacultyDenial(
+  ObjectID: Cardinal;
+  const EditorID, PromptText, DestinationID: string;
+  DestinationTopic: IInterface
+);
+const
+  DenialResponse = 'I''m sorry, but you can''t afford that right now.';
+var
+  InfoRecord, Links: IInterface;
+begin
+  InfoRecord := RequireRecord(ObjectID, 'INFO', EditorID);
+  if GetElementEditValues(InfoRecord, 'RNAM') <> PromptText then
+    raise Exception.Create(EditorID + ' denial prompt does not match');
+  AssertOwnedResponse(InfoRecord, EditorID, DenialResponse);
+  AssertCollegeFacultySpeaker(
+    InfoRecord,
+    EditorID,
+    False,
+    GoldConditionDenied
+  );
+  if GetElementNativeValues(
+    InfoRecord,
+    'ENAM\Response Flags'
+  ) <> SilentDirectResponseFlagsMask then
+    raise Exception.Create(EditorID + ' denial flags do not match');
+  Links := ElementByPath(InfoRecord, 'Link To');
+  if Assigned(Links) and (ElementCount(Links) > 0) then
+    raise Exception.Create(EditorID + ' unexpectedly has Link To entries');
+  AssertTravelFragment(InfoRecord, EditorID, DestinationID);
+  AssertTopicChild(DestinationTopic, InfoRecord, EditorID);
+  ReportLines.Add('PASS faculty denial ' + EditorID);
+end;
+
+procedure AssertDestinationTopicCount(
+  TopicRecord: IInterface;
+  const EditorID: string
+);
+var
+  InfoGroup: IInterface;
+begin
+  InfoGroup := ChildGroup(TopicRecord);
+  if not Assigned(InfoGroup) or (ElementCount(InfoGroup) <> 3) then
+    raise Exception.Create(EditorID + ' must contain exactly three INFO records');
+  if GetElementNativeValues(TopicRecord, 'TIFC') <> 3 then
+    raise Exception.Create(EditorID + ' TIFC must equal three');
 end;
 
 procedure AuditHub;
@@ -598,7 +810,12 @@ begin
     'DNT_WG_Request_Phinis',
     'Where do you need to go?'
   );
-  AssertCollegeFacultySpeaker(HubInfo, 'DNT_WG_Request_Phinis', False);
+  AssertCollegeFacultySpeaker(
+    HubInfo,
+    'DNT_WG_Request_Phinis',
+    False,
+    GoldConditionNone
+  );
   if GetElementNativeValues(
     HubInfo,
     'ENAM\Response Flags'
@@ -639,8 +856,8 @@ end;
 
 function Initialize: Integer;
 var
-  WhiterunTopic, RiftenTopic, SolitudeTopic, WindhelmTopic, MarkarthTopic,
-    SolitudeInfoGroup, WindhelmInfoGroup, MarkarthInfoGroup: IInterface;
+  WhiterunTopic, RiftenTopic, SolitudeTopic, WindhelmTopic,
+    MarkarthTopic: IInterface;
 begin
   Result := 1;
   StatusPath :=
@@ -663,6 +880,7 @@ begin
       'Can you teleport me to the College of Winterhold? (250 gold)',
       'Yes.',
       'college',
+      'Skyrim.esm',
       $00013BBB,
       $000730FA,
       $00035B52
@@ -673,6 +891,7 @@ begin
       'Can you teleport me to the College of Winterhold? (250 gold)',
       'Of course.',
       'college',
+      'Skyrim.esm',
       $00019DEF,
       $000DBA22,
       $0001F319
@@ -683,6 +902,7 @@ begin
       'Can you teleport me to the College of Winterhold? (250 gold)',
       'Of course.',
       'college',
+      'Skyrim.esm',
       $000132AA,
       $000DBA22,
       $0001F319
@@ -693,6 +913,7 @@ begin
       'Can you teleport me to the College of Winterhold? (250 gold)',
       'Of course.',
       'college',
+      'Skyrim.esm',
       $00014146,
       $000DBA22,
       $0001F319
@@ -703,9 +924,70 @@ begin
       'Can you teleport me to the College of Winterhold? (250 gold)',
       'Of course.',
       'college',
+      'Skyrim.esm',
       $0001338E,
       $000DBA22,
       $0001F319
+    );
+    AuditDirectDenial(
+      $00081B,
+      'DNT_WG_Request_Farengar_NoGold',
+      'Can you teleport me to the College of Winterhold? (250 gold)',
+      'I''m sorry, but you don''t seem to have enough gold to pay for that.',
+      'college',
+      'Skyrim.esm',
+      $00013BBB,
+      $000C6E2D,
+      $000C6E04,
+      False
+    );
+    AuditDirectDenial(
+      $00081C,
+      'DNT_WG_Request_Wylandriah_NoGold',
+      'Can you teleport me to the College of Winterhold? (250 gold)',
+      'I''m sorry, but you don''t seem to have enough gold to pay for that.',
+      'college',
+      'Skyrim.esm',
+      $00019DEF,
+      $000C6E2D,
+      $000C6E04,
+      False
+    );
+    AuditDirectDenial(
+      $00081D,
+      'DNT_WG_Request_Sybille_NoGold',
+      'Can you teleport me to the College of Winterhold? (250 gold)',
+      'I''m sorry, but you can''t afford that right now.',
+      'college',
+      'HearthFires.esm',
+      $000132AA,
+      $0000B0B2,
+      $00007016,
+      False
+    );
+    AuditDirectDenial(
+      $00081E,
+      'DNT_WG_Request_Wuunferth_NoGold',
+      'Can you teleport me to the College of Winterhold? (250 gold)',
+      'I''m sorry, but you can''t afford that right now.',
+      'college',
+      'Skyrim.esm',
+      $00014146,
+      $00000000,
+      $00000000,
+      True
+    );
+    AuditDirectDenial(
+      $00081F,
+      'DNT_WG_Request_Calcelmo_NoGold',
+      'Can you teleport me to the College of Winterhold? (250 gold)',
+      'I''m sorry, but you don''t seem to have enough gold to pay for that.',
+      'college',
+      'Skyrim.esm',
+      $0001338E,
+      $000C6E2D,
+      $000C6E04,
+      False
     );
     AuditServiceObjectProperty(
       'FarePaymentSound',
@@ -763,24 +1045,11 @@ begin
       'DIAL',
       'DNT_WG_ToMarkarth'
     );
-    SolitudeInfoGroup := ChildGroup(SolitudeTopic);
-    if not Assigned(SolitudeInfoGroup) or
-      (ElementCount(SolitudeInfoGroup) <> 2) then
-      raise Exception.Create(
-        'DNT_WG_ToSolitude must contain exactly two INFO records'
-      );
-    WindhelmInfoGroup := ChildGroup(WindhelmTopic);
-    if not Assigned(WindhelmInfoGroup) or
-      (ElementCount(WindhelmInfoGroup) <> 2) then
-      raise Exception.Create(
-        'DNT_WG_ToWindhelm must contain exactly two INFO records'
-      );
-    MarkarthInfoGroup := ChildGroup(MarkarthTopic);
-    if not Assigned(MarkarthInfoGroup) or
-      (ElementCount(MarkarthInfoGroup) <> 2) then
-      raise Exception.Create(
-        'DNT_WG_ToMarkarth must contain exactly two INFO records'
-      );
+    AssertDestinationTopicCount(WhiterunTopic, 'DNT_WG_ToWhiterun');
+    AssertDestinationTopicCount(RiftenTopic, 'DNT_WG_ToRiften');
+    AssertDestinationTopicCount(SolitudeTopic, 'DNT_WG_ToSolitude');
+    AssertDestinationTopicCount(WindhelmTopic, 'DNT_WG_ToWindhelm');
+    AssertDestinationTopicCount(MarkarthTopic, 'DNT_WG_ToMarkarth');
     AuditFacultyVoicedDestination(
       $00080B,
       'DNT_WG_Whiterun_FromPhinis',
@@ -840,6 +1109,41 @@ begin
     AuditFacultyVoicedDestination(
       $000818,
       'DNT_WG_Markarth_FromPhinis',
+      'Send me to Markarth. (250 gold)',
+      'markarth',
+      MarkarthTopic
+    );
+    AuditFacultyDenial(
+      $000820,
+      'DNT_WG_Whiterun_NoGold',
+      'Send me to Whiterun. (250 gold)',
+      'whiterun',
+      WhiterunTopic
+    );
+    AuditFacultyDenial(
+      $000821,
+      'DNT_WG_Riften_NoGold',
+      'Send me to Riften. (250 gold)',
+      'riften',
+      RiftenTopic
+    );
+    AuditFacultyDenial(
+      $000822,
+      'DNT_WG_Solitude_NoGold',
+      'Send me to Solitude. (250 gold)',
+      'solitude',
+      SolitudeTopic
+    );
+    AuditFacultyDenial(
+      $000823,
+      'DNT_WG_Windhelm_NoGold',
+      'Send me to Windhelm. (250 gold)',
+      'windhelm',
+      WindhelmTopic
+    );
+    AuditFacultyDenial(
+      $000824,
+      'DNT_WG_Markarth_NoGold',
       'Send me to Markarth. (250 gold)',
       'markarth',
       MarkarthTopic
