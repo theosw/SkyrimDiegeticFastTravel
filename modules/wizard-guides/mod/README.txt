@@ -29,7 +29,10 @@ branching hub uses the owned forced subtitle "Where do you need to go?" so its
 custom submenu advances reliably. Destination fragments run on begin, wait one
 second for the conversation to close, then call the central payment and
 teleport service. Insufficient funds show an explicit message and charge
-nothing. Papyrus travel traces include the initiating speaker reference.
+nothing. The insufficient-funds message uses the normal top-left notification
+area rather than a modal box. A successful payment plays Skyrim's vanilla
+ITMGoldDown transaction sound. Papyrus travel traces include the initiating
+speaker reference.
 
 Use a fresh test game or a save made before this plugin was installed so the
 start-game-enabled dialogue quest is initialized from its shipped SEQ file.

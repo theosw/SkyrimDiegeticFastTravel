@@ -25,6 +25,6 @@
 - Add the propylon-style ancient-site loop.
 - Optionally integrate Better Carriage Destinations as a map-picking front end
   while retaining this mod's route whitelist, graph fare, hours, and CFTO handoff.
-- Live-test the optional wizard-guide BCD adapter at 32:9, including map cancel,
+- [x] Live-test the optional wizard-guide BCD adapter at 32:9, including map cancel,
   core fare denial, one selected trip, and the dialogue-list fallback.
 - Stabilize and integrate the optional SKSE paper map.

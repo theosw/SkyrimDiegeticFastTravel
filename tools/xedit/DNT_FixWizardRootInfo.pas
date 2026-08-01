@@ -809,14 +809,14 @@ begin
   raise Exception.Create(ExpectedEditorID + ' DestinationId is missing');
 end;
 
-procedure ConfigureServiceMarker(
+procedure ConfigureServiceObjectProperty(
   const PropertyNameValue: string;
-  MarkerFormID: Cardinal;
-  const MarkerEditorID: string
+  ObjectFormID: Cardinal;
+  const ExpectedSignature, ObjectEditorID: string
 );
 var
   ServiceQuest, TargetVMAD, Scripts, ScriptEntry, Properties, PropertyEntry,
-    MarkerRecord, PropertyObject, ReadBackObject: IInterface;
+    ObjectRecord, PropertyObject, ReadBackObject: IInterface;
   PropertyName: string;
   i: Integer;
 begin
@@ -825,10 +825,10 @@ begin
     (GetElementEditValues(ServiceQuest, 'EDID') <>
       'DNT_WizardTravelQuest') then
     raise Exception.Create('Could not resolve DNT_WizardTravelQuest');
-  MarkerRecord := RequireSkyrimRecord(
-    MarkerFormID,
-    'REFR',
-    MarkerEditorID
+  ObjectRecord := RequireSkyrimRecord(
+    ObjectFormID,
+    ExpectedSignature,
+    ObjectEditorID
   );
 
   TargetVMAD := ElementByPath(ServiceQuest, 'VMAD');
@@ -878,15 +878,16 @@ begin
   );
   if not Assigned(PropertyObject) then
     raise Exception.Create(PropertyNameValue + ' has no object value');
-  SetEditValue(PropertyObject, Name(MarkerRecord));
+  SetEditValue(PropertyObject, Name(ObjectRecord));
   ReadBackObject := LinksTo(PropertyObject);
   if not Assigned(ReadBackObject) or
-    (FormID(ReadBackObject) <> FormID(MarkerRecord)) then
+    (FormID(ReadBackObject) <> FormID(ObjectRecord)) then
     raise Exception.Create(PropertyNameValue + ' did not read back');
 
   AddMessage(
     '[DNT] DNT_WizardTravelService ' + PropertyNameValue + ' -> ' +
-    MarkerEditorID + ' [REFR:' + IntToHex(MarkerFormID, 8) + ']'
+    ObjectEditorID + ' [' + ExpectedSignature + ':' +
+    IntToHex(ObjectFormID, 8) + ']'
   );
 end;
 
@@ -1321,19 +1322,34 @@ begin
       $00081A,
       'DNT_WG_Request_Calcelmo'
     );
-    ConfigureServiceMarker(
+    ConfigureServiceObjectProperty(
+      'FarePaymentSound',
+      $000334AB,
+      'SOUN',
+      'ITMGoldDown'
+    );
+    ConfigureServiceObjectProperty(
+      'CollegeMarker',
+      $00046BDF,
+      'REFR',
+      'WinterholdCollegeMapMarkerRef'
+    );
+    ConfigureServiceObjectProperty(
       'SolitudeMarker',
       $0002C194,
+      'REFR',
       'BluePalaceAudienceMarker'
     );
-    ConfigureServiceMarker(
+    ConfigureServiceObjectProperty(
       'WindhelmMarker',
       $000A3F1C,
+      'REFR',
       'WindhelmWuunferthLabMarker'
     );
-    ConfigureServiceMarker(
+    ConfigureServiceObjectProperty(
       'MarkarthMarker',
       $0003692A,
+      'REFR',
       'MarkarthCastleWizardVendorMarkerREF'
     );
     ConfigureHubMenu;

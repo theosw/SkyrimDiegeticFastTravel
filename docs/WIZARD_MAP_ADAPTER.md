@@ -93,18 +93,37 @@ These are distinct from the core service's interior arrival references.
 
 ## Live promotion gate
 
-The adapter remains Candidate until one monitored test confirms:
+The corrected adapter is live-proven. Every behavior in the promotion matrix
+has been confirmed:
 
-1. Eligible faculty show both the new map option and the old list option.
-2. Ancano and other ineligible actors do not show the map option.
-3. The map opens correctly at 32:9 and only the five destination markers are
-   selectable.
-4. Cancelling the map produces `WIZARD_MAP_CANCEL`, removes no gold, and leaves
-   the player in place.
-5. Selecting one marker produces `WIZARD_MAP_SELECT` followed by one matching
-   core `WIZARD_TRAVEL_START` / `WIZARD_TRAVEL_COMPLETE` pair.
-6. Fare denial still comes from the core service and does not move the player.
-7. The original dialogue list still completes a regression trip.
+- [x] Eligible College faculty expose the map prompt while the old list remains
+  available.
+- [x] Ancano and other ineligible actors do not show the map option.
+- [x] The map opens correctly at 32:9.
+- [x] Only the five whitelisted destination markers can be selected.
+- [x] Cancelling produces `WIZARD_MAP_CANCEL`, removes no gold, and leaves the
+  player in place.
+- [x] Selecting a marker produces `WIZARD_MAP_SELECT` followed by one matching
+  core `WIZARD_TRAVEL_START` / `WIZARD_TRAVEL_COMPLETE` pair.
+- [x] Map-initiated fare denial still comes from the core service and does not
+  move the player.
+- [x] The original dialogue list completes a regression trip.
+
+The first successful map session selected Solitude through Mirabelle and
+Riften through Phinis; both completed with fare 250 and were followed by
+successful city-wizard returns to the College. The corrected prompt first
+became visible after saving once with the adapter installed and reloading that
+save, so future clean-install tests should include an explicit save/reload
+checkpoint.
+
+The later exterior-College session confirmed Ancano exclusion, the five-marker
+whitelist, and two cancellation paths. Both cancellations emitted
+`WIZARD_MAP_CANCEL` with no select, travel, payment, or movement. The final
+fare-feedback pass selected Windhelm through Mirabelle with 22 gold and
+emitted `WIZARD_MAP_SELECT` followed by
+`WIZARD_TRAVEL_DENIED reason=gold required=250 available=22`, with no
+start/completion, payment, or movement. A funded trip in the same pass played
+vanilla `ITMGoldDown` and completed normally.
 
 Use the map-aware monitored harness for this matrix:
 

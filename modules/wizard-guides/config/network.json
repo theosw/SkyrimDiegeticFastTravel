@@ -1,13 +1,17 @@
 {
   "schema_version": 1,
   "fare_per_hop": 250,
+  "fare_feedback": {
+    "insufficient_funds": "top_left_notification",
+    "payment_sound": "0334AB:Skyrim.esm"
+  },
   "destinations": [
     {
       "id": "college",
       "name": "College of Winterhold",
       "service_npc": "01C199:Skyrim.esm",
       "service_reference": "01C1A7:Skyrim.esm",
-      "arrival_marker": "036A67:Skyrim.esm",
+      "arrival_marker": "046BDF:Skyrim.esm",
       "links": [
         "whiterun",
         "riften",

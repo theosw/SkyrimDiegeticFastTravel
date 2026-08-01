@@ -389,6 +389,41 @@ to Markarth and then Calcelmo back to the College. The successful immediate
 return conversation demonstrates a usable arrival with convenient access to
 Calcelmo.
 
+### RUN-007 — Exterior College hub marker
+
+**Status:** Proven
+
+**Claim:** Persistent reference `00046BDF:Skyrim.esm`
+(`WinterholdCollegeMapMarkerRef`) is a better College hub arrival point than
+Phinis's private-room sleep marker.
+
+**Evidence:** A focused headless-xEdit inventory places the reference at
+`116258.921875,111530.132812,-7719.998536`, beside the exterior College tour
+and Mirabelle quest-marker cluster. It is a vanilla `MapMarker` reference with
+no override among the loaded Skyrim, USSEP, and JK's College records. The
+candidate core ESP binds its sole `CollegeMarker` property to this exact
+reference, and the independent wizard-star audit passes. The ESP is
+byte-idempotent at SHA-256
+`AC92D9C14E7E9BFAB9DC09C28A4112014CF069C1536336B652C43EF698E54374`.
+The exact candidate payload is
+`dist\DiegeticTravelWizardGuides-exterior-college-candidate.zip`, SHA-256
+`E958E0AD2B43F282A9C214FEFFBABA5097601F77566DAB5789DB92C0C6625F0B`.
+
+Existing saves may retain the old quest-script property even after the ESP
+binding changes. The candidate service therefore resolves
+`00046BDF:Skyrim.esm` through `Game.GetFormFromFile` when the College marker is
+first requested, replaces a stale property, and emits
+`WIZARD_TRAVEL_MIGRATE`. New games still receive the audited VMAD binding.
+
+**Gameplay evidence:** In the monitored 2026-07-31 pass, the existing save
+emitted exactly one `WIZARD_TRAVEL_MIGRATE property=CollegeMarker` trace before
+Wylandriah completed the first return to the exterior marker. A later Farengar
+return completed without another migration. The user confirmed that the public
+arrival location was usable, then completed College-to-Whiterun and
+College-to-Riften map trips. Arrival preserves the player's pre-teleport facing
+because the service does not force a rotation; this was acceptable in the live
+test.
+
 ## Workflow claims
 
 ### TOOL-001 — Patched headless xEdit
@@ -425,7 +460,7 @@ the first monitored map-adapter pass.
 
 ### UI-001 — BCD as a wizard selection-only map adapter
 
-**Status:** Candidate
+**Status:** Proven
 
 **Claim:** A separate adapter can call BCD's native filtered MapMenu, translate
 one of five selected world-map marker references to the wizard service's stable
@@ -446,18 +481,52 @@ for reusing the core top-level branch without becoming its Starting Topic. The
 adapter quest loaded at runtime but no map prompt appeared and no map trace ran.
 The corrected candidate owns a dedicated top-level branch and is byte-idempotent
 at ESP SHA-256
-`74D1EF6F6268BFAF5CCC12FA3D6CF4B074790ECC655A233E0AA4481132A08FE4`; the core
-ESP remains unchanged at
-`F81562179374815AEF3D57015BC0EBC7AD40B7235A730CB727E7994F7EF68B4F`. The
-independent audit passes both integration masters, the five-entry whitelist,
-seven quest properties, faculty eligibility, dedicated branch ownership and
-Starting Topic, and the OnBegin picker fragment. The corrected candidate package
-is `dist\DiegeticTravelWizardMapAdapter-alpha.zip`, SHA-256
+`74D1EF6F6268BFAF5CCC12FA3D6CF4B074790ECC655A233E0AA4481132A08FE4`. Its first
+successful live pass used core ESP
+`F81562179374815AEF3D57015BC0EBC7AD40B7235A730CB727E7994F7EF68B4F`; the
+independent adapter audit also passes against the exterior-College candidate
+core `AC92D9C1...E54374`. The audit checks both integration masters, the
+five-entry whitelist, seven quest properties, faculty eligibility, dedicated
+branch ownership and Starting Topic, and the OnBegin picker fragment. The
+corrected candidate package is `dist\DiegeticTravelWizardMapAdapter-alpha.zip`, SHA-256
 `F55A9B42C6DF05F90A612DEC25168D43CC748C5CD36B3E1F80920B84E6BA3D95`.
 
-**Required test:** Confirm 32:9 rendering and five-marker selection, cancellation
-without payment, one selected trip with map/core trace pairs, core fare denial,
-Ancano exclusion, and one successful trip through the retained dialogue list.
+**Gameplay evidence:** With the corrected adapter unchanged, the prompt became
+visible after the game saved once with the adapter installed and then reloaded
+that save. At 32:9, Mirabelle opened the map and selection of Solitude emitted
+`WIZARD_MAP_OPEN`, `WIZARD_MAP_SELECT destination=Solitude`, and exactly one
+matching `WIZARD_TRAVEL_START` / `WIZARD_TRAVEL_COMPLETE` pair at fare 250.
+Sybille then completed the College return. Phinis repeated the map flow to
+Riften, followed by a successful Wylandriah-to-College return. No
+`WIZARD_MAP_REJECT`, `WIZARD_MAP_DENIED`, or DNT travel failure appeared. A
+preceding run with the same adapter installed completed the retained dialogue
+list from Faralda to Windhelm and Wuunferth back to the College.
+
+The same monitored session then proved cancellation and filtering. Closing the
+map without a selection emitted `WIZARD_MAP_CANCEL`, removed no gold, and left
+the player in place. Attempting a non-whitelisted marker produced another clean
+open/cancel pair with no select or travel trace. The user confirmed that only
+the five intended markers were selectable and that Ancano had no map prompt;
+Ancano correctly produced no DNT trace because dialogue eligibility rejected
+him before the picker script ran.
+
+The final monitored pass proved both fare-feedback paths. A funded faculty map
+trip selected Whiterun and emitted one start/completion pair. A direct Farengar
+request with 22 gold emitted
+`WIZARD_TRAVEL_DENIED reason=gold required=250 available=22`; after funding,
+the same route emitted one start/completion pair. Mirabelle then opened the
+map, selected Windhelm, and emitted `WIZARD_MAP_SELECT` followed by
+`WIZARD_TRAVEL_DENIED reason=gold required=250 available=22`, with no later
+start or completion. The user confirmed that denials displayed the top-left
+notification, removed no gold, played no payment cue, and caused no movement;
+successful payment played vanilla `ITMGoldDown` and travel completed.
+
+**Known UX debt:** Dialogue responses are chosen before the service performs
+its authoritative fare check, so a court wizard may say an affirmative vanilla
+line immediately before the notification denies travel. Keep the service check
+as the authority. A future dialogue-only refinement may add inverse player-gold
+conditions and genuine SharedInfo denial donors; the map path should remain
+notification-only because selection occurs after dialogue closes.
 
 ## Promotion gate for future claims
 
@@ -476,7 +545,8 @@ Promote a dialogue candidate to **Proven** only after all applicable checks:
 ## Deferred Phase 1 ideas
 
 - Trust, faction, disposition, and quest-based service gates.
-- Promotion and polish of the Candidate BCD wizard map adapter.
+- Voice-semantic polish for dialogue-initiated insufficient funds, using
+  genuine SharedInfo donors with verified speaker-specific FUZ assets.
 - More College spokes beyond Whiterun, Riften, Solitude, Windhelm, and Markarth.
 - Travel-time passage, rest/recovery behavior, and intervention/recall magic.
 

@@ -72,7 +72,7 @@ message box and no charge.
 The module reuses persistent markers already present in Skyrim and moved by the
 installed JK interior overhauls where necessary:
 
-- College: `MGPhinisSleepMarker` (`036A67:Skyrim.esm`)
+- College: `WinterholdCollegeMapMarkerRef` (`046BDF:Skyrim.esm`)
 - Whiterun: `FarengarLabMARKER` (`0B7AA5:Skyrim.esm`)
 - Riften: `RiftenKeepWizardLabMarker` (`044A4A:Skyrim.esm`)
 - Solitude: `BluePalaceAudienceMarker` (`02C194:Skyrim.esm`), whose installed
@@ -132,6 +132,26 @@ voices for Ancano and Calcelmo. `ANAM` is therefore not accepted as an
 eligibility gate. The corrected build requires an explicit subject
 `GetIsID == 1` condition on every exact-speaker INFO, and the structural audit
 enforces that contract.
+
+The live-proven fare-feedback build replaces the normal insufficient-funds
+modal with `Debug.Notification`, keeping the denial visible in the top-left without
+interrupting play. Successful payment plays Skyrim's vanilla `ITMGoldDown`
+sound (`000334AB:Skyrim.esm`) immediately after the silent gold removal. The
+sound is an audited `FarePaymentSound` quest-script property rather than a
+runtime EditorID lookup. The ESP is byte-idempotent at SHA-256
+`2DF34217F6576D3FCFE720E1E101690216E6D94157C26A9D79544A1E7BA83C21`;
+both Papyrus scripts compile with zero errors and warnings, and the independent
+wizard-star and map-adapter audits pass. The monitored pass proved the
+notification and absence of payment/movement on both direct-dialogue and map
+denials at 22 gold, plus the payment sound and normal completion on funded
+trips. The exact promoted package is
+`dist\DiegeticTravelWizardGuides-phase1.zip`, SHA-256
+`0029CC61CE6A9D94A900033BA1BACB341F9756F2E8F611F57F534DC4F3DDE759`.
+
+Dialogue-initiated denial still has one semantic rough edge: the terminal INFO
+can play its affirmative vanilla response before the authoritative service
+check rejects the fare. Denial-specific SharedInfo research is the next voice
+task; the service-side check remains mandatory.
 
 Do not launch Skyrim as part of the build. Run the gameplay pass only after
 explicit approval.

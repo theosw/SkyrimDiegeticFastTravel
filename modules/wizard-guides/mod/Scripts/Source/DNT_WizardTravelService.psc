@@ -2,6 +2,7 @@ Scriptname DNT_WizardTravelService extends Quest
 
 Actor Property PlayerRef Auto
 MiscObject Property Gold001 Auto
+Sound Property FarePaymentSound Auto
 
 ObjectReference Property CollegeMarker Auto
 ObjectReference Property WhiterunMarker Auto
@@ -39,12 +40,15 @@ Bool Function RequestTravel(String DestinationId, ObjectReference SourceRef = No
     Int AvailableGold = PlayerRef.GetItemCount(Gold001)
     If AvailableGold < FarePerHop
         Debug.Trace("[DNT] WIZARD_TRAVEL_DENIED source=" + SourceRef + " destination=" + DestinationId + " reason=gold required=" + FarePerHop + " available=" + AvailableGold)
-        Debug.MessageBox("You need " + FarePerHop + " gold for this journey. You have " + AvailableGold + ".")
+        Debug.Notification("You need " + FarePerHop + " gold for this journey.")
         Return False
     EndIf
 
     GoToState("Travelling")
     PlayerRef.RemoveItem(Gold001, FarePerHop, True)
+    If FarePaymentSound != None
+        FarePaymentSound.Play(PlayerRef)
+    EndIf
     Debug.Trace("[DNT] WIZARD_TRAVEL_START source=" + SourceRef + " destination=" + DestinationId + " fare=" + FarePerHop)
     Utility.Wait(1.0)
     PlayerRef.MoveTo(DestinationMarker)
@@ -55,7 +59,7 @@ EndFunction
 
 ObjectReference Function GetDestinationMarker(String DestinationId)
     If DestinationId == "college"
-        Return CollegeMarker
+        Return GetCollegeMarker()
     ElseIf DestinationId == "whiterun"
         Return WhiterunMarker
     ElseIf DestinationId == "riften"
@@ -69,6 +73,19 @@ ObjectReference Function GetDestinationMarker(String DestinationId)
     EndIf
 
     Return None
+EndFunction
+
+ObjectReference Function GetCollegeMarker()
+    ; Quest script properties are serialized into existing saves. Resolve the
+    ; new exterior hub once at runtime so an upgraded save cannot retain the
+    ; former MGPhinisSleepMarker value indefinitely.
+    ObjectReference ExteriorCollegeMarker = Game.GetFormFromFile(289759, "Skyrim.esm") as ObjectReference
+    If ExteriorCollegeMarker != None && CollegeMarker != ExteriorCollegeMarker
+        CollegeMarker = ExteriorCollegeMarker
+        Debug.Trace("[DNT] WIZARD_TRAVEL_MIGRATE property=CollegeMarker marker=" + CollegeMarker)
+    EndIf
+
+    Return CollegeMarker
 EndFunction
 
 State Travelling

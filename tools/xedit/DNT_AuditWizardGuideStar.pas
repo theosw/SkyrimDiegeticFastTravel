@@ -400,14 +400,14 @@ begin
     raise Exception.Create(EditorID + ' Service is missing');
 end;
 
-procedure AuditServiceMarker(
+procedure AuditServiceObjectProperty(
   const PropertyNameValue: string;
-  ExpectedMarkerFormID: Cardinal;
-  const ExpectedMarkerEditorID: string
+  ExpectedObjectFormID: Cardinal;
+  const ExpectedSignature, ExpectedObjectEditorID: string
 );
 var
   ServiceQuest, VMAD, Scripts, ScriptEntry, Properties, PropertyEntry,
-    MarkerRecord: IInterface;
+    ObjectRecord: IInterface;
   PropertyName: string;
   i, MatchCount: Integer;
 begin
@@ -441,22 +441,26 @@ begin
     PropertyName := GetElementEditValues(PropertyEntry, 'propertyName');
     if PropertyName = PropertyNameValue then begin
       Inc(MatchCount);
-      MarkerRecord := LinksTo(
+      ObjectRecord := LinksTo(
         ElementByPath(
           PropertyEntry,
           'Value\Object Union\Object v2\FormID'
         )
       );
-      if not Assigned(MarkerRecord) or
-        (FormID(MarkerRecord) <> ExpectedMarkerFormID) then
+      if not Assigned(ObjectRecord) or
+        (FormID(ObjectRecord) <> ExpectedObjectFormID) then
         raise Exception.Create(
           PropertyNameValue + ' does not point to ' +
-          IntToHex(ExpectedMarkerFormID, 8)
+          IntToHex(ExpectedObjectFormID, 8)
         );
-      if GetElementEditValues(MarkerRecord, 'EDID') <>
-        ExpectedMarkerEditorID then
+      if Signature(ObjectRecord) <> ExpectedSignature then
         raise Exception.Create(
-          PropertyNameValue + ' marker EditorID does not match'
+          PropertyNameValue + ' object signature does not match'
+        );
+      if GetElementEditValues(ObjectRecord, 'EDID') <>
+        ExpectedObjectEditorID then
+        raise Exception.Create(
+          PropertyNameValue + ' object EditorID does not match'
         );
     end;
   end;
@@ -467,7 +471,8 @@ begin
     );
   ReportLines.Add(
     'PASS service ' + PropertyNameValue + ' -> ' +
-    ExpectedMarkerEditorID + ' ' + IntToHex(ExpectedMarkerFormID, 8)
+    ExpectedObjectEditorID + ' ' +
+    IntToHex(ExpectedObjectFormID, 8)
   );
 end;
 
@@ -702,19 +707,34 @@ begin
       $000DBA22,
       $0001F319
     );
-    AuditServiceMarker(
+    AuditServiceObjectProperty(
+      'FarePaymentSound',
+      $000334AB,
+      'SOUN',
+      'ITMGoldDown'
+    );
+    AuditServiceObjectProperty(
+      'CollegeMarker',
+      $00046BDF,
+      'REFR',
+      'WinterholdCollegeMapMarkerRef'
+    );
+    AuditServiceObjectProperty(
       'SolitudeMarker',
       $0002C194,
+      'REFR',
       'BluePalaceAudienceMarker'
     );
-    AuditServiceMarker(
+    AuditServiceObjectProperty(
       'WindhelmMarker',
       $000A3F1C,
+      'REFR',
       'WindhelmWuunferthLabMarker'
     );
-    AuditServiceMarker(
+    AuditServiceObjectProperty(
       'MarkarthMarker',
       $0003692A,
+      'REFR',
       'MarkarthCastleWizardVendorMarkerREF'
     );
     AuditHub;

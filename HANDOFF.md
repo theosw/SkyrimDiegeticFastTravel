@@ -9,9 +9,33 @@ rejected approaches, live-proven behavior, and the next candidate test. In
 particular, do not treat xEdit accepting a dialogue field as runtime proof.
 Commit `ae1dc5c`, whose ESP is SHA-256
 `3F5C3BEBCBBD26DC70517A7943CF36E918942C57240736A3BFD3731EAB2D9550`, is the
-previous live-proven Solitude checkpoint. The corrected Windhelm/Markarth build
-is now the latest live-proven gameplay checkpoint; its ESP is SHA-256
-`F81562179374815AEF3D57015BC0EBC7AD40B7235A730CB727E7994F7EF68B4F`.
+previous live-proven Solitude checkpoint. The exterior-College build then
+rebound `CollegeMarker` to `WinterholdCollegeMapMarkerRef`. The monitored pass migrated
+an existing save exactly once, completed two city-to-College returns, and the
+user confirmed that the exterior landing was usable. Its exact payload is
+`dist\DiegeticTravelWizardGuides-exterior-college-candidate.zip`, SHA-256
+`E958E0AD2B43F282A9C214FEFFBABA5097601F77566DAB5789DB92C0C6625F0B`.
+Because quest-script properties persist in existing saves,
+`DNT_WizardTravelService.GetCollegeMarker` resolves `00046BDF:Skyrim.esm` on
+first access and replaces a stale serialized sleep-marker property. A migrated
+save emits `WIZARD_TRAVEL_MIGRATE` before its first College trip.
+
+The fare-feedback build is now the latest live-proven Phase 1 checkpoint. It is
+byte-idempotent at ESP SHA-256
+`2DF34217F6576D3FCFE720E1E101690216E6D94157C26A9D79544A1E7BA83C21`.
+It replaces the ordinary insufficient-funds modal with a top-left
+`Debug.Notification` and binds `FarePaymentSound` to vanilla `ITMGoldDown`
+`000334AB:Skyrim.esm`, played only after successful silent gold removal. The
+promoted exact package is `dist\DiegeticTravelWizardGuides-phase1.zip`, SHA-256
+`0029CC61CE6A9D94A900033BA1BACB341F9756F2E8F611F57F534DC4F3DDE759`.
+Both scripts compile with zero errors and warnings; the generator is
+byte-idempotent; and the independent wizard-star and map-adapter audits pass.
+The monitored pass proved a funded map trip, a direct-dialogue denial and
+funded retry, and a map-initiated denial. The two denials displayed the
+top-left notification, charged nothing, and did not move the player; the
+funded trips played the payment cue and completed normally. The remaining UX
+debt is semantic: a terminal dialogue INFO may still play its affirmative
+vanilla response before the service discovers that the player lacks gold.
 
 ## Wizard-guide Phase 1
 
@@ -93,8 +117,10 @@ described below.
 Arrival markers reuse stable Skyrim references whose effective positions
 already reflect the installed JK interiors:
 
-- College: `036A67:Skyrim.esm` (`MGPhinisSleepMarker`), winner
-  `JK's College of Winterhold.esp`
+- College: `046BDF:Skyrim.esm`
+  (`WinterholdCollegeMapMarkerRef`), vanilla winner. This replaces Phinis's
+  private-room sleep marker with Skyrim's exterior College fast-travel anchor;
+  the focused monitored pass confirmed the public exterior arrival is usable.
 - Whiterun: `0B7AA5:Skyrim.esm` (`FarengarLabMARKER`), vanilla winner
 - Riften: `044A4A:Skyrim.esm` (`RiftenKeepWizardLabMarker`), winner
   `JK's Mistveil Keep.esp`
@@ -164,16 +190,16 @@ xEdit at `build/xedit-patched/SSEEdit64.exe`, patches the workspace copy only,
 and deploys to LoreRim only when passed `-Deploy`; deployment is refused while
 `SkyrimSE` is running. `-Deploy` copies the complete owned module payload so
 the ESP, SEQ, and newly compiled PEX files stay in sync. The latest fully proven
-ESP is SHA-256
-`F81562179374815AEF3D57015BC0EBC7AD40B7235A730CB727E7994F7EF68B4F`.
-The exact live-tested payload was packaged with `-PackageOnly` as
-`dist\DiegeticTravelWizardGuides-phase1.zip`, SHA-256
-`55301E384F844661C0F5CE884115F54AD66E5039C965D5A99E3B95FF86086C7E`.
+ESP is the fare-feedback build at SHA-256
+`2DF34217F6576D3FCFE720E1E101690216E6D94157C26A9D79544A1E7BA83C21`.
+Its exact live-tested payload is `dist\DiegeticTravelWizardGuides-phase1.zip`,
+SHA-256
+`0029CC61CE6A9D94A900033BA1BACB341F9756F2E8F611F57F534DC4F3DDE759`.
 A normal package build recompiles the PEX files and changes their binary hashes;
 use `-PackageOnly` when checkpointing already-tested artifacts, or require a
 new live pass after recompilation.
 
-### BCD wizard map-adapter candidate
+### BCD wizard map adapter
 
 The optional adapter lives under `modules\wizard-map-picker` and is deployed as
 additional files inside the existing owned
@@ -217,8 +243,24 @@ The corrected candidate package is
 `dist\DiegeticTravelWizardMapAdapter-alpha.zip`, SHA-256
 `F55A9B42C6DF05F90A612DEC25168D43CC748C5CD36B3E1F80920B84E6BA3D95`.
 `DiegeticTravelWizardMap.esp`, BCD, and the core plugin are enabled in the
-dedicated profile. Do not promote the adapter until the remaining monitored
-matrix in `docs\WIZARD_MAP_ADAPTER.md` passes.
+dedicated profile. The complete monitored matrix in
+`docs\WIZARD_MAP_ADAPTER.md` now passes.
+
+The unchanged corrected adapter subsequently passed its first end-to-end live
+selection run at 32:9. Its prompt appeared after saving once with the adapter
+installed and reloading that save. Mirabelle opened the map, selecting Solitude
+emitted `WIZARD_MAP_SELECT` and one matching core start/complete pair, and
+Sybille returned the player to the College. Phinis then opened the map,
+selecting Riften completed another matching pair, and Wylandriah returned the
+player to the College. The prior pass with the same adapter installed also
+completed a retained-list Faralda-to-Windhelm and Wuunferth-to-College
+regression. The exterior-College pass then proved Ancano exclusion, the exact
+five-marker whitelist, and cancellation with no payment or movement. The final
+pass selected Windhelm through Mirabelle with only 22 gold and emitted
+`WIZARD_MAP_SELECT` followed by `WIZARD_TRAVEL_DENIED reason=gold`, with no
+start/completion, payment, or movement. A funded trip in the same pass played
+the payment sound and completed normally. The adapter is therefore Proven as
+a selection-only front end to the core service.
 
 Run that matrix with
 `tools\Run-WizardGuidesTest.ps1 -RequireMapAdapter`. This mode fails preflight
@@ -305,9 +347,11 @@ Wuunferth-to-College, and a faculty-to-Whiterun regression all completed. The
 user confirmed the tested voices matched their speakers and both arrivals were
 usable. Wuunferth's line ended slightly early because travel begins after one
 second; timing polish is deferred while the final voice set remains unsettled.
-The complete module is deployed to the owned LoreRim mod under
-`UltraDiegeticTravel`; all seven ESP/README/SEQ/PEX/PSC payload hashes match the
-workspace, and the non-launching profile preflight passes.
+The complete live-proven fare-feedback build is deployed to the owned LoreRim
+mod under `UltraDiegeticTravel`. Its core payload is synchronized with the
+workspace, and the unchanged live-proven map-adapter payload remains installed.
+The generator and both independent audits pass, and the final monitored pass
+proved direct and map denials plus funded payment feedback.
 
 At this checkpoint MO2's active profile is `UltraDiegeticTravel`. The complete
 workspace payload has been deployed to
