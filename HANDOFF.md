@@ -36,6 +36,13 @@ top-left notification, charged nothing, and did not move the player; the
 funded trips played the payment cue and completed normally. The remaining UX
 debt is semantic: a terminal dialogue INFO may still play its affirmative
 vanilla response before the service discovers that the player lacks gold.
+Read-only base-game and DLC research is recorded in
+`docs\WIZARD_FARE_DENIAL_VOICES.md`. Two genuine SharedInfo donors cover eight
+of the thirteen target voice types, including four of five direct court
+wizards. The recommended next candidate adds inverse player-gold conditions to
+terminal INFOs, uses those four voiced direct refusals, and uses subtitle-only
+fallbacks for Wuunferth and the College destination menu. The map path remains
+notification-only.
 
 ## Wizard-guide Phase 1
 

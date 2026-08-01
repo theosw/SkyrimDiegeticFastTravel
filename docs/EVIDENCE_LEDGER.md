@@ -304,6 +304,34 @@ top-level branch whose Starting Topic is `DNT_WG_OpenMap`. The topic and branch
 are both owned by the running adapter quest. The independent audit must reject
 reuse of the core branch and require the two-way branch/topic links.
 
+### DLG-013 — Insufficient-funds dialogue responses
+
+**Status:** Supported; implementation candidate not yet live-tested
+
+**Claim:** Mutually exclusive player-gold conditions can prevent an affirmative
+terminal response from playing before the service denies a fare, while genuine
+vanilla SharedInfos provide correct voiced refusals for most direct court
+wizards.
+
+**Evidence:** A read-only headless-xEdit scan of Skyrim and all three official
+DLCs found genuine fare-refusal SharedInfos and separately rejected 170
+ordinary dialogue matches. Skyrim `000C6E2D` says `I'm sorry, but you don't seem
+to have enough gold to pay for that.` and has exact FUZ files for 5/13 target
+voice types. HearthFires `0000B0B2` says `I'm sorry, but you can't afford that
+right now.` and covers four types. Their union covers eight distinct types,
+including Farengar, Wylandriah, Sybille, Calcelmo, and seven of twelve permanent
+faculty. No semantically suitable genuine SharedInfo covers `MaleOldGrumpy`,
+`MaleSlyCynical`, `FemaleElfHaughty`, `FemaleShrill`, or Mirabelle's unique
+voice. The existing carriage generator already authors inverse player
+`GetItemCount Gold001` conditions with a server-side payment recheck.
+
+**Candidate decision:** Gold-condition only terminal INFOs, not the College hub.
+Keep funded affirmative INFOs at `>= 250`; add denial INFOs at `< 250` that call
+the same service. Voice Farengar, Wylandriah, Sybille, and Calcelmo through the
+verified donors; use an owned forced-subtitle denial for Wuunferth and one
+subtitle denial per College destination. Keep the map path notification-only.
+See `docs\WIZARD_FARE_DENIAL_VOICES.md` for the full matrix and rejected lines.
+
 ## Runtime claims
 
 ### RUN-001 — Travel fragment timing
