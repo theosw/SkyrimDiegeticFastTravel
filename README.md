@@ -1,12 +1,16 @@
 # Diegetic Travel
 
-Diegetic Travel is a Skyrim SE carriage-network addon built on
-[Carriage and Ferry Travel Overhaul (CFTO)](https://www.nexusmods.com/skyrimspecialedition/mods/8379).
-It keeps CFTO's actors and travel behavior, but replaces the pick-any-marker layer
-with authored roads, live hazards, route choice, graph-derived fares, and quoted
-travel time.
+Diegetic Travel is a Morrowind-inspired travel network for Skyrim Special
+Edition. It replaces one-click fast travel with interconnected in-world
+services whose routes, costs, and limitations make geography matter. The first
+gameplay-proven pillar is a College-centred wizard-guide network with a reusable
+physical parchment destination picker.
 
-The current beta track is deliberately carriage-only:
+The repository also contains a carriage-network prototype built on
+[Carriage and Ferry Travel Overhaul (CFTO)](https://www.nexusmods.com/skyrimspecialedition/mods/8379).
+It keeps CFTO's actors and travel behavior, but replaces the pick-any-marker
+layer with authored roads, live hazards, route choice, graph-derived fares, and
+quoted travel time:
 
 - carriage paths use carriage edges only;
 - CFTO ferries remain untouched until their per-ferryman lanes are decoded;
@@ -15,8 +19,8 @@ The current beta track is deliberately carriage-only:
 - active refuse-tier chokepoints remove a path from consideration;
 - the cheapest remaining path supplies the fare and time estimate.
 
-This repository is the public-release implementation. The LoreRim research and
-load-order datamine remain upstream evidence, not runtime dependencies.
+Local LoreRim research, downloaded learning sources, and load-order datamines
+remain development evidence rather than redistributed runtime dependencies.
 
 The project also contains a separate
 [`modules/wizard-guides`](modules/wizard-guides) vertical slice. That module
@@ -42,6 +46,18 @@ destination IDs; the core still validates, charges, logs, and teleports. The
 proven dialogue list remains available as a fallback. See
 [`docs/WIZARD_MAP_ADAPTER.md`](docs/WIZARD_MAP_ADAPTER.md) for the pinned
 upstream contract and live-test gate.
+
+The new [`modules/parchment-picker`](modules/parchment-picker) candidate is a
+provider-neutral alternative to the native tween MapMenu. It uses a blocking
+SKSE Menu Framework window, provider-defined artwork/aspect/marker positions,
+and returns only a selection index to Papyrus. The wizard provider maps that
+index to the same stable core destination IDs. The module intentionally ships
+no map artwork or audio: a separate mod-manager dependency supplies the
+configured texture. Its native/Papyrus builds and structural audits pass. At
+32:9, gameplay tests prove the five-route parchment layout, gold idle/red hover
+presentation, Norden-style cursor, no-default startup, Escape/button
+cancellation, HUD restoration, service handoff, fare handling, and completed
+travel. The BCD adapter and five-choice dialogue menu remain intact fallbacks.
 
 Dialogue hypotheses and their actual evidence level are tracked in
 [`docs/EVIDENCE_LEDGER.md`](docs/EVIDENCE_LEDGER.md). Commit `ed004f2` is the

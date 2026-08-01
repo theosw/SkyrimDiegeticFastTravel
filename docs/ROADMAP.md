@@ -27,4 +27,8 @@
   while retaining this mod's route whitelist, graph fare, hours, and CFTO handoff.
 - [x] Live-test the optional wizard-guide BCD adapter at 32:9, including map cancel,
   core fare denial, one selected trip, and the dialogue-list fallback.
-- Stabilize and integrate the optional SKSE paper map.
+- [x] Build and statically audit the provider-neutral SKSE parchment picker,
+  including an external-art contract and 32:9-safe layout.
+- [ ] Run the parchment picker gameplay matrix for mouse/controller selection,
+  cancel, missing/found artwork, fare denial, and core service handoff.
+- [ ] Add the professor's physical map/showing animation after picker proof.

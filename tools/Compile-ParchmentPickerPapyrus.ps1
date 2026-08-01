@@ -1,0 +1,39 @@
+param(
+    [string]$LoreRimRoot = "D:\Lorerim"
+)
+
+$ErrorActionPreference = "Stop"
+
+$compilerRoot = Join-Path $LoreRimRoot `
+    "mods\Project New Reign - Nemesis Unlimited Behavior Engine\Nemesis_Engine\Papyrus Compiler"
+$compiler = Join-Path $compilerRoot "PapyrusCompiler.exe"
+$flags = Join-Path $compilerRoot "scripts\TESV_Papyrus_Flags.flg"
+$projectRoot = Split-Path -Parent $PSScriptRoot
+$moduleRoot = Join-Path $projectRoot "modules\parchment-picker"
+$source = Join-Path $moduleRoot "mod\Scripts\Source"
+$wizardSource = Join-Path $projectRoot "modules\wizard-guides\mod\Scripts\Source"
+$stubs = Join-Path $projectRoot "tools\papyrus-stubs"
+$output = Join-Path $moduleRoot "mod\Scripts"
+
+foreach ($requiredPath in @($compiler, $flags, $source, $wizardSource, $stubs)) {
+    if (-not (Test-Path -LiteralPath $requiredPath)) {
+        throw "Required parchment-picker Papyrus input not found: $requiredPath"
+    }
+}
+
+New-Item -ItemType Directory -Force -Path $output | Out-Null
+$imports = "$source;$wizardSource;$stubs"
+$scripts = Get-ChildItem -LiteralPath $source -File -Filter "DNT_*Parchment*.psc" | Sort-Object Name
+if ($scripts.Count -ne 3) {
+    throw "Expected exactly three parchment-picker scripts, found $($scripts.Count)."
+}
+
+foreach ($script in $scripts) {
+    Write-Host "Compiling $($script.Name)"
+    & $compiler $script.FullName "-f=$flags" "-i=$imports" "-o=$output"
+    if ($LASTEXITCODE -ne 0) {
+        throw "Papyrus compilation failed for $($script.Name)"
+    }
+}
+
+Write-Host "Compiled $($scripts.Count) parchment-picker scripts to $output"

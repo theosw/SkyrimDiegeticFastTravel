@@ -11,12 +11,20 @@ param(
     [switch]$RequireMapAdapter,
     [string]$WizardMapPluginName = "DiegeticTravelWizardMap.esp",
     [string]$BCDPluginName = "Better Carriage Destinations.esp",
+    [switch]$RequireParchmentPicker,
+    [string]$ParchmentModName = "DiegeticTravel - Parchment Picker Test",
+    [string]$ParchmentPluginName = "DiegeticTravelWizardParchment.esp",
+    [string]$ParchmentArtworkModName = "RUSTIC MAPS",
     [string]$OriginalModName = "DiegeticTravel",
     [string]$OriginalPluginName = "DiegeticTravel.esp",
     [string]$AuditModName = "houseCARL - houseCARL_PapyrusAudit",
     [string]$LogPath = (
         Join-Path $env:USERPROFILE `
             "Documents\My Games\Skyrim Special Edition\Logs\Script\Papyrus.0.log"
+    ),
+    [string]$ParchmentLogPath = (
+        Join-Path $env:USERPROFILE `
+            "Documents\My Games\Skyrim Special Edition\SKSE\DNTParchmentPicker.log"
     )
 )
 
@@ -64,6 +72,17 @@ function Assert-TestReady {
             throw "Enable '$BCDPluginName'; the wizard map adapter requires BCD."
         }
     }
+    if ($RequireParchmentPicker) {
+        if ($modlist -notcontains "+$ParchmentModName") {
+            throw "Enable '$ParchmentModName' in the '$ProfileName' profile."
+        }
+        if ($plugins -notcontains "*$ParchmentPluginName") {
+            throw "Enable '$ParchmentPluginName' in the MO2 right pane."
+        }
+        if ($modlist -notcontains "+$ParchmentArtworkModName") {
+            throw "Enable '$ParchmentArtworkModName'; the parchment picker references its loose battle-map texture."
+        }
+    }
     if ($modlist -contains "+$AuditModName") {
         throw "Disable '$AuditModName'; it is audit output, not a runtime dependency."
     }
@@ -90,6 +109,19 @@ function Assert-TestReady {
             (Join-Path $wizardRoot "SEQ\DiegeticTravelWizardMap.seq"),
             (Join-Path $wizardRoot "Scripts\DNT_WizardMapPicker.pex"),
             (Join-Path $wizardRoot "Scripts\DNT_WizardMapFragment.pex")
+        )
+    }
+    if ($RequireParchmentPicker) {
+        $parchmentRoot = Join-Path (Join-Path $instanceRoot "mods") $ParchmentModName
+        $requiredWizardFiles += @(
+            (Join-Path $parchmentRoot $ParchmentPluginName),
+            (Join-Path $parchmentRoot "SEQ\DiegeticTravelWizardParchment.seq"),
+            (Join-Path $parchmentRoot "Scripts\DNT_ParchmentNative.pex"),
+            (Join-Path $parchmentRoot "Scripts\DNT_WizardParchmentFragment.pex"),
+            (Join-Path $parchmentRoot "Scripts\DNT_WizardParchmentPicker.pex"),
+            (Join-Path $parchmentRoot "SKSE\Plugins\DNTParchmentPicker.dll"),
+            (Join-Path (Join-Path (Join-Path $instanceRoot "mods") $ParchmentArtworkModName) `
+                "textures\dungeons\imperial\battlemap01.dds")
         )
     }
     foreach ($requiredWizardFile in $requiredWizardFiles) {
@@ -125,6 +157,7 @@ Assert-TestReady
 Write-Output "Wizard-guide preflight passed for profile '$ProfileName'."
 Write-Output "Runtime module: $WizardPluginName"
 Write-Output "Map adapter: $(if ($RequireMapAdapter) { "$WizardMapPluginName with $BCDPluginName" } else { 'not required' })"
+Write-Output "Parchment picker: $(if ($RequireParchmentPicker) { $ParchmentPluginName } else { 'not required' })"
 Write-Output "Original carriage module: $(if ($AllowOriginalCarriageModule) { 'allowed' } else { 'disabled' })"
 
 if ($ValidateOnly) {
@@ -159,6 +192,9 @@ $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
 $observedFreshLog = $false
 $lineCount = 0
 $completionCount = 0
+$selectionCount = 0
+$nativeLineCount = 0
+$observedFreshNativeLog = $false
 
 Write-Output "Monitoring fresh Papyrus output at: $LogPath"
 while ((Get-Date) -lt $deadline) {
@@ -183,20 +219,49 @@ while ((Get-Date) -lt $deadline) {
             if ($lines.Count -gt $lineCount) {
                 $newLines = @($lines[$lineCount..($lines.Count - 1)])
                 foreach ($line in $newLines) {
-                    if ($line -match "\[DNT\].*WIZARD_(TRAVEL|MAP)") {
+                    if ($line -match "\[DNT\].*WIZARD_(TRAVEL|MAP|PARCHMENT)") {
                         Write-Output "WIZARD LOG: $line"
                         if ($line -match "WIZARD_TRAVEL_COMPLETE") {
                             $completionCount += 1
                             Write-Output "WIZARD TRIP SUCCESS #${completionCount}"
                         }
                     } elseif (
-                        $line -match "(?i)(error|warning).*(DNT_Wizard(Map|Travel)|WIZARD_(MAP|TRAVEL))" -or
-                        $line -match "(?i)(DNT_Wizard(Map|Travel)|WIZARD_(MAP|TRAVEL)).*(error|warning)"
+                        $line -match "(?i)(error|warning).*(DNT_(Parchment|Wizard(Map|Travel|Parchment))|WIZARD_(MAP|TRAVEL|PARCHMENT))" -or
+                        $line -match "(?i)(DNT_(Parchment|Wizard(Map|Travel|Parchment))|WIZARD_(MAP|TRAVEL|PARCHMENT)).*(error|warning)"
                     ) {
                         Write-Warning "WIZARD SCRIPT ISSUE: $line"
                     }
                 }
                 $lineCount = $lines.Count
+            }
+        }
+    }
+
+    if ($RequireParchmentPicker -and (Test-Path -LiteralPath $ParchmentLogPath -PathType Leaf)) {
+        $nativeLogFile = Get-Item -LiteralPath $ParchmentLogPath
+        if ($nativeLogFile.LastWriteTime -ge $launchTime) {
+            $nativeLines = @(Get-Content -LiteralPath $ParchmentLogPath)
+            if (-not $observedFreshNativeLog) {
+                $observedFreshNativeLog = $true
+                Write-Output "Fresh parchment native log detected; picker listener is live."
+            }
+            if ($nativeLines.Count -lt $nativeLineCount) {
+                $nativeLineCount = 0
+            }
+            if ($nativeLines.Count -gt $nativeLineCount) {
+                $newNativeLines = @($nativeLines[$nativeLineCount..($nativeLines.Count - 1)])
+                foreach ($nativeLine in $newNativeLines) {
+                    if ($nativeLine -match "PARCHMENT_") {
+                        Write-Output "PARCHMENT LOG: $nativeLine"
+                        if ($nativeLine -match "PARCHMENT_SELECT") {
+                            $selectionCount += 1
+                            Write-Output "PARCHMENT SELECTION #${selectionCount}"
+                        }
+                    } elseif ($nativeLine -match "(?i)(error|warning|critical)") {
+                        Write-Warning "PARCHMENT NATIVE ISSUE: $nativeLine"
+                    }
+                }
+                $nativeLineCount = $nativeLines.Count
             }
         }
     }

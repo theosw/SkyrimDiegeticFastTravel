@@ -1,6 +1,6 @@
 # Diegetic Travel evidence ledger
 
-Updated: 2026-07-31
+Updated: 2026-08-01
 
 This ledger separates ideas that look valid in tooling from behavior that has
 actually been demonstrated in Skyrim. Update an entry whenever a test changes
@@ -71,6 +71,118 @@ the workspace, and the non-launching profile preflight passes. The exact
 live-tested payload was packaged without recompilation at
 `dist\DiegeticTravelWizardGuides-phase1.zip`, SHA-256
 `55301E384F844661C0F5CE884115F54AD66E5039C965D5A99E3B95FF86086C7E`.
+
+### PARCH-001 — Provider-neutral parchment destination picker
+
+**Status:** Proven (core interaction, five-route layout, visibility, and startup/cursor polish)
+
+**Claim:** A blocking SKSE Menu Framework window can present provider-supplied
+map artwork and normalized destination markers, return only a selection index,
+and leave wizard fare/payment/movement exclusively in the proven core service.
+
+**Offline evidence:** The AE DLL builds cleanly; the three Papyrus scripts
+compile with zero errors and warnings; C++ tests preserve provider art aspect
+and centered safe-canvas layout at 16:9, 21:9, and 32:9; all 26 dynamically
+resolved functions exist in LoreRim's installed SKSE Menu Framework 3.9 DLL;
+and Champollion readback verifies the embedded artwork configuration and
+capitalized labels. The separate generated ESP passes an independent
+headless-xEdit audit, masters the wizard core but not BCD, and regenerates
+byte-identically at SHA-256
+`90DB9BF3FFE1823D0403D4739BF694B8FACC89E498276C66363C5E3C4D760E0B`.
+The current candidate archive is
+`dist\DiegeticTravelParchmentPicker-offline-candidate.zip`, SHA-256
+`95954C5EEF2B09EB4A35E22FA88340A5F99ACFCEBCBAF41197D2B494F3C6F4DB`,
+and contains zero artwork/audio assets.
+
+**Gameplay evidence:** After the known custom-dialogue compatibility save and
+reload, a monitored 32:9 pass opened the RUSTIC parchment four times with the
+configured `(0,0)-(1,0.75)` crop. The original rectangular selection layer was
+usable; a later visible-ring pass showed that its approximate centers did not
+precisely surround several printed crests. Native logs recorded button
+cancellation, a funded Whiterun selection and result-event handoff, plus
+underfunded Whiterun and Solitude selections.
+The service charged/moved nothing for both denials and completed the funded
+route. Papyrus recorded two completed trips; neither log contained native or
+script errors/warnings. The runtime dynamic API identified itself as version
+3.7 even though the installed framework file is labelled 3.9.0.
+
+A later monitored pass displayed `Whiterun - 250 gold` correctly and completed
+a funded Solitude selection. Native and Papyrus logs agreed on destination,
+fare, and successful completion. This promotes the ASCII footer and a funded
+non-default destination to Proven.
+
+**Rejected HUD attempt:** The same pass logged the single vanilla `HUD Menu`
+movie being hidden and restored, but the screenshot retained LoreRim's
+bottom-left TrueHUD/STB interface. A vanilla-only visibility toggle is therefore
+rejected for this profile.
+
+**Proven HUD replacement:** Local source/config inspection shows Norden
+enables TrueHUD's player widget and LoreRim's Ultimate Immersion Toggle controls
+`HUD Menu`, `TrueHUD`, `lvlWidget`, `goldWidget`, STB, and related movie roots
+through `_root._alpha`. The deployed replacement saves visibility and numeric
+root alpha independently for each present optional movie, then restores those
+exact values. It changes no installed-mod configuration. In the monitored pass,
+the user confirmed no HUD remained over the parchment; native logs recorded 12
+present layers hidden from visibility/alpha 100 and restored exactly. Markarth
+selection and travel then completed with no native or Papyrus errors.
+
+**Presentation evidence and candidate:** Rectangular destination buttons are
+replaced by large invisible hitboxes over the baked city crests. The first
+small-ring positions visibly missed several baked crests and are rejected.
+Texture inspection also found that the 0.75 crop included approximately 56
+rows of opaque backing below the useful parchment edge. A later gameplay pass
+proved crop max `0.736328`, aspect `1.358090`, all five corrected crest centers,
+the Winterhold route origin, five spokes, and route selection at 32:9; the user
+confirmed that everything was in the right spot. That pass rejected the quiet
+idle styling as too hard to see and the yellow pointer as unlike LoreRim's
+other screens.
+
+The live-tested revision uses visible rings at 46% of the hitbox, strong gold for all
+idle rings/routes, and red for only the hovered or controller-focused route
+and ring. Inspection of the active `Norden UI 16x9` `cursormenu.swf` established
+the target arrow silhouette and monochrome palette. Because Menu Framework's
+ImGui layer renders after Skyrim Scaleform and cannot place the exact SWF
+cursor above the parchment, the candidate redraws that appearance with
+polyline and concave-fill primitives. It copies and ships no cursor asset.
+LoreRim's exact installed DLL exports every required function. The monitored
+pass visually approved the gold/red presentation and confirmed that the new
+monochrome cursor appeared. Native logs recorded one clean cancel and then a
+Markarth selection; Papyrus recorded the matching 250-gold start/completion.
+All 12 HUD layers restored exactly, Skyrim exited normally, and no DNT
+error/warning appeared.
+
+The apparent initial Whiterun highlight was an explicit first-item navigation
+focus, not a selected destination. The polish candidate removes that default,
+shows retained focus only after keyboard/gamepad input, and lowers the dark
+cursor-center alpha from 245 to 150. Native build, Papyrus, xEdit, static asset
+audit, and offline tests pass. All six deployed runtime payloads match the
+workspace, and its non-launching `UltraDiegeticTravel` preflight passes after
+switching back from the parallel profile.
+
+The monitored polish pass visually approved both requested changes: no route
+was active at startup and the translucent cursor center looked good. The run
+completed a parchment trip to Markarth and Calcelmo's direct return to the
+College. Two subsequent parchment opens proved Escape cancellation and the
+close button respectively. Every selection/cancel restored all 12 HUD layers
+to visibility/alpha 100, Skyrim exited normally, and no DNT error/warning
+appeared. This promotes the startup gate, cursor alpha, and Escape path to
+Proven.
+
+**Compatibility evidence:** The new dialogue branch initially remained absent
+until the user saved and reloaded once with the adapter installed. Quest
+stop/start did not resolve that live session. The Creation Kit Wiki discussion
+documents the same custom-dialogue save/load workaround:
+https://ck.uesp.net/wiki/Talk%3ABethesda_Tutorial_Dialogue
+
+**Remaining boundary:** Keyboard/controller destination activation,
+controller-B cancellation, missing-art fallback, and the old dialogue fallback
+remain unproven for this adapter. Controller work is deliberately deferred
+while both controller mods are disabled; test only with the intended
+`No Delete Controller` compatibility stack enabled.
+
+**Use:** The provider-neutral picker is valid for continued wizard-guide
+development. Keep the BCD adapter and five-choice dialogue path as regression
+fallbacks until the remaining input and fallback cases are exercised.
 
 ## Dialogue and voice claims
 

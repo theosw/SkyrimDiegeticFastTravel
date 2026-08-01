@@ -1,0 +1,63 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 24,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "ae",
+      "displayName": "Parchment picker - Skyrim AE",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/parchment-picker",
+      "cacheVariables": {
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL",
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static-md"
+      }
+    },
+    {
+      "name": "parchment-core",
+      "displayName": "Parchment picker - offline core only",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/parchment-core",
+      "cacheVariables": {
+        "DNT_PARCHMENT_BUILD_PLUGIN": "OFF",
+        "DNT_PARCHMENT_BUILD_TESTS": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "parchment-ae",
+      "configurePreset": "ae",
+      "configuration": "RelWithDebInfo"
+    },
+    {
+      "name": "parchment-core",
+      "configurePreset": "parchment-core",
+      "configuration": "Release"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "parchment-ae",
+      "configurePreset": "ae",
+      "configuration": "RelWithDebInfo",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "parchment-core",
+      "configurePreset": "parchment-core",
+      "configuration": "Release",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}

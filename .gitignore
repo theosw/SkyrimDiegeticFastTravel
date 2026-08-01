@@ -10,3 +10,8 @@ dist/
 # Locally downloaded authoring tools are never redistributed.
 .tools/
 
+# Third-party mods and assets used only for local research are never published.
+Learning Sources/
+
+# Native debug symbols are local build artifacts.
+*.pdb
