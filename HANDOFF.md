@@ -1,6 +1,212 @@
 # Diegetic Travel handoff
 
-Updated: 2026-08-01
+Updated: 2026-08-02
+
+## Mirabelle presentation and parchment handoff
+
+The 2026-08-02 actor-targeted voice candidate is Rejected. Selecting
+Mirabelle's parchment prompt queued the voice request and immediately crashed
+Skyrim before the parchment `Show` call. It was rolled back to a subtitle-only
+safe fallback before this new candidate was built.
+
+The implementation deliberately does not call `ObjectReference.Say` on the
+original `MG01` topic: the installed quest fragment proves that First Lessons
+calls `Stop()` at completion, so that architecture would normally be silent.
+The first `ConsoleUtil.SetSelectedReference` experiment is rejected:
+ConsoleUtil queues the selection change through the UI message queue, then
+immediately reads the current console target for `ExecuteCommand`, creating a
+targeting race that produced no Mirabelle audio in the live test. The new
+actor-targeted replacement scheduled a game-thread task, resolved Mirabelle,
+and called CommonLibSSE-NG `Script::CompileAndRun`. CrashLogger proves the
+access violation occurred inside that exact call with Mirabelle, the temporary
+Script, and the `SpeakSound` path on the stack. The module's configured
+CommonLib uses AE relocation ID `21890`; OStim NG's maintained workaround uses
+`441582` for runtime patches 1.6.1130 and newer. LoreRim is 1.6.1170, so the
+outdated relocation—not Menu Framework—is the immediate crash cause. The
+checkout itself is official CommonLibSSE-NG at upstream commit
+`b93280e832f263dbef44e44cbe2936622a02f91a`; replacing it with a random fork is
+not the fix.
+
+The new isolated Candidate retains official CommonLib and bypasses only the
+stale convenience method. `dependencies.lock.json` pins the exact Skyrim,
+SKSE, Address Library, Menu Framework, RUSTIC MAPS, wizard-core, CommonLib, and
+vcpkg inputs. Its read-only audit decodes the locked Address Library database
+and proves legacy ID `21890` is absent, ID `21891` maps to the rejected crash
+offset `0x33D880`, and modern ID `441582` maps to the required `0x33D6A0`.
+The native bridge refuses every runtime except Skyrim 1.6.1170, refuses any
+offset mismatch, and accepts only Mirabelle reference `0001C1B9` with the exact
+installed MG01 FUZ path.
+
+For the first focused test, selecting Mirabelle's parchment prompt queues only
+the voice probe and returns before parchment request creation or `Show`.
+Therefore no map is expected from Mirabelle. Other faculty retain the existing
+map behavior. This deliberately separates the corrected voice call from Menu
+Framework; it is offline-audited, not yet gameplay-proven.
+
+The first focused monitored pass promoted the corrected relocation and native
+playback to Proven: four Mirabelle attempts queued and dispatched at ID
+`441582` / offset `0x33D6A0`, the player heard the matching line with proper lip
+sync, Skyrim exited normally, and no new crash report or DNT error was produced.
+The remaining defect was ordering: `OpenMap` waited for the subtitle-only INFO
+to finish and the Dialogue Menu to close, producing a silent subtitle/lip-sync
+presentation before the audible native FUZ. The follow-up timing Candidate
+queues Mirabelle's proven probe immediately from the INFO OnBegin path; its
+native game-thread task pauses that silent response, and Mirabelle still returns
+before any parchment request or Menu Framework call. This timing change still
+needed the focused live check recorded below.
+
+That focused timing check is now Proven: two clean OnBegin probes started the
+voice at the intended moment with correct lip sync, normal exit, no new crash,
+and no DNT error. The resulting line had no subtitle because
+`PauseCurrentDialogue` also removes the Fuz Ro D-oh-generated silent subtitle,
+while `SpeakSound` creates audio/lip data but no subtitle entry. The follow-up
+Candidate adds the hard-coded matching text to Skyrim's normal
+`SubtitleManager` immediately after playback starts, under the manager's own
+spin lock and with Mirabelle's speaker handle plus forced display. It does not
+draw custom HUD text or change the active Fuz Ro D-oh/Lingering Subtitles Fix
+mods.
+
+That focused subtitle pass is now Proven for insertion and visible display.
+Two Mirabelle attempts queued and dispatched cleanly at relocation ID `441582`
+/ offset `0x33D6A0`; both logged `subtitleAdded=true`. The player confirmed the
+subtitle, voice, and lip sync worked together. Skyrim exited normally, no new
+crash report was created, and neither native nor DNT Papyrus logging reported
+an error. Subtitle lifetime/cleanup was not separately reported and remains a
+minor later regression check rather than a blocker.
+
+The currently deployed Candidate restores the parchment handoff. Direct extraction from
+`Skyrim - Voices_en0.bsa` measures the exact MG01 XWM payload at 2.147846
+seconds. After the proven OnBegin voice/subtitle dispatch, the provider now
+reserves 2.35 seconds for playback plus a short queued-task/cleanup margin,
+then enters the existing proven dialogue-close and parchment `Show` path. It
+marks the request as opening before the wait to prevent re-entry. A rejected
+voice dispatch no longer denies travel; it falls back to opening the map. This
+end-to-end voice -> subtitle -> map -> travel sequence is offline-audited and
+needs one focused live test.
+
+The workspace now advances that deployed one-off into a provider-neutral
+offline candidate. `PlayPresentation` accepts a live actor, constrained
+installed FUZ path, subtitle text, and measured duration; it returns the exact
+duration plus a 0.20-second task margin. The queued task retains an
+`ObjectRefHandle`, inserts the provider subtitle through the proven normal
+subtitle path, and preserves the exact 1.6.1170 relocation guard. Mirabelle is
+the first configured provider, while `PlayVoiceProbe` remains a compatibility
+wrapper. This workspace revision is not deployed while another Skyrim test is
+active. It needs the same focused voice -> subtitle -> map -> travel pass after
+the game closes.
+
+The generated DIAL now contains two mutually exclusive INFOs: the general
+faculty response explicitly excludes Mirabelle, while the dedicated response
+requires exact `MirabelleErvine` identity and also sets her exact speaker.
+Both retain the proven OnBegin parchment fragment. The quest script binds
+`MirabelleBase` alongside the existing wizard service.
+
+Offline evidence:
+
+- all three Papyrus scripts compile with zero errors and warnings;
+- the independent xEdit audit passes the quest properties, two INFOs, exact
+  conditions/speaker, matching response text, and both fragments;
+- ESP regeneration is byte-identical at SHA-256
+  `5A6E8305BB1C0E9EDD62A32B3C144700AA788AD427F968F2451BD3742018A8CC`;
+- provider PEX SHA-256 is
+  `2C79AF9C28581BB51608234972AB135B48EB74FB7C64F5098B057BFAB5063784`;
+- native-contract PEX SHA-256 is
+  `3B2CF967E7B4C9671FD918E6FD3999AE08DF93DA598CBE2BE130A08E354D2956`;
+- native DLL SHA-256 is
+  `1F0E2C1DB15896614582618CC63BDBB8169D76E99B9DC4FE80A42F3FCB800043`;
+- native tests pass, and source/package audits report zero bundled artwork or
+  audio;
+- all three Papyrus scripts compile with zero errors and warnings, and the
+  independent xEdit adapter audit passes;
+- the dependency audit proves the exact runtime hashes, pinned CommonLib
+  commit, and corrected Address Library mapping before build.
+
+Do not retest the rejected DLL. The corrected candidate now tests Mirabelle's
+complete voice/subtitle-to-parchment handoff. Before launch, verify its deployed
+hashes against the workspace and run the non-launching profile preflight. Do
+not launch without explicit user approval.
+
+Broad offline checkpoint package hashes:
+
+- `DiegeticTravel-alpha.zip`:
+  `9D729A230725A984AEB510180C472EF6EDCDEAF5FF26FAB4238D2E4D7A5B979A`;
+- `DiegeticTravelParchmentPicker-offline-candidate.zip`:
+  `CC90A93C56A65AC3601126EFCD97E09BD4BDA547889B6FEBEAE294024A4B7671`;
+- `DiegeticTravelWizardGuides-phase1.zip`:
+  `0F5BF619466BF2A8E72345CBB9C9DFC43D8E561E95F768674CA3E72165E83C55`;
+- `DiegeticTravelWizardMapAdapter-alpha.zip`:
+  `CDFF6A1F4297B77073B50526FFED4A2B71B8AE6781E973EBCBBB6CCC99A41994`.
+
+The workspace-only suite, Python routing tests, all native/Papyrus builds,
+staging-only xEdit audits, and packages pass. No workspace candidate from this
+checkpoint has been deployed to LoreRim while the parallel gameplay test is
+active.
+
+## Seven-spoke wizard live pass and Morthal follow-up
+
+The College-centred star now has seven spokes: Farengar/Whiterun,
+Wylandriah/Riften, Sybille/Solitude, Wuunferth/Windhelm, Calcelmo/Markarth,
+Madena/Dawnstar, and Falion/Morthal. Every spoke wizard offers only the College;
+permanent College faculty offer all seven capitals. Trust and quest gating
+remain deliberately out of scope.
+
+The two new speaker records are exact and locally inventoried:
+
+- Madena `01361D`, reference `01A6C3`, voice `FemaleCondescending`;
+- Falion `0135E9`, reference `01AA5E`, voice `MaleSlyCynical`.
+
+Dawnstar arrives at purpose-built `MadenaServiceMarkerREF` (`0877B4`). The
+first Morthal candidate, `MorthalMapMarkerRef` (`0177B0`), was rejected by the
+2026-08-01 live pass because COTN geometry places the player on a roof. A
+full-profile VFS xEdit audit identified Skyrim's purpose-built ground-level
+`MorthalCarriageEastDestinationMarker` (`0EB7CC`) as the replacement; no active
+plugin overrides it. Both new properties have runtime FormID repair so
+existing active-quest saves cannot retain stale serialized values.
+
+The generator and independent audit prove seven exact direct routes, seven hub
+links, two new three-INFO destination topics, mutually exclusive funded/denial
+conditions, exact fragment destinations, and both marker properties. Madena
+and Falion have genuine voiced/lip-synced generic `Of course.` assets; Madena
+also has the chosen house-purchase refusal. Falion now uses generic SharedInfo
+`CantBeHelped` (`000DBA24`, "It can't be helped."), whose distinct 1.35-second
+`MaleSlyCynical` FUZ/LIP was extracted, decoded, and level-checked. Both wizard
+Papyrus scripts compile with zero errors or warnings.
+Running the generator a second time produced the same ESP hash byte-for-byte.
+
+The parchment provider now adds Dawnstar at normalized `(0.570,0.177)` and
+Morthal at `(0.402,0.298)`. Native tests, three Papyrus compiles, the adapter
+xEdit audit, the seven-destination source audit, and the zero-bundled-asset
+audit pass. The proven native UI core/DLL and adapter ESP are otherwise
+unchanged. Exact artifacts:
+
+- wizard ESP SHA-256
+  `174CD2B86AC08693C4B708CDB1141190B5093F2BC6C594BCBE03916840D47B56`;
+- wizard service PEX SHA-256
+  `2250E1D4C750B424419957EB6C2D5C9EC40E2498348FF02D7E2A4842F34E6D68`;
+- wizard package `dist\DiegeticTravelWizardGuides-seven-spoke-candidate.zip`,
+  SHA-256 `29844E10D041790F0898B564B939DC562AFE1001EED008E6F9053F970E233F86`;
+- parchment provider PEX SHA-256
+  `116ED9A31FFBC2795F648695B8D52BFADBA54B1B642E2BCBC5E673C10A65795A`;
+- parchment package `dist\DiegeticTravelParchmentPicker-offline-candidate.zip`,
+  SHA-256 `3335140DEAD3319BFC5E2E202A6AF65AD555D38DA182C867615082E61769D83B`.
+
+An earlier monitored 2026-08-01 run recorded two clean trip completions with no
+Papyrus/native warning. The replacement Morthal carriage marker is now Proven:
+the player arrived on the ground. Falion's zero-gold branch correctly denied
+travel, and his funded route returned to the College. With the rebuilt
+1.75-second delay, the player heard only "course." Direct extraction proves the
+correct 0.93-second FUZ is valid; the service also played `ITMGoldDown` at the
+exact start of the response, making audio masking the stronger explanation than
+end cutoff. All thirteen reused success recordings are at most 1.11 seconds.
+The current build therefore reserves 1.5 seconds for dialogue, then calls
+`FarePaymentSound.PlayAndWait`, then teleports. A focused monitored retest proved
+the full lip-synced `It can't be helped.` denial, the full `Of course.` funded
+confirmation, payment cue, and completed teleport. Papyrus recorded the denial
+and two Falion funded start/completion pairs; the same run also completed a
+Mirabelle parchment trip to Morthal with clean HUD hide/restore. The voice and
+payment sequencing is now Proven. Dawnstar/Morthal crest alignment and the
+seven-choice dialogue fallback remain useful later regression checks. Do not
+launch without explicit user approval.
 
 ## Parchment-picker live checkpoint
 
@@ -19,7 +225,9 @@ faculty dialogue branch with the prompt `Could you show me your travel map?
 (250 gold per trip)`. Its OnBegin fragment waits for the Dialogue Menu to close
 before opening the blocking parchment window. The ESP masters the wizard core
 but not Better Carriage Destinations, defines no FormList/world-map whitelist,
-and leaves both the five-choice dialogue menu and proven BCD adapter unchanged.
+and leaves the core dialogue fallback and proven BCD adapter available. The
+current core dialogue fallback now contains seven destinations; the older BCD
+adapter remains intentionally limited to its five-city world-map whitelist.
 
 Build and structural evidence:
 
@@ -40,22 +248,31 @@ Build and structural evidence:
   labels;
 - the package contains zero artwork/audio assets.
 
-The current no-default-focus/translucent-cursor DLL SHA-256 is
-`506A373F5899D13C519F44E992755296BA28D2866483F0895979F6C83F1025CF`.
+The previously gameplay-proven no-default-focus/translucent-cursor DLL SHA-256
+was `506A373F5899D13C519F44E992755296BA28D2866483F0895979F6C83F1025CF`.
+The rejected actor-targeted voice DLL SHA-256 was
+`EB99DB57F4E0A2F2C893D4976549F7EBBE371EBD49EDA7DED28274A60F19C0A4`.
+The subtitle-only safe fallback DLL SHA-256 was
+`577F2BC6B6BEF62D1B41EB8AD5A3BC1E18F73A0EDD57F3B14B135973F7FB333E`.
+The gameplay-proven corrected-relocation/timing DLL SHA-256 is
+`A8661EABDFF32795ED8FFD881E69E4FF6340B619DE168F7A6F878C2CB5B6BCA2`.
+The current forced-subtitle Candidate DLL SHA-256 is
+`1F0E2C1DB15896614582618CC63BDBB8169D76E99B9DC4FE80A42F3FCB800043`.
 The complete package is
 `dist\DiegeticTravelParchmentPicker-offline-candidate.zip`, SHA-256
-`95954C5EEF2B09EB4A35E22FA88340A5F99ACFCEBCBAF41197D2B494F3C6F4DB`.
+`CA785A6BDE17AC9F0A11D262920A731439FCCD9B9EE33201B1537F7EDDD059EC`.
 The prior five-route DLL was deployed and tested at SHA-256
 `CFEA7975EB13EE34629A70A0BEA94974DDC5A63ADBD900B6BE7108DF31B15CD1`.
-The current polish revision is now deployed to the isolated test
-mod. All six runtime files match the audited workspace byte-for-byte, including
-DLL SHA-256 `506A373F5899D13C519F44E992755296BA28D2866483F0895979F6C83F1025CF`
+The current forced-subtitle revision is deployed to the owned test mod
+`D:\Lorerim\mods\DiegeticTravel - Parchment Picker Test`. All six runtime
+files match the audited workspace byte-for-byte. Its identifiers include DLL
+SHA-256
+`1F0E2C1DB15896614582618CC63BDBB8169D76E99B9DC4FE80A42F3FCB800043`
 and provider PEX SHA-256
-`57ACC552B90592B9FE2BEB6D117A3CC39559130F878F9583E18AE498B59B761A`.
-After MO2 was switched back from the parallel profile, the current candidate's
-non-launching `UltraDiegeticTravel` preflight passed with the wizard core and
-parchment picker enabled, the original carriage module disabled, and no map
-adapter required.
+`2C79AF9C28581BB51608234972AB135B48EB74FB7C64F5098B057BFAB5063784`.
+Its non-launching `UltraDiegeticTravel` preflight passes with the wizard core
+and parchment picker enabled, the original carriage module disabled, and no
+map adapter required.
 It references LoreRim's already-enabled RUSTIC MAPS texture at
 `Data\textures\dungeons\imperial\battlemap01.dds`; no map image is shipped.
 Inspection places the useful parchment edge at texture row 3016. The provider
@@ -526,7 +743,9 @@ completions: faculty `0001C1A1` -> Markarth, Calcelmo `00019908` -> College,
 Mirabelle `0001C1B9` -> Windhelm, Wuunferth `0001B132` -> College, and faculty
 `0001C1A8` -> Whiterun. Ancano had no option and produced no travel trace. The
 tested voices matched their actors; Wuunferth's line was only slightly clipped
-by the one-second travel delay. Skyrim exited normally.
+by the former one-second travel delay. The current candidate separates dialogue
+from the payment cue and waits for both before `MoveTo`.
+Skyrim exited normally.
 
 ### Solitude-spoke regression
 
@@ -691,14 +910,16 @@ the old running quest instance instead of reconstructing its new alias.
 
 ## xEdit work
 
-- `tools/Generate-Plugin.ps1` uses managed Windows UI Automation only; the
-  temporary dynamic C#/PInvoke implementation was removed after Defender
-  flagged the Codex transcript containing it.
-- The current xEdit executable still presents the Module Selection dialog.
-  Managed UI Automation did not activate its OK button during the successful
-  2026-07-30 build, so the user clicked OK once. The wrapper now treats the
-  generator's terminal `success` status plus a clean xEdit exit as authoritative
-  and does not falsely reject that completed run.
+- `tools/Generate-Plugin.ps1` now defaults to the locally built patched xEdit,
+  runs it hidden against copied staging data, and needs no Module Selection
+  click. Managed Windows UI Automation remains only when a stock executable is
+  passed explicitly; the temporary dynamic C#/PInvoke implementation remains
+  removed after Defender flagged the Codex transcript containing it.
+- The first full headless carriage attempt proved the CLI patch worked but
+  exposed a generator error: it redundantly rewrote the copied player alias's
+  non-editable `Specific Reference` union. Removing that write produced a clean
+  full build with 11 SEQ quest IDs. Failed headless runs now write compact error
+  detail and cannot leave their own hidden xEdit process behind.
 - The exact xEdit 4.1.5f source checkout is under ignored `.tools/`.
 - The distributable source patch is
   `tools/xedit/patches/xedit-4.1.5f-script-autoload-autoexit.patch`.

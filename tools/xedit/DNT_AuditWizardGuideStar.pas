@@ -788,8 +788,9 @@ end;
 procedure AuditHub;
 var
   HubInfo, Links, FirstTarget, SecondTarget, ThirdTarget, FourthTarget,
-    FifthTarget, WhiterunTopic, RiftenTopic, SolitudeTopic, WindhelmTopic,
-    MarkarthTopic: IInterface;
+    FifthTarget, SixthTarget, SeventhTarget, WhiterunTopic, RiftenTopic,
+    SolitudeTopic, WindhelmTopic, MarkarthTopic, DawnstarTopic,
+    MorthalTopic: IInterface;
 begin
   HubInfo := RequireRecord($000808, 'INFO', 'DNT_WG_Request_Phinis');
   WhiterunTopic := RequireRecord(
@@ -801,6 +802,8 @@ begin
   SolitudeTopic := RequireRecord($00080F, 'DIAL', 'DNT_WG_ToSolitude');
   WindhelmTopic := RequireRecord($000813, 'DIAL', 'DNT_WG_ToWindhelm');
   MarkarthTopic := RequireRecord($000817, 'DIAL', 'DNT_WG_ToMarkarth');
+  DawnstarTopic := RequireRecord($000825, 'DIAL', 'DNT_WG_ToDawnstar');
+  MorthalTopic := RequireRecord($000828, 'DIAL', 'DNT_WG_ToMorthal');
 
   if GetElementEditValues(HubInfo, 'RNAM') <>
     'Can you teleport me somewhere? (250 gold per trip)' then
@@ -825,13 +828,15 @@ begin
     raise Exception.Create('Phinis hub unexpectedly has a travel VMAD');
 
   Links := ElementByPath(HubInfo, 'Link To');
-  if not Assigned(Links) or (ElementCount(Links) <> 5) then
-    raise Exception.Create('Phinis hub must have exactly five Link To entries');
+  if not Assigned(Links) or (ElementCount(Links) <> 7) then
+    raise Exception.Create('Phinis hub must have exactly seven Link To entries');
   FirstTarget := LinksTo(ElementByIndex(Links, 0));
   SecondTarget := LinksTo(ElementByIndex(Links, 1));
   ThirdTarget := LinksTo(ElementByIndex(Links, 2));
   FourthTarget := LinksTo(ElementByIndex(Links, 3));
   FifthTarget := LinksTo(ElementByIndex(Links, 4));
+  SixthTarget := LinksTo(ElementByIndex(Links, 5));
+  SeventhTarget := LinksTo(ElementByIndex(Links, 6));
   if not Assigned(FirstTarget) or
     (FormID(FirstTarget) <> FormID(WhiterunTopic)) then
     raise Exception.Create('Phinis first hub target is not Whiterun');
@@ -847,17 +852,23 @@ begin
   if not Assigned(FifthTarget) or
     (FormID(FifthTarget) <> FormID(MarkarthTopic)) then
     raise Exception.Create('Phinis fifth hub target is not Markarth');
+  if not Assigned(SixthTarget) or
+    (FormID(SixthTarget) <> FormID(DawnstarTopic)) then
+    raise Exception.Create('Phinis sixth hub target is not Dawnstar');
+  if not Assigned(SeventhTarget) or
+    (FormID(SeventhTarget) <> FormID(MorthalTopic)) then
+    raise Exception.Create('Phinis seventh hub target is not Morthal');
 
   ReportLines.Add(
     'PASS hub DNT_WG_Request_Phinis -> ' +
-    'whiterun,riften,solitude,windhelm,markarth'
+    'whiterun,riften,solitude,windhelm,markarth,dawnstar,morthal'
   );
 end;
 
 function Initialize: Integer;
 var
   WhiterunTopic, RiftenTopic, SolitudeTopic, WindhelmTopic,
-    MarkarthTopic: IInterface;
+    MarkarthTopic, DawnstarTopic, MorthalTopic: IInterface;
 begin
   Result := 1;
   StatusPath :=
@@ -929,6 +940,28 @@ begin
       $000DBA22,
       $0001F319
     );
+    AuditDirect(
+      $00082B,
+      'DNT_WG_Request_Madena',
+      'Can you teleport me to the College of Winterhold? (250 gold)',
+      'Of course.',
+      'college',
+      'Skyrim.esm',
+      $0001361D,
+      $000DBA22,
+      $0001F319
+    );
+    AuditDirect(
+      $00082C,
+      'DNT_WG_Request_Falion',
+      'Can you teleport me to the College of Winterhold? (250 gold)',
+      'Of course.',
+      'college',
+      'Skyrim.esm',
+      $000135E9,
+      $000DBA22,
+      $0001F319
+    );
     AuditDirectDenial(
       $00081B,
       'DNT_WG_Request_Farengar_NoGold',
@@ -989,6 +1022,30 @@ begin
       $000C6E04,
       False
     );
+    AuditDirectDenial(
+      $00082D,
+      'DNT_WG_Request_Madena_NoGold',
+      'Can you teleport me to the College of Winterhold? (250 gold)',
+      'I''m sorry, but you don''t seem to have enough gold to pay for that.',
+      'college',
+      'Skyrim.esm',
+      $0001361D,
+      $000C6E2D,
+      $000C6E04,
+      False
+    );
+    AuditDirectDenial(
+      $00082E,
+      'DNT_WG_Request_Falion_NoGold',
+      'Can you teleport me to the College of Winterhold? (250 gold)',
+      'It can''t be helped.',
+      'college',
+      'Skyrim.esm',
+      $000135E9,
+      $000DBA24,
+      $0001F319,
+      False
+    );
     AuditServiceObjectProperty(
       'FarePaymentSound',
       $000334AB,
@@ -1019,6 +1076,18 @@ begin
       'REFR',
       'MarkarthCastleWizardVendorMarkerREF'
     );
+    AuditServiceObjectProperty(
+      'DawnstarMarker',
+      $000877B4,
+      'REFR',
+      'MadenaServiceMarkerREF'
+    );
+    AuditServiceObjectProperty(
+      'MorthalMarker',
+      $000EB7CC,
+      'REFR',
+      'MorthalCarriageEastDestinationMarker'
+    );
     AuditHub;
     WhiterunTopic := RequireRecord(
       $000803,
@@ -1045,11 +1114,23 @@ begin
       'DIAL',
       'DNT_WG_ToMarkarth'
     );
+    DawnstarTopic := RequireRecord(
+      $000825,
+      'DIAL',
+      'DNT_WG_ToDawnstar'
+    );
+    MorthalTopic := RequireRecord(
+      $000828,
+      'DIAL',
+      'DNT_WG_ToMorthal'
+    );
     AssertDestinationTopicCount(WhiterunTopic, 'DNT_WG_ToWhiterun');
     AssertDestinationTopicCount(RiftenTopic, 'DNT_WG_ToRiften');
     AssertDestinationTopicCount(SolitudeTopic, 'DNT_WG_ToSolitude');
     AssertDestinationTopicCount(WindhelmTopic, 'DNT_WG_ToWindhelm');
     AssertDestinationTopicCount(MarkarthTopic, 'DNT_WG_ToMarkarth');
+    AssertDestinationTopicCount(DawnstarTopic, 'DNT_WG_ToDawnstar');
+    AssertDestinationTopicCount(MorthalTopic, 'DNT_WG_ToMorthal');
     AuditFacultyVoicedDestination(
       $00080B,
       'DNT_WG_Whiterun_FromPhinis',
@@ -1154,6 +1235,48 @@ begin
       'Send me to Markarth. (250 gold)',
       'markarth',
       MarkarthTopic
+    );
+    AuditFacultyVoicedDestination(
+      $000826,
+      'DNT_WG_Dawnstar_FromPhinis',
+      'Send me to Dawnstar. (250 gold)',
+      'dawnstar',
+      DawnstarTopic
+    );
+    AuditMirabelleDestination(
+      $000827,
+      'DNT_WG_Dawnstar_FromMirabelle',
+      'Send me to Dawnstar. (250 gold)',
+      'dawnstar',
+      DawnstarTopic
+    );
+    AuditFacultyDenial(
+      $00082F,
+      'DNT_WG_Dawnstar_NoGold',
+      'Send me to Dawnstar. (250 gold)',
+      'dawnstar',
+      DawnstarTopic
+    );
+    AuditFacultyVoicedDestination(
+      $000829,
+      'DNT_WG_Morthal_FromPhinis',
+      'Send me to Morthal. (250 gold)',
+      'morthal',
+      MorthalTopic
+    );
+    AuditMirabelleDestination(
+      $00082A,
+      'DNT_WG_Morthal_FromMirabelle',
+      'Send me to Morthal. (250 gold)',
+      'morthal',
+      MorthalTopic
+    );
+    AuditFacultyDenial(
+      $000830,
+      'DNT_WG_Morthal_NoGold',
+      'Send me to Morthal. (250 gold)',
+      'morthal',
+      MorthalTopic
     );
 
     ReportLines.Add('PASS wizard-guide star audit complete');

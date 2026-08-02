@@ -190,8 +190,9 @@ $afterHash = (Get-FileHash -LiteralPath $outputPlugin -Algorithm SHA256).Hash
 
 Write-Host (
     "Patched the College-centred wizard star: direct court-wizard routes " +
-    "from Whiterun, Riften, Solitude, Windhelm, and Markarth; a rank-gated " +
-    "faculty hub; voiced terminal responses; and Mirabelle subtitle fallbacks."
+    "from Whiterun, Riften, Solitude, Windhelm, Markarth, Dawnstar, and " +
+    "Morthal; a rank-gated faculty hub; voiced terminal responses; a voiced " +
+    "Falion refusal; and Mirabelle subtitle fallbacks."
 )
 Write-Host "Before SHA-256: $beforeHash"
 Write-Host "After SHA-256:  $afterHash"

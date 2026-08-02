@@ -7,8 +7,11 @@ const
   ParchmentPrompt =
     'Could you show me your travel map? (250 gold per trip)';
   ParchmentResponse = 'Let me show you.';
+  MirabelleParchmentResponse = 'Very good. Then we''re done here.';
   OnBeginFragmentMask = $01;
   SilentTerminalResponseFlagsMask = $0A01;
+  EqualConditionType = $00;
+  NotEqualConditionType = $20;
 
 var
   OutputFile, SkyrimFile, WizardFile: IInterface;
@@ -155,6 +158,50 @@ begin
   Result := ElementByIndex(ElementByPath(QuestRecord, 'VMAD\Scripts'), 0);
 end;
 
+procedure AddSubjectCondition(
+  InfoRecord: IInterface;
+  const FunctionName: string;
+  ParameterRecord: IInterface;
+  ConditionType: Cardinal;
+  ComparisonValue: Double
+);
+var
+  Conditions, ConditionEntry, ConditionData, ParameterElement,
+    ReadBackParameter: IInterface;
+begin
+  Conditions := ElementByPath(InfoRecord, 'Conditions');
+  if not Assigned(Conditions) then begin
+    Add(InfoRecord, 'Conditions', True);
+    Conditions := ElementByPath(InfoRecord, 'Conditions');
+  end;
+  if not Assigned(Conditions) then
+    raise Exception.Create('Could not create INFO conditions');
+
+  ConditionEntry := ElementAssign(Conditions, HighInteger, nil, False);
+  if not Assigned(ConditionEntry) then
+    raise Exception.Create('Could not create INFO condition entry');
+  ConditionData := ElementByPath(ConditionEntry, 'CTDA');
+  if not Assigned(ConditionData) then
+    raise Exception.Create('INFO condition has no CTDA');
+
+  SetElementNativeValues(ConditionData, 'Type', ConditionType);
+  SetElementNativeValues(
+    ConditionData,
+    'Comparison Value - Float',
+    ComparisonValue
+  );
+  SetElementEditValues(ConditionData, 'Function', FunctionName);
+  SetElementNativeValues(ConditionData, 'Run On', 0);
+  ParameterElement := ElementByPath(ConditionData, 'Parameter #1');
+  if not Assigned(ParameterElement) then
+    raise Exception.Create(FunctionName + ' condition has no Parameter #1');
+  SetEditValue(ParameterElement, Name(ParameterRecord));
+  ReadBackParameter := LinksTo(ParameterElement);
+  if not Assigned(ReadBackParameter) or
+    (FormID(ReadBackParameter) <> FormID(ParameterRecord)) then
+    raise Exception.Create(FunctionName + ' condition did not read back');
+end;
+
 function ConfigureInfoFragment(
   InfoRecord, TemplateInfo: IInterface;
   const ScriptName: string
@@ -198,8 +245,9 @@ end;
 procedure ConfigureParchmentDialogue(PickerQuest: IInterface);
 var
   HubInfo, SourceTopic, SourceBranch, PickerTopic, PickerBranch, InfoGroup,
-    PickerInfo, TemplateInfo, FragmentScript, Responses, SourceResponses,
-    Conditions, SourceConditions: IInterface;
+    PickerInfo, MirabelleInfo, TemplateInfo, FragmentScript,
+    MirabelleFragmentScript, Responses, SourceResponses, Conditions,
+    SourceConditions, MirabelleBase, SpeakerElement: IInterface;
   QuestElement, BranchElement, BranchQuestElement, StartingTopicElement,
     ReadBack: IInterface;
   i: Integer;
@@ -316,6 +364,20 @@ begin
   if Assigned(ElementByPath(PickerInfo, 'Link To')) then
     RemoveElement(PickerInfo, 'Link To');
 
+  MirabelleBase := RequireRecord(
+    SkyrimFile,
+    $0001C1A0,
+    'NPC_',
+    'MirabelleErvine'
+  );
+  AddSubjectCondition(
+    PickerInfo,
+    'GetIsID',
+    MirabelleBase,
+    NotEqualConditionType,
+    1.0
+  );
+
   TemplateInfo := RequireRecord(
     WizardFile,
     $00080B,
@@ -329,12 +391,80 @@ begin
   );
   AddObjectProperty(FragmentScript, 'Picker', PickerQuest);
 
+  MirabelleInfo := Add(PickerTopic, 'INFO', True);
+  Add(MirabelleInfo, 'ENAM', True);
+  Add(MirabelleInfo, 'CNAM', True);
+
+  Add(MirabelleInfo, 'Conditions', True);
+  Conditions := ElementByPath(MirabelleInfo, 'Conditions');
+  while ElementCount(Conditions) > 0 do
+    RemoveElement(Conditions, 0);
+  for i := 0 to Pred(ElementCount(SourceConditions)) do
+    ElementAssign(
+      Conditions,
+      HighInteger,
+      ElementByIndex(SourceConditions, i),
+      False
+    );
+  AddSubjectCondition(
+    MirabelleInfo,
+    'GetIsID',
+    MirabelleBase,
+    EqualConditionType,
+    1.0
+  );
+
+  Add(MirabelleInfo, 'Responses', True);
+  Responses := ElementByPath(MirabelleInfo, 'Responses');
+  while ElementCount(Responses) > 0 do
+    RemoveElement(Responses, 0);
+  ElementAssign(
+    Responses,
+    HighInteger,
+    ElementByIndex(SourceResponses, 0),
+    False
+  );
+
+  SetElementEditValues(
+    MirabelleInfo,
+    'EDID',
+    'DNT_WG_OpenParchment_Mirabelle'
+  );
+  SetElementEditValues(MirabelleInfo, 'RNAM', ParchmentPrompt);
+  if Assigned(ElementByPath(MirabelleInfo, 'DNAM')) then
+    RemoveElement(MirabelleInfo, 'DNAM');
+  SetElementEditValues(
+    MirabelleInfo,
+    'Responses\Response\NAM1',
+    MirabelleParchmentResponse
+  );
+  SetElementNativeValues(
+    MirabelleInfo,
+    'ENAM\Response Flags',
+    SilentTerminalResponseFlagsMask
+  );
+  if Assigned(ElementByPath(MirabelleInfo, 'Link To')) then
+    RemoveElement(MirabelleInfo, 'Link To');
+  Add(MirabelleInfo, 'ANAM', True);
+  SpeakerElement := ElementByPath(MirabelleInfo, 'ANAM');
+  SetEditValue(SpeakerElement, Name(MirabelleBase));
+
+  MirabelleFragmentScript := ConfigureInfoFragment(
+    MirabelleInfo,
+    TemplateInfo,
+    'DNT_WizardParchmentFragment'
+  );
+  AddObjectProperty(MirabelleFragmentScript, 'Picker', PickerQuest);
+
   if GetElementEditValues(PickerInfo, 'RNAM') <> ParchmentPrompt then
     raise Exception.Create('Parchment prompt did not read back');
   if GetElementEditValues(PickerInfo, 'Responses\Response\NAM1') <>
     ParchmentResponse then
     raise Exception.Create('Parchment response did not read back');
-  SetElementNativeValues(PickerTopic, 'TIFC', 1);
+  if GetElementEditValues(MirabelleInfo, 'Responses\Response\NAM1') <>
+    MirabelleParchmentResponse then
+    raise Exception.Create('Mirabelle parchment response did not read back');
+  SetElementNativeValues(PickerTopic, 'TIFC', 2);
 end;
 
 procedure SaveGeneratedPlugin;
@@ -365,7 +495,7 @@ end;
 
 function Initialize: Integer;
 var
-  PickerQuest, PickerScript, WizardService: IInterface;
+  PickerQuest, PickerScript, WizardService, MirabelleBase: IInterface;
 begin
   Result := 1;
   StatusPath := ScriptsPath + '..\..\build\wizard-parchment.status';
@@ -404,6 +534,13 @@ begin
     );
     PickerScript := QuestScript(PickerQuest);
     AddObjectProperty(PickerScript, 'Service', WizardService);
+    MirabelleBase := RequireRecord(
+      SkyrimFile,
+      $0001C1A0,
+      'NPC_',
+      'MirabelleErvine'
+    );
+    AddObjectProperty(PickerScript, 'MirabelleBase', MirabelleBase);
 
     ConfigureParchmentDialogue(PickerQuest);
     SaveGeneratedPlugin;

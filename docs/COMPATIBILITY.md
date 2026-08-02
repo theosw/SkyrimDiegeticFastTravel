@@ -51,6 +51,7 @@ destination ID, and delegates fare and movement to `DNT_WizardTravelService`.
 
 The adapter deliberately remains a separate plugin with hard masters on BCD
 and `DiegeticTravelWizardGuides.esp`. The core wizard plugin and its dialogue
-list therefore remain usable when the adapter is removed. This adapter is a
-statically validated candidate pending the monitored checks in
-`docs/WIZARD_MAP_ADAPTER.md`.
+list therefore remain usable when the adapter is removed. The adapter has now
+passed its monitored 32:9 checks: map open/cancel, core fare denial, funded
+travel, and the dialogue-list fallback. The parchment picker is the preferred
+in-world surface; BCD remains a proven optional adapter and comparison point.

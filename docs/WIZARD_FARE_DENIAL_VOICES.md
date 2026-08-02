@@ -47,6 +47,18 @@ hireling and stable refusals. They are not SharedInfo and are rejected as
 donors. Context-specific SharedInfos such as `Not now. I'm too upset to talk.`
 were also rejected on semantic grounds.
 
+### Later Falion-specific finding
+
+A deeper Skyrim-only pass subsequently found generic SharedInfo
+`CantBeHelped` (`DIAL 0001F319`, `INFO 000DBA24`), response
+`It can't be helped.` Unlike the rejected ordinary INFO donors, this record is
+genuine SharedInfo and Skyrim ships its exact
+`MaleSlyCynical` FUZ/LIP. The extracted 1.35-second asset decoded normally and
+is now used by Falion's exact-speaker denial branch. This supersedes the
+earlier statement that `MaleSlyCynical` had no suitable voiced refusal; the
+remaining uncovered types are `MaleOldGrumpy`, `FemaleElfHaughty`,
+`FemaleShrill`, and `FemaleUniqueMirabelleErvine`.
+
 ## Recommended Phase 1 candidate
 
 Use mutually exclusive player-gold conditions on terminal dialogue INFOs while
@@ -95,3 +107,8 @@ confirmed the intended silent College subtitle fallback with Tolfdir, Nirya,
 and Sergius, silent notification-only map denials, and funded map travel.
 Wylandriah and Calcelmo retain statically verified assets but await focused live
 voice spot-checks. Wuunferth remains intentionally subtitle-only.
+
+The later seven-spoke candidate adds Falion's voiced `CantBeHelped` refusal.
+Its exact-record and archive audits pass. A focused monitored live test proved
+the full audible line and lip sync, followed by a clean service denial with no
+payment or movement.

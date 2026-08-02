@@ -6,8 +6,10 @@ const
   ParchmentPrompt =
     'Could you show me your travel map? (250 gold per trip)';
   ParchmentResponse = 'Let me show you.';
+  MirabelleParchmentResponse = 'Very good. Then we''re done here.';
   OnBeginFragmentMask = $01;
   SilentTerminalResponseFlagsMask = $0A01;
+  EqualConditionType = $00;
   GreaterThanOrEqualConditionType = $60;
   NotEqualConditionType = $20;
 
@@ -134,6 +136,27 @@ begin
   end;
 end;
 
+function InfoInTopicByEditorID(
+  TopicRecord: IInterface;
+  const EditorIDValue: string
+): IInterface;
+var
+  InfoGroup, Candidate: IInterface;
+  i: Integer;
+begin
+  Result := nil;
+  InfoGroup := ChildGroup(TopicRecord);
+  if not Assigned(InfoGroup) then
+    Exit;
+  for i := 0 to Pred(ElementCount(InfoGroup)) do begin
+    Candidate := ElementByIndex(InfoGroup, i);
+    if GetElementEditValues(Candidate, 'EDID') = EditorIDValue then begin
+      Result := Candidate;
+      Exit;
+    end;
+  end;
+end;
+
 function HasMasterNamed(const PluginName: string): Boolean;
 var
   i: Integer;
@@ -234,8 +257,8 @@ end;
 
 procedure AuditQuest;
 var
-  PickerQuest, WizardService, VMAD, Scripts, ScriptEntry, Properties:
-    IInterface;
+  PickerQuest, WizardService, MirabelleBase, VMAD, Scripts, ScriptEntry,
+    Properties: IInterface;
 begin
   PickerQuest := RequireAdapterRecord(
     'QUST',
@@ -254,8 +277,8 @@ begin
     'DNT_WizardParchmentPicker' then
     raise Exception.Create('Parchment quest script does not match');
   Properties := ElementByPath(ScriptEntry, 'Properties');
-  if not Assigned(Properties) or (ElementCount(Properties) <> 1) then
-    raise Exception.Create('Parchment quest does not have one property');
+  if not Assigned(Properties) or (ElementCount(Properties) <> 2) then
+    raise Exception.Create('Parchment quest does not have two properties');
 
   WizardService := RequireRecord(
     WizardFile,
@@ -264,12 +287,21 @@ begin
     'DNT_WizardTravelQuest'
   );
   AssertProperty(ScriptEntry, 'Service', WizardService);
-  ReportLines.Add('PASS quest -> native provider script and core service');
+  MirabelleBase := RequireSkyrimRecord(
+    $0001C1A0,
+    'NPC_',
+    'MirabelleErvine'
+  );
+  AssertProperty(ScriptEntry, 'MirabelleBase', MirabelleBase);
+  ReportLines.Add(
+    'PASS quest -> native provider, core service, and Mirabelle identity'
+  );
 end;
 
 procedure AuditDialogue;
 var
   PickerQuest, PickerBranch, PickerTopic, InfoGroup, PickerInfo,
+    MirabelleInfo, MirabelleBase, Speaker,
     Conditions, VMAD, Scripts, ScriptEntry, Properties, TopicQuest,
     BranchQuest, StartingTopic, HubInfo, HubTopic, CoreBranch, ActualBranch:
     IInterface;
@@ -288,7 +320,7 @@ begin
   );
   if GetElementEditValues(PickerTopic, 'FULL') <> ParchmentPrompt then
     raise Exception.Create('Parchment DIAL prompt does not match');
-  if GetElementNativeValues(PickerTopic, 'TIFC') <> 1 then
+  if GetElementNativeValues(PickerTopic, 'TIFC') <> 2 then
     raise Exception.Create('Parchment DIAL INFO count does not match');
 
   TopicQuest := LinksTo(ElementByPath(PickerTopic, 'QNAM'));
@@ -324,12 +356,18 @@ begin
     raise Exception.Create('Parchment DIAL reuses the core branch');
 
   InfoGroup := ChildGroup(PickerTopic);
-  if not Assigned(InfoGroup) or (ElementCount(InfoGroup) <> 1) then
-    raise Exception.Create('Parchment DIAL does not contain one INFO');
-  PickerInfo := ElementByIndex(InfoGroup, 0);
-  if GetElementEditValues(PickerInfo, 'EDID') <>
-    'DNT_WG_OpenParchment_Faculty' then
-    raise Exception.Create('Parchment INFO EditorID does not match');
+  if not Assigned(InfoGroup) or (ElementCount(InfoGroup) <> 2) then
+    raise Exception.Create('Parchment DIAL does not contain two INFOs');
+  PickerInfo := InfoInTopicByEditorID(
+    PickerTopic,
+    'DNT_WG_OpenParchment_Faculty'
+  );
+  MirabelleInfo := InfoInTopicByEditorID(
+    PickerTopic,
+    'DNT_WG_OpenParchment_Mirabelle'
+  );
+  if not Assigned(PickerInfo) or not Assigned(MirabelleInfo) then
+    raise Exception.Create('Parchment INFO EditorIDs do not match');
   if GetElementEditValues(PickerInfo, 'RNAM') <> ParchmentPrompt then
     raise Exception.Create('Parchment INFO prompt does not match');
   if GetElementEditValues(PickerInfo, 'Responses\Response\NAM1') <>
@@ -344,8 +382,8 @@ begin
     raise Exception.Create('Parchment INFO unexpectedly links a submenu');
 
   Conditions := ElementByPath(PickerInfo, 'Conditions');
-  if not Assigned(Conditions) or (ElementCount(Conditions) <> 3) then
-    raise Exception.Create('Parchment INFO does not have three conditions');
+  if not Assigned(Conditions) or (ElementCount(Conditions) <> 4) then
+    raise Exception.Create('Faculty parchment INFO does not have four conditions');
   AssertCondition(
     PickerInfo,
     0,
@@ -359,6 +397,19 @@ begin
     1,
     'GetIsID',
     RequireSkyrimRecord($0006A152, 'NPC_', 'MGArnielSummon'),
+    NotEqualConditionType,
+    1.0
+  );
+  MirabelleBase := RequireSkyrimRecord(
+    $0001C1A0,
+    'NPC_',
+    'MirabelleErvine'
+  );
+  AssertCondition(
+    PickerInfo,
+    3,
+    'GetIsID',
+    MirabelleBase,
     NotEqualConditionType,
     1.0
   );
@@ -389,7 +440,80 @@ begin
   if not Assigned(Properties) or (ElementCount(Properties) <> 1) then
     raise Exception.Create('Parchment fragment does not have one property');
   AssertProperty(ScriptEntry, 'Picker', PickerQuest);
-  ReportLines.Add('PASS dialogue -> dedicated branch and parchment fragment');
+
+  if GetElementEditValues(MirabelleInfo, 'RNAM') <> ParchmentPrompt then
+    raise Exception.Create('Mirabelle parchment prompt does not match');
+  if GetElementEditValues(MirabelleInfo, 'Responses\Response\NAM1') <>
+    MirabelleParchmentResponse then
+    raise Exception.Create('Mirabelle parchment response does not match');
+  if GetElementNativeValues(MirabelleInfo, 'ENAM\Response Flags') <>
+    SilentTerminalResponseFlagsMask then
+    raise Exception.Create('Mirabelle parchment response flags do not match');
+  if Assigned(ElementByPath(MirabelleInfo, 'DNAM')) then
+    raise Exception.Create('Mirabelle parchment unexpectedly uses SharedInfo');
+  if Assigned(ElementByPath(MirabelleInfo, 'Link To')) then
+    raise Exception.Create('Mirabelle parchment unexpectedly links a submenu');
+  Speaker := LinksTo(ElementByPath(MirabelleInfo, 'ANAM'));
+  if not Assigned(Speaker) or (FormID(Speaker) <> FormID(MirabelleBase)) then
+    raise Exception.Create('Mirabelle parchment speaker does not match');
+
+  Conditions := ElementByPath(MirabelleInfo, 'Conditions');
+  if not Assigned(Conditions) or (ElementCount(Conditions) <> 4) then
+    raise Exception.Create('Mirabelle parchment INFO does not have four conditions');
+  AssertCondition(
+    MirabelleInfo,
+    0,
+    'GetFactionRank',
+    RequireSkyrimRecord($0001F259, 'FACT', 'CollegeofWinterholdFaction'),
+    GreaterThanOrEqualConditionType,
+    3.0
+  );
+  AssertCondition(
+    MirabelleInfo,
+    1,
+    'GetIsID',
+    RequireSkyrimRecord($0006A152, 'NPC_', 'MGArnielSummon'),
+    NotEqualConditionType,
+    1.0
+  );
+  AssertCondition(
+    MirabelleInfo,
+    2,
+    'GetIsID',
+    RequireSkyrimRecord($0003B0E4, 'NPC_', 'dunAlftandEndrast'),
+    NotEqualConditionType,
+    1.0
+  );
+  AssertCondition(
+    MirabelleInfo,
+    3,
+    'GetIsID',
+    MirabelleBase,
+    EqualConditionType,
+    1.0
+  );
+
+  VMAD := ElementByPath(MirabelleInfo, 'VMAD');
+  if not Assigned(VMAD) or
+    (GetElementNativeValues(VMAD, 'Script Fragments\Flags') <>
+      OnBeginFragmentMask) or
+    (GetElementEditValues(VMAD, 'Script Fragments\FileName') <>
+      'DNT_WizardParchmentFragment') then
+    raise Exception.Create('Mirabelle parchment fragment metadata mismatch');
+  Scripts := ElementByPath(VMAD, 'Scripts');
+  if not Assigned(Scripts) or (ElementCount(Scripts) <> 1) then
+    raise Exception.Create('Mirabelle parchment does not have one script');
+  ScriptEntry := ElementByIndex(Scripts, 0);
+  if GetElementEditValues(ScriptEntry, 'ScriptName') <>
+    'DNT_WizardParchmentFragment' then
+    raise Exception.Create('Mirabelle parchment fragment script does not match');
+  Properties := ElementByPath(ScriptEntry, 'Properties');
+  if not Assigned(Properties) or (ElementCount(Properties) <> 1) then
+    raise Exception.Create('Mirabelle parchment fragment does not have one property');
+  AssertProperty(ScriptEntry, 'Picker', PickerQuest);
+  ReportLines.Add(
+    'PASS dialogue -> general faculty plus Mirabelle voice presentation INFO'
+  );
 end;
 
 function Initialize: Integer;

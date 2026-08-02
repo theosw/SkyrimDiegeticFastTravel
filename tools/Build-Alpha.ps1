@@ -1,7 +1,7 @@
 param(
     [string]$Graph = "C:\Users\Theo\Documents\LoreRim Info\travel-network\graph.json",
     [string]$LoreRimRoot = "D:\Lorerim",
-    [string]$XEdit = "D:\Lorerim\tools\SSE Edit (4.0.4)\SSEEdit64.exe",
+    [string]$XEdit = "build\xedit-patched\SSEEdit64.exe",
     [string]$PackageName = "DiegeticTravel-alpha",
     [switch]$PackageOnly
 )

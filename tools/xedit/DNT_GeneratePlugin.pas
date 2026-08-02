@@ -16,7 +16,8 @@ var
   OutputFile, RouteQuest, CoordinatorQuest, TemplateInfo, LegacyFreeGlobal: IInterface;
   AvailableGlobals, CostGlobals, HoursGlobals, OriginServices: TStringList;
   GeneratorConfigPath, ManifestPath, DialogueRuntimePath, PluginOutputPath,
-    SeqFormIDsPath, GeneratorStatusPath, OutputPluginName: string;
+    SeqFormIDsPath, GeneratorStatusPath, GeneratorErrorPath,
+    OutputPluginName: string;
 
 procedure WriteGeneratorStatus(const Status: string);
 var
@@ -28,6 +29,19 @@ begin
     StatusLines.SaveToFile(GeneratorStatusPath);
   finally
     StatusLines.Free;
+  end;
+end;
+
+procedure WriteGeneratorError(const ErrorText: string);
+var
+  ErrorLines: TStringList;
+begin
+  ErrorLines := TStringList.Create;
+  try
+    ErrorLines.Add(ErrorText);
+    ErrorLines.SaveToFile(GeneratorErrorPath);
+  finally
+    ErrorLines.Free;
   end;
 end;
 
@@ -221,7 +235,9 @@ begin
   );
   SetElementNativeValues(AliasEntry, 'ALST', 0);
   SetElementEditValues(AliasEntry, 'ALID', 'DNT_Player');
-  SetElementEditValues(AliasEntry, 'ALFR', Name(PlayerRef));
+  // ElementAssign copied the complete Specific Reference union from the
+  // known player-alias template. Reassigning ALFR through the union container
+  // is rejected by xEdit 4.1.5f as an edit to the non-editable struct itself.
   Add(QuestRecord, 'ANAM', True);
   SetElementNativeValues(QuestRecord, 'ANAM', 1);
 
@@ -852,6 +868,8 @@ begin
   SetJDOLineBreak(#13#10);
   GeneratorStatusPath :=
     ScriptsPath + '..\..\build\xedit_generator.status';
+  GeneratorErrorPath :=
+    ScriptsPath + '..\..\build\xedit_generator.error';
   WriteGeneratorStatus('running');
 
   AvailableGlobals := TStringList.Create;
@@ -902,8 +920,11 @@ begin
     );
     WriteGeneratorStatus('success');
   except
-    WriteGeneratorStatus('failed');
-    raise;
+    on E: Exception do begin
+      WriteGeneratorError(E.Message);
+      WriteGeneratorStatus('failed');
+      raise;
+    end;
   end;
 end;
 

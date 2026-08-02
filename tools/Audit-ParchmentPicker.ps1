@@ -20,6 +20,9 @@ $requiredSources = @(
     (Join-Path $moduleRoot "src\ParchmentCore.cpp"),
     (Join-Path $moduleRoot "src\ParchmentMenu.cpp"),
     (Join-Path $moduleRoot "src\Plugin.cpp")
+    (Join-Path $projectRoot "dependencies.lock.json")
+    (Join-Path $projectRoot "tools\Audit-NativeDependencies.ps1")
+    (Join-Path $projectRoot "THIRD_PARTY_NOTICES.txt")
 )
 foreach ($source in $requiredSources) {
     if (-not (Test-Path -LiteralPath $source -PathType Leaf)) {
@@ -37,13 +40,13 @@ if ($shippedAssets) {
 
 $nativeScript = Get-Content -Raw (Join-Path $modRoot "Scripts\Source\DNT_ParchmentNative.psc")
 $providerScript = Get-Content -Raw (Join-Path $modRoot "Scripts\Source\DNT_WizardParchmentPicker.psc")
-foreach ($requiredToken in @("BeginRequest", "SetRouteOrigin", "AddDestination", "Show", "Cancel", "DNT_ParchmentResult")) {
+foreach ($requiredToken in @("BeginRequest", "SetRouteOrigin", "AddDestination", "Show", "Cancel", "PlayPresentation", "PlayVoiceProbe", "DNT_ParchmentResult")) {
     if ($nativeScript -notmatch [regex]::Escape($requiredToken) -and
         $providerScript -notmatch [regex]::Escape($requiredToken)) {
         throw "Parchment Papyrus contract is missing token: $requiredToken"
     }
 }
-foreach ($destination in @("whiterun", "riften", "solitude", "windhelm", "markarth")) {
+foreach ($destination in @("whiterun", "riften", "solitude", "windhelm", "markarth", "dawnstar", "morthal")) {
     if ($providerScript -notmatch ('"' + [regex]::Escape($destination) + '"')) {
         throw "Wizard parchment provider is missing destination: $destination"
     }
@@ -52,6 +55,59 @@ foreach ($artToken in @("battlemap01.dds", "TextureUvMinX", "TextureUvMaxY", "1.
     if ($providerScript -notmatch [regex]::Escape($artToken)) {
         throw "Wizard parchment provider is missing artwork contract token: $artToken"
     }
+}
+foreach ($voiceToken in @(
+    "MirabelleBase",
+    "Voice/Skyrim.esm/FemaleUniqueMirabelleErvine/mg01__000d67d1_1.fuz",
+    "Very good. Then we're done here.",
+    "MirabellePresentationDurationSeconds = 2.147846",
+    "DNT_ParchmentNative.PlayPresentation",
+    "WIZARD_PARCHMENT_PRESENTATION_QUEUED",
+    "timing=info_on_begin",
+    "mapSuppressed=false",
+    "presentationSeconds=",
+    "fallback=map",
+    "Bool VoiceStarted = False",
+    "presentationVoice="
+)) {
+    if ($providerScript -notmatch [regex]::Escape($voiceToken)) {
+        throw "Wizard parchment provider is missing Mirabelle presentation token: $voiceToken"
+    }
+}
+
+$papyrusSource = Get-Content -Raw (Join-Path $moduleRoot "src\Papyrus.cpp")
+foreach ($voiceToken in @(
+    "ExpectedRuntime{ 1, 6, 1170, 0 }",
+    "ModernCompileAndRunId = 441582",
+    "ExpectedCompileAndRunOffset = 0x33D6A0",
+    "MirabelleReferenceId = 0x0001C1B9",
+    "MirabelleProbeSubtitle",
+    "MirabelleProbeDurationSeconds = 2.147846F",
+    "ValidatePresentation",
+    "PresentationWindowSeconds",
+    "CompileAndRunWithRuntimeRelocation",
+    "AddPresentationSubtitle",
+    "SubtitleManager::GetSingleton",
+    "BSSpinLockGuard",
+    "subtitleManager->subtitles.push_back",
+    "subtitle.forceDisplay = true",
+    "REL::ID(a_relocationId)",
+    "PARCHMENT_VOICE_PROBE_QUEUED",
+    "PARCHMENT_PRESENTATION_QUEUED",
+    "PARCHMENT_PRESENTATION_DISPATCH",
+    "PARCHMENT_PRESENTATION_REJECT",
+    "subtitleAdded=",
+    "PauseCurrentDialogue",
+    'std::format("SpeakSound \"{}\"", presentation.voicePath)'
+)) {
+    if ($papyrusSource -notmatch [regex]::Escape($voiceToken)) {
+        throw "Runtime-gated Mirabelle voice probe is missing token: $voiceToken"
+    }
+}
+if ($providerScript -match "ConsoleUtil" -or
+    $papyrusSource -match [regex]::Escape("script->CompileAndRun(" ) -or
+    $papyrusSource -match [regex]::Escape("RELOCATION_ID(21416, 21890)")) {
+    throw "Rejected stock CommonLib/ConsoleUtil voice path is still present."
 }
 
 $menuSource = Get-Content -Raw (Join-Path $moduleRoot "src\ParchmentMenu.cpp")
@@ -117,4 +173,4 @@ if ($RequireNativeBuild) {
 
 Write-Host "Parchment-picker audit passed."
 Write-Host "Bundled artwork/audio assets: 0"
-Write-Host "Wizard destinations: 5"
+Write-Host "Wizard destinations: 7"

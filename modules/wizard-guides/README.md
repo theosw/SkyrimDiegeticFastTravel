@@ -12,15 +12,17 @@ Destinations dependency.
 - Sybille Stentor offers a direct trip to the College.
 - Wuunferth the Unliving offers a direct trip to the College.
 - Calcelmo offers a direct trip to the College.
-- Permanent College faculty offer Whiterun, Riften, Solitude, Windhelm, or
-  Markarth from the College.
+- Madena offers a direct trip to the College.
+- Falion offers a direct trip to the College.
+- Permanent College faculty offer Whiterun, Riften, Solitude, Windhelm,
+  Markarth, Dawnstar, or Morthal from the College.
 - Every hop costs 250 gold.
 - Travel is an immediate teleport. It does not advance time, count as rest, or
   restore health, magicka, or stamina.
 - There are no faction, relationship, quest, or trust gates in Phase 1.
 
-The proven three-node star established the route pattern used by the proven
-six-node network:
+The proven three-node star established the route pattern used by the
+eight-node candidate:
 each court wizard reaches only the College, while any permanent College faculty
 member can provide the same outward destination menu.
 
@@ -50,6 +52,8 @@ vanilla INFO whose FUZ/LIP exists for the speaker's exact voice type:
 - Sybille Stentor: `Of course.`
 - Wuunferth the Unliving: `Of course.`
 - Calcelmo: `Of course.`
+- Madena: `Of course.`
+- Falion: `Of course.`
 - College faculty destination confirmation: `Of course.`
 
 The branching faculty hub owns the unvoiced forced-subtitle response
@@ -81,8 +85,15 @@ installed JK interior overhauls where necessary:
   inventory winner is USSEP
 - Markarth: `MarkarthCastleWizardVendorMarkerREF` (`03692A:Skyrim.esm`), whose
   focused inventory winner is Skyrim.esm
+- Dawnstar: `MadenaServiceMarkerREF` (`0877B4:Skyrim.esm`)
+- Morthal: `MorthalCarriageEastDestinationMarker` (`0EB7CC:Skyrim.esm`), a
+  purpose-built ground-level arrival reference outside the rebuilt town
 
-Their spatial safety passed the controlled 2026-07-31 in-game regression.
+The first six nodes' spatial safety passed the controlled 2026-07-31 in-game
+regression. Dawnstar passed its focused 2026-08-01 arrival test. The original
+Morthal map-marker candidate landed on COTN roof geometry and is rejected; the
+carriage-destination replacement is structurally verified but still needs a
+focused gameplay arrival check.
 Structural validation alone still cannot prove marker safety after future
 load-order or interior changes.
 
@@ -123,8 +134,9 @@ voice-asset audits pass. The monitored 2026-07-31 retest confirmed Ancano had no
 option, both new round trips completed with matching voices, both arrival
 markers were usable, and the Whiterun regression completed. Papyrus recorded
 five starts and five completions. Wuunferth's line was slightly cut off by the
-one-second travel delay; timing polish is deferred while voice choices remain
-provisional.
+former one-second travel delay. The current candidate reserves 1.5 seconds for
+dialogue, then plays the payment sound with `PlayAndWait`, so neither audio cue
+masks or clips the other; further timing polish remains live-test gated.
 
 An initial `9B4545B8...` gameplay pass proved all five requested teleports but
 also allowed Ancano to select an identical court-wizard root and produced wrong
@@ -136,7 +148,7 @@ enforces that contract.
 The live-proven fare-feedback build replaces the normal insufficient-funds
 modal with `Debug.Notification`, keeping the denial visible in the top-left without
 interrupting play. Successful payment plays Skyrim's vanilla `ITMGoldDown`
-sound (`000334AB:Skyrim.esm`) immediately after the silent gold removal. The
+sound (`000334AB:Skyrim.esm`) after the confirmation response. The
 sound is an audited `FarePaymentSound` quest-script property rather than a
 runtime EditorID lookup. The ESP is byte-idempotent at SHA-256
 `2DF34217F6576D3FCFE720E1E101690216E6D94157C26A9D79544A1E7BA83C21`;
@@ -152,7 +164,7 @@ The live-proven phase-1 checkpoint had one semantic rough edge: its terminal
 INFO could play an affirmative vanilla response before the authoritative
 service rejected the fare. The service-side check remains mandatory.
 
-The current fare-denial candidate addresses that rough edge with mutually
+The previous fare-denial candidate addressed that rough edge with mutually
 exclusive terminal INFOs: funded responses require at least 250 gold and denial
 responses require less than 250 gold, while both still call the authoritative
 service fragment. Farengar, Wylandriah, Sybille, and Calcelmo use verified
@@ -169,6 +181,30 @@ College destination-level subtitle denials, silent map denials, and funded map
 travel. The listener observed four successful trips and no wizard-script
 warning. Wylandriah and Calcelmo still need focused live voice spot-checks;
 Wuunferth is intentionally subtitle-only.
+
+The current seven-spoke expansion adds exact-speaker routes for Madena and
+Falion plus Dawnstar and Morthal faculty destinations. The independent xEdit
+audit verifies seven exact direct routes, seven hub links, two new three-INFO
+destination topics, inverse fare conditions, fragment destinations, and the
+two new service-marker bindings. Both Papyrus scripts compile with zero errors
+and warnings. Vanilla voice-archive inspection proves genuine `Of course.`
+FUZ/LIP for `FemaleCondescending` and `MaleSlyCynical`, and proves Madena's
+funds refusal. A deeper archive/xEdit pass found Falion's genuine generic
+`CantBeHelped` SharedInfo (`000DBA24`, "It can't be helped.") and matching
+`MaleSlyCynical` FUZ/LIP, replacing the earlier subtitle-only fallback.
+`DawnstarMarker` and `MorthalMarker` also resolve their Skyrim FormIDs at
+runtime so an upgraded save cannot retain serialized `None` or stale marker
+properties. A monitored 2026-08-01 pass proved Madena, Dawnstar, Falion's fare
+branches, and four clean trip completions. It rejected the Morthal map marker
+after a roof landing; the audited carriage-destination replacement still needs
+a focused arrival retest. A later pass proved the replacement Morthal arrival;
+Falion's funded line initially played only "course" while the payment cue began
+at the same instant. The sequential service now reserves 1.5 seconds for the
+dialogue and finishes the payment cue before moving the player. A focused
+monitored retest proved Falion's full lip-synced `It can't be helped.` denial,
+full `Of course.` confirmation, payment sound, and completed travel.
+The generator is byte-idempotent at ESP SHA-256
+`174CD2B86AC08693C4B708CDB1141190B5093F2BC6C594BCBE03916840D47B56`.
 
 Do not launch Skyrim as part of the build. Run the gameplay pass only after
 explicit approval.

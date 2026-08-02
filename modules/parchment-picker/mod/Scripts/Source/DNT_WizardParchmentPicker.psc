@@ -1,6 +1,11 @@
 Scriptname DNT_WizardParchmentPicker extends Quest
 
 DNT_WizardTravelService Property Service Auto
+Form Property MirabelleBase Auto
+
+String MirabellePresentationVoice = "Voice/Skyrim.esm/FemaleUniqueMirabelleErvine/mg01__000d67d1_1.fuz"
+String MirabellePresentationSubtitle = "Very good. Then we're done here."
+Float MirabellePresentationDurationSeconds = 2.147846
 
 ; LoreRim already supplies this loose BC7 texture through RUSTIC MAPS. The
 ; picker references it but never redistributes it.
@@ -23,11 +28,33 @@ Function OpenMap(ObjectReference SourceRef)
         Return
     EndIf
 
-    ; The dialogue fragment runs OnBegin. Let the terminal response close the
-    ; Dialogue Menu before opening the blocking native window, and absorb the
-    ; input release that selected this dialogue line.
     ActiveRequest = "opening"
     CurrentSource = SourceRef
+    Bool VoiceStarted = False
+    Float PresentationDelay = 0.0
+
+    ; Mirabelle's dedicated INFO is subtitle-only, so waiting for the Dialogue
+    ; Menu to close would first play that entire silent response. Queue the
+    ; proven actor-targeted FUZ immediately from OnBegin instead. The native
+    ; task pauses the current silent response, queues its normal subtitle, and
+    ; returns the measured payload duration plus one short task margin.
+    If SourceRef != None && MirabelleBase != None && SourceRef.GetBaseObject() == MirabelleBase
+        PresentationDelay = DNT_ParchmentNative.PlayPresentation(SourceRef, MirabellePresentationVoice, MirabellePresentationSubtitle, MirabellePresentationDurationSeconds)
+        VoiceStarted = PresentationDelay > 0.0
+        If VoiceStarted
+            Debug.Trace("[DNT] WIZARD_PARCHMENT_PRESENTATION_QUEUED source=" + SourceRef + " timing=info_on_begin mapSuppressed=false presentationSeconds=" + PresentationDelay)
+        Else
+            Debug.Trace("[DNT] WIZARD_PARCHMENT_PRESENTATION_REJECT source=" + SourceRef + " timing=info_on_begin mapSuppressed=false fallback=map", 2)
+        EndIf
+    EndIf
+
+    ; The dialogue fragment runs OnBegin. Let the terminal response close the
+    ; Dialogue Menu before opening the blocking native window, and absorb the
+    ; input release that selected this dialogue line. Mirabelle first receives
+    ; her measured voice/subtitle presentation window.
+    If PresentationDelay > 0.0
+        Utility.Wait(PresentationDelay)
+    EndIf
     Utility.Wait(0.1)
     Int DialogueWaitTicks = 0
     While UI.IsMenuOpen("Dialogue Menu") && DialogueWaitTicks < 50
@@ -70,13 +97,21 @@ Function OpenMap(ObjectReference SourceRef)
     AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "solitude", "Solitude ", Service.GetFare("solitude"), 0.330, 0.150) && AddedAll
     AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "windhelm", "Windhelm ", Service.GetFare("windhelm"), 0.812, 0.372) && AddedAll
     AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "markarth", "Markarth ", Service.GetFare("markarth"), 0.079, 0.474) && AddedAll
+    AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "dawnstar", "Dawnstar ", Service.GetFare("dawnstar"), 0.570, 0.177) && AddedAll
+    AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "morthal", "Morthal ", Service.GetFare("morthal"), 0.402, 0.298) && AddedAll
 
-    If !AddedAll || !DNT_ParchmentNative.Show(ActiveRequest)
+    If !AddedAll
+        DNT_ParchmentNative.Cancel(ActiveRequest)
+        AbortOpen("destination_setup_failed")
+        Return
+    EndIf
+
+    If !DNT_ParchmentNative.Show(ActiveRequest)
         DNT_ParchmentNative.Cancel(ActiveRequest)
         AbortOpen("show_failed")
         Return
     EndIf
-    Debug.Trace("[DNT] WIZARD_PARCHMENT_OPEN source=" + SourceRef + " request=" + ActiveRequest)
+    Debug.Trace("[DNT] WIZARD_PARCHMENT_OPEN source=" + SourceRef + " request=" + ActiveRequest + " presentationVoice=" + VoiceStarted)
 EndFunction
 
 Function AbortOpen(String Reason)
@@ -125,6 +160,10 @@ String Function GetDestinationId(Int SelectionIndex)
         Return "windhelm"
     ElseIf SelectionIndex == 4
         Return "markarth"
+    ElseIf SelectionIndex == 5
+        Return "dawnstar"
+    ElseIf SelectionIndex == 6
+        Return "morthal"
     EndIf
     Return ""
 EndFunction

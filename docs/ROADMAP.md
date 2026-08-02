@@ -19,16 +19,30 @@
 
 ## After beta
 
-- Decode and author each CFTO ferryman's real lane graph.
-- Add court-wizard teleport services and favor-quest unlocks.
-- Quest-lock Mark/Recall and related teleport spells.
-- Add the propylon-style ancient-site loop.
-- Optionally integrate Better Carriage Destinations as a map-picking front end
-  while retaining this mod's route whitelist, graph fare, hours, and CFTO handoff.
+- [x] Establish the College-centred wizard-guide infrastructure and seven
+  capital spokes without trust/quest gates.
 - [x] Live-test the optional wizard-guide BCD adapter at 32:9, including map cancel,
   core fare denial, one selected trip, and the dialogue-list fallback.
 - [x] Build and statically audit the provider-neutral SKSE parchment picker,
   including an external-art contract and 32:9-safe layout.
-- [ ] Run the parchment picker gameplay matrix for mouse/controller selection,
-  cancel, missing/found artwork, fare denial, and core service handoff.
-- [ ] Add the professor's physical map/showing animation after picker proof.
+- [ ] Run the remaining parchment picker matrix: Dawnstar/Morthal alignment,
+  the replacement Morthal carriage-marker arrival, controller selection/cancel,
+  missing artwork, and dialogue fallback.
+- [x] Prove a physical parchment selection surface with route highlighting,
+  HUD suppression, mouse input, cancel, and external-art fallback.
+- [x] Prove Mirabelle voice, subtitle, and lip sync before picker handoff.
+- [ ] Live-test the generalized presentation-then-picker handoff.
+- [ ] Add controller focus/confirm/cancel only with the intended No Delete
+  Controller compatibility stack enabled.
+- [ ] Adapt the parchment/BCD selection contract to CFTO carriages while
+  retaining CFTO ride execution and live graph fare/time revalidation.
+- [ ] Decode and author each CFTO ferryman's real lane graph, then implement a
+  boat-provider adapter.
+- [ ] Define optional compatibility adapters for intervention and Mark/Recall
+  mods instead of immediately cloning their spell suites.
+- [ ] Prototype the propylon-style ancient-site loop after discovery, follower,
+  and quest-safe arrival policies are specified.
+- [ ] Add optional favor/relationship gates only after the travel infrastructure
+  is otherwise release-ready.
+
+See `docs/PILLAR_RESEARCH.md` for the rationale and provider order.

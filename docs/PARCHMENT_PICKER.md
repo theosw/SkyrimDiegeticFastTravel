@@ -1,12 +1,13 @@
 # Parchment-picker design ledger
 
-Status: core interaction gameplay-proven in the isolated
+Status: core interaction and the original five routes are gameplay-proven in the isolated
 `UltraDiegeticTravel` profile; the ASCII footer, funded Solitude/Markarth paths,
 and multi-menu HUD lifecycle are gameplay-proven. The corrected crop, five
 crest centers, Winterhold origin, and route behavior are also visually proven.
 The stronger gold/red visibility treatment and Norden-style monochrome cursor
 are now gameplay-proven. No-default-focus startup, the translucent cursor
-center, and Escape cancellation are also gameplay-proven.
+center, and Escape cancellation are also gameplay-proven. Dawnstar and Morthal
+form the current seven-route offline candidate and remain visually unproven.
 
 Candidate artifacts:
 
@@ -15,7 +16,7 @@ Candidate artifacts:
 - `DNTParchmentPicker.dll` SHA-256
   `506A373F5899D13C519F44E992755296BA28D2866483F0895979F6C83F1025CF`;
 - `dist/DiegeticTravelParchmentPicker-offline-candidate.zip` SHA-256
-  `95954C5EEF2B09EB4A35E22FA88340A5F99ACFCEBCBAF41197D2B494F3C6F4DB`.
+  `3335140DEAD3319BFC5E2E202A6AF65AD555D38DA182C867615082E61769D83B`.
 
 ## Accepted architecture
 
@@ -40,8 +41,10 @@ The first local proof references LoreRim's already-enabled RUSTIC MAPS texture
 at `Data/textures/dungeons/imperial/battlemap01.dds`. Source inspection places
 the ragged parchment edge at row 3016 of 4096. The provider-owned crop is now
 `(0,0)-(1,0.736328)` with aspect `1.358090`, excluding the opaque backing strip
-that the prior 0.75 crop exposed. Its corrected five destination coordinates
-and optional Winterhold route origin target the printed crests. The installed
+that the prior 0.75 crop exposed. Five corrected destination coordinates are
+gameplay-proven; Dawnstar `(0.570,0.177)` and Morthal `(0.402,0.298)` extend the
+same normalized contract and await visual proof. The optional Winterhold route
+origin targets its printed crest. The installed
 4K texture remains outside the repository and candidate archive; its local-test
 SHA-256 is
 `C77E6B93129577CD23C6AC733310A5EA6A028F4BE00B472F9AA62018C4C239F8`.
@@ -80,13 +83,15 @@ than treating the packaging label and runtime API value as interchangeable.
   cancel, result-event handoff, funded Whiterun travel, and underfunded
   Whiterun/Solitude denial. Later passes proved the ASCII footer, funded
   Solitude/Markarth travel, and exact hide/restore of 12 LoreRim HUD movies.
-- Still pending: controller-B cancellation, keyboard/controller destination
-  activation, missing-art fallback, and the old five-choice dialogue fallback.
+- Still pending: Dawnstar/Morthal crest alignment, the replacement Morthal
+  carriage-marker arrival, controller-B
+  cancellation, keyboard/controller destination activation, missing-art
+  fallback, and the seven-choice dialogue fallback.
 
 The final package audit reports zero bundled artwork/audio assets. Champollion
 readback confirms the provider PEX embeds the configurable default texture path
 and aspect ratio, preserves capitalized display labels, and maps selection
-indices back to the five lowercase service IDs.
+indices back to the seven lowercase service IDs.
 
 ## Existing-save compatibility
 
@@ -163,9 +168,22 @@ two controller mods are disabled. Revisit them only with the intended
 `No Delete Controller` compatibility layer enabled so the result represents
 the actual release stack.
 
-## Deferred presentation layer
+The controller implementation checklist is intentionally recorded now without
+changing the proven mouse path:
 
-The professor's physical map/showing animation is deliberately separate from
-selection. First prove the picker, cancellation, controller navigation, and
-service handoff. Then investigate a vanilla reading/showing idle and a custom
-folded-map prop without changing the picker/service contract.
+- preserve no-default-focus behavior until the first navigation input;
+- move focus among provider destinations without synthesizing mouse hover;
+- confirm only the currently focused destination;
+- map controller B to the same inert cancel result as Escape/close;
+- never remove or replace LoreRim's controller object;
+- test focus, confirm, cancel, dialogue fallback, and HUD restoration with the
+  intended compatibility stack enabled.
+
+## Presentation layer
+
+The parchment itself and Mirabelle's spoken/subtitled lead-in are proven
+independently. The current offline candidate exposes a provider-neutral
+presentation API and returns a measured voice window before entering the same
+picker. This keeps a future vanilla showing idle or custom folded-map prop
+separate from selection and travel authority. See
+`docs/PRESENTATION_CONTRACT.md` for the exact boundary and remaining live test.

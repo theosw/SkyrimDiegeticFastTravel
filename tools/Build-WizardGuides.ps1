@@ -52,5 +52,5 @@ if (Test-Path -LiteralPath $archive -PathType Leaf) {
 Compress-Archive -Path (Join-Path $packageRoot "*") -DestinationPath $archive -CompressionLevel Optimal
 
 $hash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash
-Write-Host "Packaged wizard-guide phase 1: $archive"
+Write-Host "Packaged College-centred wizard-guide network: $archive"
 Write-Host "SHA-256: $hash"

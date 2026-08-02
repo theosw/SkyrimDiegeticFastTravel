@@ -46,6 +46,8 @@ namespace
             { "solitude", "Solitude", 250, 0.330F, 0.150F },
             { "windhelm", "Windhelm", 250, 0.812F, 0.372F },
             { "markarth", "Markarth", 250, 0.079F, 0.474F },
+            { "dawnstar", "Dawnstar", 250, 0.570F, 0.177F },
+            { "morthal", "Morthal", 250, 0.402F, 0.298F },
         };
         for (const auto& destination : destinations) {
             Require(DNT::Parchment::AddDestination(request, destination, error), "college destination should validate");
@@ -58,7 +60,7 @@ namespace
         auto request = CollegeRequest();
         std::string error;
         Require(DNT::Parchment::ValidateReadyRequest(request, error), "college request should be ready");
-        Require(request.destinations.size() == 5, "college request should contain five destinations");
+        Require(request.destinations.size() == 7, "college request should contain seven destinations");
         Require(request.routeOrigin.has_value(), "college request should define a route origin");
 
         Require(!DNT::Parchment::SetRouteOrigin(
@@ -137,6 +139,55 @@ namespace
             Require(y >= layout.top && y <= layout.top + layout.height, "marker y must remain on the artwork");
         }
     }
+
+    void TestPresentationValidation()
+    {
+        constexpr float mirabelleDuration = 2.147846F;
+        DNT::Parchment::Presentation presentation{
+            .voicePath = "Voice/Skyrim.esm/FemaleUniqueMirabelleErvine/mg01__000d67d1_1.fuz",
+            .subtitle = "Very good. Then we're done here.",
+            .voiceDurationSeconds = mirabelleDuration
+        };
+        std::string error;
+        Require(DNT::Parchment::ValidatePresentation(
+            presentation,
+            error), "the measured Mirabelle presentation should validate");
+        RequireClose(
+            DNT::Parchment::PresentationWindowSeconds(presentation.voiceDurationSeconds),
+            mirabelleDuration + DNT::Parchment::PresentationTaskMarginSeconds,
+            0.0001F,
+            "presentation window should add only the documented task margin");
+
+        auto injection = presentation;
+        injection.voicePath = "Voice/Skyrim.esm/FemaleUnique/test.fuz\"; quit";
+        Require(!DNT::Parchment::ValidatePresentation(
+            injection,
+            error), "console-command delimiters must fail voice-path validation");
+
+        auto traversal = presentation;
+        traversal.voicePath = "Voice/Skyrim.esm/../test.fuz";
+        Require(!DNT::Parchment::ValidatePresentation(
+            traversal,
+            error), "parent traversal must fail voice-path validation");
+
+        auto wrongRoot = presentation;
+        wrongRoot.voicePath = "Sound/Skyrim.esm/test.fuz";
+        Require(!DNT::Parchment::ValidatePresentation(
+            wrongRoot,
+            error), "presentation paths outside Voice must fail");
+
+        auto controlSubtitle = presentation;
+        controlSubtitle.subtitle = "Unsafe\nsubtitle";
+        Require(!DNT::Parchment::ValidatePresentation(
+            controlSubtitle,
+            error), "subtitle control characters must fail");
+
+        auto invalidDuration = presentation;
+        invalidDuration.voiceDurationSeconds = 0.0F;
+        Require(!DNT::Parchment::ValidatePresentation(
+            invalidDuration,
+            error), "zero-duration presentations must fail");
+    }
 }
 
 int main()
@@ -144,6 +195,7 @@ int main()
     TestRequestValidation();
     TestAspectSafeLayouts();
     TestMarkerCentersRemainOnArt();
+    TestPresentationValidation();
     std::cout << "DNTParchmentCoreTests: all checks passed\n";
     return EXIT_SUCCESS;
 }

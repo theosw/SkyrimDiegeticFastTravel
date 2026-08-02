@@ -10,6 +10,8 @@ ObjectReference Property RiftenMarker Auto
 ObjectReference Property SolitudeMarker Auto
 ObjectReference Property WindhelmMarker Auto
 ObjectReference Property MarkarthMarker Auto
+ObjectReference Property DawnstarMarker Auto
+ObjectReference Property MorthalMarker Auto
 
 Int Property FarePerHop = 250 Auto
 
@@ -46,11 +48,14 @@ Bool Function RequestTravel(String DestinationId, ObjectReference SourceRef = No
 
     GoToState("Travelling")
     PlayerRef.RemoveItem(Gold001, FarePerHop, True)
-    If FarePaymentSound != None
-        FarePaymentSound.Play(PlayerRef)
-    EndIf
     Debug.Trace("[DNT] WIZARD_TRAVEL_START source=" + SourceRef + " destination=" + DestinationId + " fare=" + FarePerHop)
-    Utility.Wait(1.0)
+    ; Every reused confirmation is at most 1.11 seconds. Keep the transaction
+    ; cue out of that window so it cannot mask the first word, then wait for the
+    ; cue itself before MoveTo changes cells.
+    Utility.Wait(1.5)
+    If FarePaymentSound != None
+        FarePaymentSound.PlayAndWait(PlayerRef)
+    EndIf
     PlayerRef.MoveTo(DestinationMarker)
     Debug.Trace("[DNT] WIZARD_TRAVEL_COMPLETE source=" + SourceRef + " destination=" + DestinationId + " fare=" + FarePerHop)
     GoToState("")
@@ -70,9 +75,38 @@ ObjectReference Function GetDestinationMarker(String DestinationId)
         Return WindhelmMarker
     ElseIf DestinationId == "markarth"
         Return MarkarthMarker
+    ElseIf DestinationId == "dawnstar"
+        Return GetDawnstarMarker()
+    ElseIf DestinationId == "morthal"
+        Return GetMorthalMarker()
     EndIf
 
     Return None
+EndFunction
+
+ObjectReference Function GetDawnstarMarker()
+    ; New script properties are serialized into an active quest instance.
+    ; Resolve and repair this property at runtime for upgraded saves.
+    ObjectReference ServiceMarker = Game.GetFormFromFile(554932, "Skyrim.esm") as ObjectReference
+    If ServiceMarker != None && DawnstarMarker != ServiceMarker
+        DawnstarMarker = ServiceMarker
+        Debug.Trace("[DNT] WIZARD_TRAVEL_MIGRATE property=DawnstarMarker marker=" + DawnstarMarker)
+    EndIf
+
+    Return DawnstarMarker
+EndFunction
+
+ObjectReference Function GetMorthalMarker()
+    ; The city map marker can sit on rebuilt geometry. Skyrim's dedicated
+    ; east carriage destination is a ground-level arrival reference and has
+    ; no winning override in the tested LoreRim Morthal stack.
+    ObjectReference ArrivalMarker = Game.GetFormFromFile(964556, "Skyrim.esm") as ObjectReference
+    If ArrivalMarker != None && MorthalMarker != ArrivalMarker
+        MorthalMarker = ArrivalMarker
+        Debug.Trace("[DNT] WIZARD_TRAVEL_MIGRATE property=MorthalMarker marker=" + MorthalMarker)
+    EndIf
+
+    Return MorthalMarker
 EndFunction
 
 ObjectReference Function GetCollegeMarker()

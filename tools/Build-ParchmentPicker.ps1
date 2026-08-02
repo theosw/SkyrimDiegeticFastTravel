@@ -15,6 +15,8 @@ $distRoot = Join-Path $projectRoot "dist"
 $archive = Join-Path $distRoot "$PackageName.zip"
 
 if (-not $PackageOnly) {
+    & (Join-Path $PSScriptRoot "Audit-NativeDependencies.ps1") `
+        -LoreRimRoot $LoreRimRoot
     & cmake --build --preset parchment-ae
     if ($LASTEXITCODE -ne 0) {
         throw "Native parchment-picker build failed."
@@ -45,6 +47,7 @@ $requiredInputs = @(
     (Join-Path $modRoot "Scripts\Source\DNT_WizardParchmentFragment.psc"),
     (Join-Path $modRoot "Scripts\Source\DNT_WizardParchmentPicker.psc"),
     (Join-Path $modRoot "SKSE\Plugins\DNTParchmentPicker.dll")
+    (Join-Path $projectRoot "THIRD_PARTY_NOTICES.txt")
 )
 foreach ($requiredInput in $requiredInputs) {
     if (-not (Test-Path -LiteralPath $requiredInput -PathType Leaf)) {
@@ -86,6 +89,8 @@ Copy-Item -Path (Join-Path $modRoot "Scripts\Source\*.psc") `
     -Destination (Join-Path $packageRoot "Scripts\Source") -Force
 Copy-Item -LiteralPath (Join-Path $modRoot "SKSE\Plugins\DNTParchmentPicker.dll") `
     -Destination (Join-Path $packageRoot "SKSE\Plugins") -Force
+Copy-Item -LiteralPath (Join-Path $projectRoot "THIRD_PARTY_NOTICES.txt") `
+    -Destination $packageRoot -Force
 
 $forbiddenExtensions = @(".png", ".jpg", ".jpeg", ".dds", ".svg", ".wav", ".xwm", ".fuz")
 $bundledAssets = Get-ChildItem -LiteralPath $packageRoot -Recurse -File | Where-Object {

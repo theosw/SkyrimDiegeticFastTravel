@@ -59,6 +59,33 @@ $expected.Add(
 )
 $expected.Add(
     [pscustomobject]@{
+        Label = "Madena: Of course."
+        Path = (
+            "sound\voice\skyrim.esm\femalecondescending\" +
+            "dialoguege_dialoguegeneric_000dba22_1.fuz"
+        )
+    }
+)
+$expected.Add(
+    [pscustomobject]@{
+        Label = "Falion: Of course."
+        Path = (
+            "sound\voice\skyrim.esm\maleslycynical\" +
+            "dialoguege_dialoguegeneric_000dba22_1.fuz"
+        )
+    }
+)
+$expected.Add(
+    [pscustomobject]@{
+        Label = "Falion: insufficient funds"
+        Path = (
+            "sound\voice\skyrim.esm\maleslycynical\" +
+            "dialoguege_dialoguegeneric_000dba24_1.fuz"
+        )
+    }
+)
+$expected.Add(
+    [pscustomobject]@{
         Label = "Farengar: insufficient funds"
         Path = (
             "sound\voice\skyrim.esm\maleeventonedaccented\" +
@@ -89,6 +116,15 @@ $expected.Add(
         Label = "Calcelmo: insufficient funds"
         Path = (
             "sound\voice\skyrim.esm\maleoldkindly\" +
+            "housepurch_housepurchasesh_000c6e2d_1.fuz"
+        )
+    }
+)
+$expected.Add(
+    [pscustomobject]@{
+        Label = "Madena: insufficient funds"
+        Path = (
+            "sound\voice\skyrim.esm\femalecondescending\" +
             "housepurch_housepurchasesh_000c6e2d_1.fuz"
         )
     }

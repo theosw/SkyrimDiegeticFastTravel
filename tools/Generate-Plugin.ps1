@@ -1,6 +1,6 @@
 param(
     [string]$LoreRimRoot = "D:\Lorerim",
-    [string]$XEdit = "D:\Lorerim\tools\SSE Edit (4.0.4)\SSEEdit64.exe",
+    [string]$XEdit = "build\xedit-patched\SSEEdit64.exe",
     [string]$Manifest = "build\dialogue_manifest.json",
     [string]$DialogueRuntime = "build\dialogue_runtime.json",
     [string]$PluginOutput = "build\DiegeticTravel.esp",
@@ -71,6 +71,7 @@ function Find-XEditWindow(
 }
 
 $manifestPath = Resolve-ProjectPath $Manifest
+$xeditPath = Resolve-ProjectPath $XEdit
 $dialogueRuntimePath = Resolve-ProjectPath $DialogueRuntime
 $pluginOutputPath = Resolve-ProjectPath $PluginOutput
 $seqOutputPath = Resolve-ProjectPath $SeqOutput
@@ -79,12 +80,13 @@ $generatorConfigPath = Join-Path $projectRoot "build\xedit_generator_config.json
 $pluginsListPath = Join-Path $projectRoot "build\xedit_plugins.txt"
 $xeditLogPath = Join-Path $projectRoot "build\xedit_generator.log"
 $xeditStatusPath = Join-Path $projectRoot "build\xedit_generator.status"
+$xeditErrorPath = Join-Path $projectRoot "build\xedit_generator.error"
 $seqFormIdsPath = Join-Path $projectRoot "build\xedit_seq_formids.txt"
 $scriptPath = Join-Path $PSScriptRoot "xedit\DNT_GeneratePlugin.pas"
 $gameData = Join-Path $LoreRimRoot "Stock Game\Data"
 $cftoPlugin = Join-Path $LoreRimRoot "mods\Carriage and Ferry Travel Overhaul - Fixes and Winterhold\CFTO.esp"
 
-foreach ($required in @($XEdit, $manifestPath, $scriptPath, $cftoPlugin)) {
+foreach ($required in @($xeditPath, $manifestPath, $scriptPath, $cftoPlugin)) {
     if (-not (Test-Path -LiteralPath $required -PathType Leaf)) {
         throw "Required build input not found: $required"
     }
@@ -112,6 +114,7 @@ foreach ($oldOutput in @(
     $dialogueRuntimePath,
     $xeditLogPath,
     $xeditStatusPath,
+    $xeditErrorPath,
     $seqFormIdsPath
 )) {
     if (Test-Path -LiteralPath $oldOutput -PathType Leaf) {
@@ -149,16 +152,23 @@ $xeditArguments = @(
 
 # Official xEdit 4.1.5f parses -autoload/-autoexit only in Edit mode even
 # though Script mode already contains the corresponding load and shutdown
-# behavior. Keep a managed UI Automation fallback for the stock executable.
-# The stock modal selector must be visible for UI Automation to expose it;
-# launching it hidden leaves no accessible top-level window. A patched xEdit
-# accepts the switches and will pass through without UI interaction.
-Add-Type -AssemblyName UIAutomationClient
-Add-Type -AssemblyName UIAutomationTypes
+# behavior. The repository's patched executable accepts those switches and is
+# the default. Retain managed UI Automation only when a stock executable is
+# passed explicitly.
+$patchedDefault = Resolve-ProjectPath "build\xedit-patched\SSEEdit64.exe"
+$useManagedUiFallback = -not $xeditPath.Equals(
+    $patchedDefault,
+    [System.StringComparison]::OrdinalIgnoreCase
+)
+if ($useManagedUiFallback) {
+    Add-Type -AssemblyName UIAutomationClient
+    Add-Type -AssemblyName UIAutomationTypes
+}
+$xeditWindowStyle = if ($useManagedUiFallback) { "Normal" } else { "Hidden" }
 $xeditProcess = Start-Process `
-    -FilePath $XEdit `
+    -FilePath $xeditPath `
     -ArgumentList $xeditArguments `
-    -WindowStyle Normal `
+    -WindowStyle $xeditWindowStyle `
     -PassThru
 $confirmedModules = $false
 $terminalStatusSeen = $false
@@ -167,7 +177,7 @@ $automationDeadline = [DateTime]::UtcNow.AddMinutes(2)
 while (-not $xeditProcess.HasExited -and [DateTime]::UtcNow -lt $automationDeadline) {
     $xeditProcess.Refresh()
 
-    if (-not $confirmedModules) {
+    if ($useManagedUiFallback -and -not $confirmedModules) {
         $moduleDialog = Find-XEditControl `
             -Process $xeditProcess `
             -Name "Module Selection" `
@@ -201,7 +211,7 @@ while (-not $xeditProcess.HasExited -and [DateTime]::UtcNow -lt $automationDeadl
     if ($terminalStatusSeen) {
         Start-Sleep -Milliseconds 250
         $xeditProcess.Refresh()
-        if (-not $xeditProcess.HasExited) {
+        if ($useManagedUiFallback -and -not $xeditProcess.HasExited) {
             $mainWindow = Find-XEditWindow `
                 -Process $xeditProcess `
                 -ExcludedName "Module Selection"
@@ -229,17 +239,42 @@ if (-not $xeditProcess.HasExited) {
 }
 $xeditProcess.Refresh()
 
-if (-not $xeditProcess.HasExited) {
-    throw "xEdit did not finish automatically; its window was left open for inspection."
+if (
+    $terminalStatusSeen -and
+    $generatorStatus -eq "failed" -and
+    -not $useManagedUiFallback -and
+    -not $xeditProcess.HasExited
+) {
+    # A failed script can leave a hidden error/save dialog even though its
+    # compact status is complete. This is the exact process launched above;
+    # stop it so headless failures never linger beside the game.
+    Stop-Process -Id $xeditProcess.Id -Force
+    $null = $xeditProcess.WaitForExit(5000)
+    $xeditProcess.Refresh()
 }
-if ($xeditProcess.ExitCode -ne 0) {
-    throw "xEdit plugin generation failed with exit code $($xeditProcess.ExitCode)"
+
+if (-not $xeditProcess.HasExited) {
+    if (-not $useManagedUiFallback) {
+        Stop-Process -Id $xeditProcess.Id -Force
+        $null = $xeditProcess.WaitForExit(5000)
+        $xeditProcess.Refresh()
+        throw "Patched xEdit did not finish automatically; its exact process was terminated."
+    }
+    throw "Stock xEdit did not finish automatically; its window was left open for inspection."
 }
 if (-not $terminalStatusSeen) {
     throw "xEdit exited without reporting generator completion. See: $xeditLogPath"
 }
 if ($generatorStatus -ne "success") {
-    throw "xEdit generator reported failure. See: $xeditLogPath"
+    $errorDetail = if (Test-Path -LiteralPath $xeditErrorPath -PathType Leaf) {
+        (Get-Content -LiteralPath $xeditErrorPath -Raw).Trim()
+    } else {
+        "no compact error detail was written"
+    }
+    throw "xEdit generator reported failure: $errorDetail"
+}
+if ($xeditProcess.ExitCode -ne 0) {
+    throw "xEdit plugin generation failed with exit code $($xeditProcess.ExitCode)"
 }
 if (-not $confirmedModules) {
     Write-Verbose (

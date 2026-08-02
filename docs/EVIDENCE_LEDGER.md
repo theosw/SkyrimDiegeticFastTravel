@@ -1,6 +1,6 @@
 # Diegetic Travel evidence ledger
 
-Updated: 2026-08-01
+Updated: 2026-08-02
 
 This ledger separates ideas that look valid in tooling from behavior that has
 actually been demonstrated in Skyrim. Update an entry whenever a test changes
@@ -22,6 +22,38 @@ monitored gameplay test on the `UltraDiegeticTravel` profile.
 The latest fully proven faculty-access wizard star is the six-node College,
 Whiterun, Riften, Solitude, Windhelm, and Markarth network. Its ESP is SHA-256
 `F81562179374815AEF3D57015BC0EBC7AD40B7235A730CB727E7994F7EF68B4F`.
+The current eight-node wizard extension adds Madena/Dawnstar and Falion/Morthal
+without changing the College-centred topology. Offline evidence proves seven
+exact-speaker direct routes, seven hub links, every funded/denial condition
+pair, service fragments, runtime marker migration, both new success voice
+assets, both direct-wizard refusal assets, and the seven-destination parchment
+contract.
+Both wizard Papyrus scripts and all three parchment scripts compile with zero
+errors and warnings; the native test, independent xEdit audits, and zero-
+bundled-asset audit pass. A monitored 2026-08-01 run recorded four clean trips:
+Madena and Dawnstar passed, Falion's denial/funded travel branches executed, and
+the Morthal parchment selection handed off correctly. The original Morthal map
+marker is Rejected because it landed on COTN roof geometry. A full-profile VFS
+xEdit audit identified unoverridden ground-level
+`MorthalCarriageEastDestinationMarker` (`0EB7CC`) as the replacement, and the
+next monitored pass proved its ground-level arrival. Falion's funded travel
+completed again but its confirmation remained silent. Direct BSA extraction
+proves that the selected FUZ is valid, distinct, non-silent audio lasting 0.93
+seconds. A 1.75-second follow-up produced only "course," disproving end cutoff;
+the payment sound began at the exact response start and is the stronger masking
+candidate. All thirteen success clips are at most 1.11 seconds. The rebuilt
+service waits 1.5 seconds, plays the payment sound with `PlayAndWait`, then
+moves the player. xEdit and BSA inspection also found genuine SharedInfo
+`CantBeHelped` (`000DBA24`) with a distinct 1.35-second `MaleSlyCynical` FUZ for
+Falion's denial. A focused monitored live check proved the full lip-synced
+denial, the full funded confirmation, payment cue, and completed travel. The
+voice/payment sequencing is Proven. The two new crest alignments still need
+confirmation.
+Its wizard ESP is SHA-256
+`174CD2B86AC08693C4B708CDB1141190B5093F2BC6C594BCBE03916840D47B56`;
+the separately named package is
+`dist\DiegeticTravelWizardGuides-seven-spoke-candidate.zip`, SHA-256
+`29844E10D041790F0898B564B939DC562AFE1001EED008E6F9053F970E233F86`.
 The preceding Solitude checkpoint is commit `ae1dc5c`, whose ESP is SHA-256
 `3F5C3BEBCBBD26DC70517A7943CF36E918942C57240736A3BFD3731EAB2D9550`.
 Commit `4dfb646`, whose ESP is SHA-256
@@ -74,7 +106,8 @@ live-tested payload was packaged without recompilation at
 
 ### PARCH-001 — Provider-neutral parchment destination picker
 
-**Status:** Proven (core interaction, five-route layout, visibility, and startup/cursor polish)
+**Status:** Proven (core interaction, original five-route layout, visibility,
+and startup/cursor polish); Candidate (Dawnstar/Morthal extension)
 
 **Claim:** A blocking SKSE Menu Framework window can present provider-supplied
 map artwork and normalized destination markers, return only a selection index,
@@ -91,8 +124,10 @@ byte-identically at SHA-256
 `90DB9BF3FFE1823D0403D4739BF694B8FACC89E498276C66363C5E3C4D760E0B`.
 The current candidate archive is
 `dist\DiegeticTravelParchmentPicker-offline-candidate.zip`, SHA-256
-`95954C5EEF2B09EB4A35E22FA88340A5F99ACFCEBCBAF41197D2B494F3C6F4DB`,
-and contains zero artwork/audio assets.
+`CA785A6BDE17AC9F0A11D262920A731439FCCD9B9EE33201B1537F7EDDD059EC`,
+and contains zero artwork/audio assets. Its forced-subtitle native DLL is
+SHA-256
+`1F0E2C1DB15896614582618CC63BDBB8169D76E99B9DC4FE80A42F3FCB800043`.
 
 **Gameplay evidence:** After the known custom-dialogue compatibility save and
 reload, a monitored 32:9 pass opened the RUSTIC parchment four times with the
@@ -168,6 +203,90 @@ to visibility/alpha 100, Skyrim exited normally, and no DNT error/warning
 appeared. This promotes the startup gate, cursor alpha, and Escape path to
 Proven.
 
+**Mirabelle presentation voice result:** Mirabelle's unique voice type has
+no matching generic SharedInfo asset, while the exact desired INFO belongs to
+`MG01`, a quest that stops after First Lessons. The first direct-FUZ experiment
+used ConsoleUtil selection followed immediately by `ExecuteCommand`; source
+inspection shows the selection is queued through Skyrim's UI message queue but
+the command reads the current selected reference synchronously. Two live
+attempts logged the Papyrus request but produced no Mirabelle audio, so this
+selection-based architecture is Rejected. The replacement native `PlayVoice`
+call resolved the actor on the game thread and invoked CommonLibSSE-NG
+`Script::CompileAndRun`. The live test then crashed at 01:58:36 before map
+`Show`; CrashLogger's probable stack names `DNTParchmentPicker.dll`,
+`Script::CompileAndRun`, Papyrus.cpp line 132, Mirabelle `0001C1B9`, and the
+exact `SpeakSound` path. No `PARCHMENT_VOICE_DISPATCH` was logged. Source
+comparison explains the failure: this CommonLib build maps AE to relocation ID
+`21890`, whereas OStim NG uses ID `441582` on runtime patches 1.6.1130 and
+newer. The actor-targeted stock-CommonLib path is therefore Rejected on
+LoreRim's 1.6.1170 runtime. A subtitle-only fallback with no runtime voice
+command was rebuilt, audited, deployed byte-for-byte, and profile-preflighted.
+
+**Isolated corrected-relocation candidate:** The configured CommonLib checkout
+is official upstream commit `b93280e832f263dbef44e44cbe2936622a02f91a`;
+the problem is its still-stale convenience-method relocation, not an accidental
+fork or dependency downgrade. Direct decoding of LoreRim's exact Address
+Library 11.0.0 database proves ID `21890` is absent, the next ID `21891`
+resolves to the rejected crash address `0x33D880`, and modern ID `441582`
+resolves to `0x33D6A0`. `dependencies.lock.json` pins the Skyrim, SKSE,
+Address Library, Menu Framework, RUSTIC MAPS, wizard-core, CommonLib, and vcpkg
+inputs by version/commit and hash; the read-only dependency audit passes.
+
+The new Candidate bypasses only CommonLib's stock `Script::CompileAndRun`
+method. It refuses any runtime other than 1.6.1170, refuses any resolved offset
+other than `0x33D6A0`, and whitelists only Mirabelle reference `0001C1B9` plus
+the exact installed MG01 FUZ path. Its first test branch returns before request
+creation and map `Show`, so a Mirabelle prompt can test voice dispatch without
+involving Menu Framework. Other faculty retain the proven map path. Native
+build/tests, three zero-warning Papyrus compiles, source/package constraints,
+and the independent xEdit adapter audit pass. This is not gameplay-proven.
+The archive SHA-256 is
+`0543BCB990EED393BDBF16AF4EBD6D5F72BDEEB5F685CAFF17EBA58C1B7AE21C`.
+All six deployed runtime files match the workspace byte-for-byte, and the
+non-launching `UltraDiegeticTravel` preflight passes. No game was launched.
+
+**Focused gameplay result:** The 2026-08-02 monitored pass dispatched the
+corrected relocation four times at ID `441582` / offset `0x33D6A0`. The player
+heard the matching Mirabelle line with proper lip sync, Skyrim exited normally,
+no new crash report was created, and neither native nor DNT Papyrus logging
+reported an error. This promotes the relocation, actor targeting, FUZ path,
+audio, and lip sync to Proven. The pass also exposed a sequencing defect: the
+subtitle-only INFO completed a silent subtitle/lip-sync presentation before
+`OpenMap`'s dialogue-close wait queued the proven voice. The follow-up Candidate
+moves only the Mirabelle probe ahead of that wait, directly into the INFO
+OnBegin path; it remains map-suppressed and requires focused timing verification.
+
+The focused timing pass then fired two clean probes. The player confirmed that
+the voice now starts at the intended moment and lip sync remains correct;
+Skyrim exited normally, no new crash report appeared, and DNT logs were clean.
+This promotes the OnBegin timing to Proven. Pausing the Fuz Ro D-oh-generated
+silent response also removes its subtitle, and `SpeakSound` does not create a
+replacement, so the audible line had no subtitle. The next Candidate inserts
+the exact matching text into Skyrim's normal `SubtitleManager` immediately
+after proven playback begins. It uses the manager's own spin lock, Mirabelle's
+speaker handle, squared distance zero, and forced-display flag; it does not
+draw custom HUD text. LoreRim's active Fuz Ro D-oh and Lingering Subtitles Fix
+remain untouched.
+
+The focused subtitle pass then produced two clean Mirabelle probes. Both native
+dispatches resolved relocation ID `441582` to `0x33D6A0` and logged
+`subtitleAdded=true`; the player confirmed that subtitle, voice, and lip sync
+worked together. Skyrim exited normally, no new crash report was created, and
+no native or DNT Papyrus warning/error was recorded. This promotes normal
+subtitle-manager insertion and visible display to Proven. Subtitle
+lifetime/cleanup was not separately reported and remains a minor regression
+check.
+
+**End-to-end Mirabelle handoff Candidate:** Direct extraction from the locked
+vanilla voice BSA measures the exact MG01 XWM payload at 2.147846 seconds. The
+provider now reserves a 2.35-second presentation window after the proven
+OnBegin voice/subtitle dispatch, then enters the existing dialogue-close and
+parchment `Show` path. It marks the request as opening before waiting to prevent
+re-entry. If native voice dispatch is rejected, travel remains available via a
+map fallback. Native tests, three zero-warning Papyrus compiles, the independent
+xEdit audit, dependency audit, and zero-bundled-asset audit pass. The complete
+voice -> subtitle -> map -> travel sequence needs one focused gameplay test.
+
 **Compatibility evidence:** The new dialogue branch initially remained absent
 until the user saved and reloaded once with the adapter installed. Quest
 stop/start did not resolve that live session. The Creation Kit Wiki discussion
@@ -181,7 +300,7 @@ while both controller mods are disabled; test only with the intended
 `No Delete Controller` compatibility stack enabled.
 
 **Use:** The provider-neutral picker is valid for continued wizard-guide
-development. Keep the BCD adapter and five-choice dialogue path as regression
+development. Keep the BCD adapter and seven-choice dialogue path as regression
 fallbacks until the remaining input and fallback cases are exercised.
 
 ## Dialogue and voice claims
@@ -479,11 +598,14 @@ See `docs\WIZARD_FARE_DENIAL_VOICES.md` for the full matrix and rejected lines.
 
 **Status:** Proven
 
-**Claim:** A terminal INFO fragment running on `OnBegin`, followed by a
-one-second service delay, reliably charges and moves the player after dialogue.
+**Claim:** A terminal INFO fragment running on `OnBegin` can charge immediately,
+reserve 1.5 seconds for dialogue, play the payment cue with `PlayAndWait`, and
+then move the player without overlapping either audio source.
 
 **Evidence:** Farengar, Wylandriah, Whiterun, and Riften routes have completed
-with paired `WIZARD_TRAVEL_START` and `WIZARD_TRAVEL_COMPLETE` traces.
+with paired `WIZARD_TRAVEL_START` and `WIZARD_TRAVEL_COMPLETE` traces. The
+sequential audio revision is statically supported and awaiting its focused live
+gate.
 
 ### RUN-002 — Fare denial
 
@@ -696,6 +818,43 @@ coverage exists and forced-subtitle fallbacks elsewhere. The service remains the
 authority and the map path remains notification-only because selection occurs
 after dialogue closes. Do not call the semantic mismatch fixed until the new
 candidate passes the monitored denial and funded-regression checks.
+
+## 2026-08-02 offline provider and authoring checkpoint
+
+**Claim:** The gameplay-proven Mirabelle playback/subtitle mechanism can be
+expressed as a provider-neutral presentation contract without weakening its
+runtime guard or coupling it to selection/payment/movement.
+
+**Offline evidence:** `PlayPresentation` now validates actor, installed
+`Voice/*.fuz` path, subtitle, and finite measured duration; holds an
+`ObjectRefHandle` through the queued task; and returns duration plus a
+0.20-second margin. Pure tests accept Mirabelle's measured contract and reject
+command delimiters, traversal, wrong roots, subtitle controls, and invalid
+durations. The native build, three Papyrus compiles, dependency lock, exact
+Address Library relocation check, independent parchment xEdit audit, BCD
+adapter audit, and zero-bundled-art/audio audit all pass. This revision was not
+deployed while a separate Skyrim test was active and is not gameplay-proven.
+
+**Claim:** The patched xEdit CLI can build the carriage alpha without Module
+Selection or UI automation once the generator itself uses supported record
+operations.
+
+**Offline evidence:** The prior failure was reproduced at the generator's
+attempt to rewrite `ALFR` after copying a complete Specific Reference quest
+alias union. xEdit 4.1.5f rejects editing that union container. The assignment
+was redundant because `ElementAssign` had already copied the player alias; its
+removal allows the script to complete headlessly. The launcher now defaults to
+the patched executable, uses a hidden window, records compact failure detail,
+and stops only its own process if a failed script leaves a hidden dialog. The
+full carriage build produced 29 stops, 812 ordered routes, 11 SEQ quest IDs,
+six warning-free Papyrus compiles, and no lingering xEdit process.
+
+Final workspace packages:
+
+- carriage alpha: `9D729A230725A984AEB510180C472EF6EDCDEAF5FF26FAB4238D2E4D7A5B979A`;
+- parchment offline candidate: `CC90A93C56A65AC3601126EFCD97E09BD4BDA547889B6FEBEAE294024A4B7671`;
+- wizard guides: `0F5BF619466BF2A8E72345CBB9C9DFC43D8E561E95F768674CA3E72165E83C55`;
+- optional BCD wizard adapter: `CDFF6A1F4297B77073B50526FFED4A2B71B8AE6781E973EBCBBB6CCC99A41994`.
 
 ## Promotion gate for future claims
 

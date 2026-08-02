@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "targetRuntime": {
+    "skyrim": {
+      "version": "1.6.1170.0",
+      "path": "Stock Game/SkyrimSE.exe",
+      "sha256": "C434208894F07F604B852F29B8EDC3A58C4DE63DE783373733E72B2B73F33BE9"
+    },
+    "skse": {
+      "version": "0.2.2.6",
+      "path": "mods/Skyrim Script Extender (SKSE64)/Root/skse64_1_6_1170.dll",
+      "sha256": "C9A2C8A80DF6BF2372C5F49468BB2E5AB67786157265B6F29ECE9F4EAC075D54"
+    },
+    "addressLibrary": {
+      "version": "11.0.0.0",
+      "path": "mods/Address Library for SKSE Plugins/SKSE/Plugins/versionlib-1-6-1170-0.bin",
+      "sha256": "C4093C569A3C83B26587F4B9EA4C55DE9AE6E73B84A2AF9FB3FBD30E2FE0D452"
+    },
+    "menuFramework": {
+      "version": "3.9.0.0",
+      "reportedApiVersion": "3.7",
+      "path": "mods/SKSE Menu Framework/SKSE/Plugins/SKSEMenuFramework.dll",
+      "sha256": "5DC622433579E77C227E85759A6712BFD783C15D2523D0599E84D840B275A7E6"
+    },
+    "artwork": {
+      "name": "RUSTIC MAPS",
+      "version": "2.0.0.0",
+      "path": "mods/RUSTIC MAPS/textures/dungeons/imperial/battlemap01.dds",
+      "sha256": "C77E6B93129577CD23C6AC733310A5EA6A028F4BE00B472F9AA62018C4C239F8"
+    },
+    "wizardCore": {
+      "version": "1.0",
+      "path": "mods/houseCARL - DiegeticTravelWizardGuides/DiegeticTravelWizardGuides.esp",
+      "sha256": "174CD2B86AC08693C4B708CDB1141190B5093F2BC6C594BCBE03916840D47B56"
+    }
+  },
+  "buildDependencies": {
+    "commonLibSseNg": {
+      "repository": "https://github.com/CharmedBaryon/CommonLibSSE-NG.git",
+      "commit": "b93280e832f263dbef44e44cbe2936622a02f91a"
+    },
+    "vcpkgBaseline": "1dc5ee30eb1032221d29f281f4a94b73f06b4284"
+  },
+  "runtimeRelocations": {
+    "scriptCompileAndRun": {
+      "legacyAeId": 21890,
+      "modernAeMinimumPatch": 1130,
+      "modernAeId": 441582,
+      "targetOffset": "0x33D6A0",
+      "legacyIdMustBeAbsentOnTarget": true,
+      "nextLegacyId": 21891,
+      "nextLegacyOffset": "0x33D880"
+    }
+  }
+}

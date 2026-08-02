@@ -25,19 +25,20 @@ remain development evidence rather than redistributed runtime dependencies.
 The project also contains a separate
 [`modules/wizard-guides`](modules/wizard-guides) vertical slice. That module
 starts the Morrowind-style mage-guide pillar without depending on CFTO or
-overriding the carriage prototype: Phinis Gestor is the hub, Farengar and
-the court wizards are spokes, and the travel service is UI-independent so a
-later map adapter can call the same fare, payment, and teleport functions. The
-live-proven vertical slice exposes a six-node star: Farengar, Wylandriah,
-Sybille, Wuunferth, and Calcelmo travel directly to the College, while permanent
-College faculty link to Whiterun, Riften, Solitude, Windhelm, and Markarth.
+overriding the carriage prototype: permanent College faculty serve the hub,
+court wizards are spokes, and the travel service is UI-independent so multiple
+pickers call the same fare, payment, and teleport functions. The current
+eight-node extension adds Madena/Dawnstar and Falion/Morthal: all seven
+spoke wizards travel directly to the College, while permanent College faculty
+link outward to Whiterun, Riften, Solitude, Windhelm, Markarth, Dawnstar, and
+Morthal.
 Voiced INFOs use an explicitly audited short vanilla response whose FUZ exists
 for each eligible voice type. The
 branching faculty hub owns a forced-subtitle response so its custom `LinkTo`
-submenu advances reliably; Mirabelle uses subtitle-only terminal fallbacks
-because her unique voice lacks the selected generic recording. Only the
-selected destination runs a travel fragment. This proves the dialogue
-infrastructure before more spokes are added.
+submenu advances reliably. Mirabelle's provider-specific installed FUZ,
+subtitle, and lip sync are gameplay-proven; the current offline candidate
+generalizes that presentation before the parchment opens. Only the selected
+destination runs a travel fragment.
 
 The separate [`modules/wizard-map-picker`](modules/wizard-map-picker) candidate
 uses Better Carriage Destinations only as a five-city MapMenu selector. It
@@ -54,16 +55,27 @@ and returns only a selection index to Papyrus. The wizard provider maps that
 index to the same stable core destination IDs. The module intentionally ships
 no map artwork or audio: a separate mod-manager dependency supplies the
 configured texture. Its native/Papyrus builds and structural audits pass. At
-32:9, gameplay tests prove the five-route parchment layout, gold idle/red hover
+32:9, gameplay tests prove the original five-route parchment layout, gold idle/red hover
 presentation, Norden-style cursor, no-default startup, Escape/button
 cancellation, HUD restoration, service handoff, fare handling, and completed
-travel. The BCD adapter and five-choice dialogue menu remain intact fallbacks.
+travel. Dawnstar and both new service flows passed a monitored run. Morthal's
+first map-marker arrival landed on rebuilt roof geometry; its verified
+ground-level carriage-marker replacement still needs a focused retest. The BCD adapter remains an unchanged five-city fallback; the
+core dialogue fallback now contains seven destinations.
+
+The five-pillar scope and reuse decisions are recorded in
+[`docs/PILLAR_RESEARCH.md`](docs/PILLAR_RESEARCH.md). The generic spoken
+provider boundary is specified in
+[`docs/PRESENTATION_CONTRACT.md`](docs/PRESENTATION_CONTRACT.md), and
+[`docs/ASSET_POLICY.md`](docs/ASSET_POLICY.md) defines what must remain an
+external dependency rather than enter a package.
 
 Dialogue hypotheses and their actual evidence level are tracked in
 [`docs/EVIDENCE_LEDGER.md`](docs/EVIDENCE_LEDGER.md). Commit `ed004f2` is the
 rollback checkpoint for the fully voiced three-node build. Commit `4dfb646`
-is the previous live-proven faculty-access checkpoint. The Solitude,
-Windhelm, and Markarth spokes are now live-proven in the six-node star.
+is the previous live-proven faculty-access checkpoint. The Solitude, Windhelm,
+and Markarth spokes are live-proven in the six-node checkpoint; Dawnstar is
+now live-proven and Morthal's replacement arrival is the current candidate.
 
 ## Implementation status
 
@@ -83,9 +95,9 @@ The strict compiler currently emits 29 stops, 812 ordered routes, an average of
 2.99 candidates per trip, and zero sensor or CFTO endpoint errors. The xEdit
 generator's smoke build emits a valid TES4 header, the six expected masters, 27
 availability/cost/hours global sets, nine origin quests, and 27 quoted
-destination topics without xEdit assignment errors. Stock xEdit may still need
-one manual Module Selection confirmation, as described below. The mod still
-needs the in-game checks listed in
+destination topics without xEdit assignment errors. The patched default now
+completes that build headlessly with no Module Selection confirmation. The mod
+still needs the in-game checks listed in
 [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## Developer quick start
@@ -102,6 +114,9 @@ python -m diegetic_travel compile `
 
 .\tools\Compile-Papyrus.ps1 `
   -LoreRimRoot "D:\Lorerim"
+
+# Safe while another gameplay test is active: workspace builds/audits only.
+.\tools\Run-OfflineChecks.ps1 -FullBuild
 ```
 
 The compile command writes `runtime.json`, `dialogue_manifest.json`, and a
@@ -124,16 +139,14 @@ To repackage already-generated, already-validated build artifacts without
 reopening xEdit, use `.\tools\Build-Alpha.ps1 -PackageOnly`. It verifies that
 every `DNT_*.psc` source has its matching compiled PEX before creating the ZIP.
 
-xEdit 4.1.x does not offer a truly headless `-script` mode: `-script` selects
-Script mode, while `-autoload` and `-autoexit` are parsed only in Edit mode.
-`Generate-Plugin.ps1` works around that limitation narrowly: it supplies a
-private plugins list, attempts to invoke the preselected Module Selection OK
-button through Windows UI Automation, waits for the generator status file, and
-closes xEdit through its normal window-close path. Stock xEdit is briefly
-visible because its modal selector is not exposed to UI Automation while
-hidden. On the current LoreRim setup the managed invocation has not activated
-the button reliably, so one manual OK click may still be required. On timeout
-the launcher leaves xEdit open for inspection.
+Stock xEdit 4.1.x does not offer a truly headless `-script` mode: `-script`
+selects Script mode, while `-autoload` and `-autoexit` are parsed only in Edit
+mode. This workspace uses the locally built narrow xEdit patch documented in
+`tools/xedit/patches`: it permits autoload/autoexit for the scripted staging
+workflow, skips Module Selection, and exits after the script reports its
+status. Generators and audits copy inputs into ignored workspace staging; they
+do not run through MO2's VFS or write to LoreRim. The stock UI-automation
+fallback remains relevant only if that patched executable is unavailable.
 
 The current alpha is not compatible with the **Better Carriage Destinations -
 CFTO** patch: that patch opens its map picker before CFTO's destination topics,

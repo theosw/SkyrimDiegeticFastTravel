@@ -9,6 +9,9 @@
 namespace DNT::Parchment
 {
     inline constexpr std::size_t MaxDestinations = 24;
+    inline constexpr std::size_t MaxPresentationVoicePath = 260;
+    inline constexpr std::size_t MaxPresentationSubtitle = 512;
+    inline constexpr float PresentationTaskMarginSeconds = 0.20F;
 
     struct Destination
     {
@@ -39,6 +42,13 @@ namespace DNT::Parchment
         std::vector<Destination> destinations;
     };
 
+    struct Presentation
+    {
+        std::string voicePath;
+        std::string subtitle;
+        float voiceDurationSeconds{ 0.0F };
+    };
+
     struct Layout
     {
         float left{ 0.0F };
@@ -54,5 +64,7 @@ namespace DNT::Parchment
     [[nodiscard]] bool SetRouteOrigin(Request& a_request, RouteOrigin a_origin, std::string& a_error);
     [[nodiscard]] bool AddDestination(Request& a_request, Destination a_destination, std::string& a_error);
     [[nodiscard]] bool ValidateReadyRequest(const Request& a_request, std::string& a_error);
+    [[nodiscard]] bool ValidatePresentation(const Presentation& a_presentation, std::string& a_error);
+    [[nodiscard]] float PresentationWindowSeconds(float a_voiceDurationSeconds);
     [[nodiscard]] Layout ComputeLayout(float a_viewportWidth, float a_viewportHeight, float a_artAspectRatio);
 }

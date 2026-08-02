@@ -11,3 +11,8 @@ Bool Function AddDestination(String RequestId, String DestinationId, String Labe
 Bool Function Show(String RequestId) Global Native
 
 Bool Function Cancel(String RequestId) Global Native
+
+Float Function PlayPresentation(ObjectReference SpeakerRef, String VoicePath, String SubtitleText, Float VoiceDurationSeconds) Global Native
+
+; Backward-compatible wrapper for the gameplay-proven Mirabelle probe.
+Bool Function PlayVoiceProbe(ObjectReference SpeakerRef, String VoicePath) Global Native

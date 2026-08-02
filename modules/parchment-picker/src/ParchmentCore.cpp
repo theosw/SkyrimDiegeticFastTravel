@@ -32,6 +32,24 @@ namespace
                a_x >= 0.0F && a_x <= 1.0F &&
                a_y >= 0.0F && a_y <= 1.0F;
     }
+
+    bool HasPrefix(const std::string_view a_value, const std::string_view a_prefix)
+    {
+        return a_value.size() >= a_prefix.size() &&
+               a_value.substr(0, a_prefix.size()) == a_prefix;
+    }
+
+    bool HasCaseInsensitiveFuzSuffix(const std::string_view a_value)
+    {
+        if (a_value.size() < 4) {
+            return false;
+        }
+        const auto suffix = a_value.substr(a_value.size() - 4);
+        return suffix[0] == '.' &&
+               (suffix[1] == 'f' || suffix[1] == 'F') &&
+               (suffix[2] == 'u' || suffix[2] == 'U') &&
+               (suffix[3] == 'z' || suffix[3] == 'Z');
+    }
 }
 
 bool DNT::Parchment::IsValidIdentifier(const std::string_view a_value)
@@ -145,6 +163,57 @@ bool DNT::Parchment::ValidateReadyRequest(const Request& a_request, std::string&
         return false;
     }
     return true;
+}
+
+bool DNT::Parchment::ValidatePresentation(
+    const Presentation& a_presentation,
+    std::string& a_error)
+{
+    const auto& voicePath = a_presentation.voicePath;
+    if (voicePath.empty() || voicePath.size() > MaxPresentationVoicePath) {
+        a_error = "presentation voice path must contain 1-260 characters";
+        return false;
+    }
+    if (!HasPrefix(voicePath, "Voice/") || !HasCaseInsensitiveFuzSuffix(voicePath)) {
+        a_error = "presentation voice path must be a Voice/*.fuz path";
+        return false;
+    }
+    if (voicePath.find("..") != std::string::npos ||
+        !std::ranges::all_of(voicePath, [](const unsigned char a_character) {
+            return (a_character >= 'a' && a_character <= 'z') ||
+                   (a_character >= 'A' && a_character <= 'Z') ||
+                   (a_character >= '0' && a_character <= '9') ||
+                   a_character == '_' || a_character == '-' ||
+                   a_character == '.' || a_character == '/' ||
+                   a_character == ' ';
+        })) {
+        a_error = "presentation voice path contains an unsafe character";
+        return false;
+    }
+
+    const auto& subtitle = a_presentation.subtitle;
+    if (subtitle.empty() || subtitle.size() > MaxPresentationSubtitle) {
+        a_error = "presentation subtitle must contain 1-512 bytes";
+        return false;
+    }
+    if (!std::ranges::all_of(subtitle, [](const unsigned char a_character) {
+            return a_character >= 0x20 && a_character != 0x7F;
+        })) {
+        a_error = "presentation subtitle contains a control character";
+        return false;
+    }
+    if (!std::isfinite(a_presentation.voiceDurationSeconds) ||
+        a_presentation.voiceDurationSeconds <= 0.0F ||
+        a_presentation.voiceDurationSeconds > 30.0F) {
+        a_error = "presentation voice duration must be inside (0, 30] seconds";
+        return false;
+    }
+    return true;
+}
+
+float DNT::Parchment::PresentationWindowSeconds(const float a_voiceDurationSeconds)
+{
+    return a_voiceDurationSeconds + PresentationTaskMarginSeconds;
 }
 
 DNT::Parchment::Layout DNT::Parchment::ComputeLayout(

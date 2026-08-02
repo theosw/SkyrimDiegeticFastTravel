@@ -96,6 +96,7 @@ begin
     (
       (Pos('yes', Candidate) > 0) or
       (Pos('very well', Candidate) > 0) or
+      (Pos('very good', Candidate) > 0) or
       (Pos('all right', Candidate) > 0) or
       (Pos('of course', Candidate) > 0) or
       (Pos('certainly', Candidate) > 0) or
@@ -106,7 +107,15 @@ begin
       (Pos('as you wish', Candidate) > 0) or
       (Pos('what is it', Candidate) > 0) or
       (Pos('what do you need', Candidate) > 0) or
-      (Pos('go on', Candidate) > 0)
+      (Pos('go on', Candidate) > 0) or
+      (Candidate = 'no.') or
+      (Pos('i''m sorry', Candidate) > 0) or
+      (Pos('i am sorry', Candidate) > 0) or
+      (Pos('i''m afraid', Candidate) > 0) or
+      (Pos('i am afraid', Candidate) > 0) or
+      (Pos('can''t', Candidate) > 0) or
+      (Pos('cannot', Candidate) > 0) or
+      (Pos('don''t have', Candidate) > 0)
     );
 end;
 
@@ -370,13 +379,32 @@ begin
     ReportActor($00013BBB, 'FarengarSecretFire');
     ReportActor($0001C199, 'PhinisGestor');
     ReportActor($00019DEF, 'Wylandriah');
+    ReportActor($000135E9, 'Falion');
     ReportLines.Add('SELECTED DONOR DETAILS:');
     ReportDonorDetails($000730FA, 'Farengar Yes');
     ReportDonorDetails($000DBA22, 'Generic Of course');
+    ReportDonorDetails($000DBA24, 'Generic It cannot be helped');
     ReportDonorDetails($00087940, 'Generic Yes');
     ReportDonorDetails($00079AD7, 'Favor Very well');
     ReportDonorDetails($000CD8F3, 'Goodbye Very well');
     ReportDonorDetails($000854CD, 'Generic All right then');
+    ReportDonorDetails($00023C2D, 'No candidate 23C2D');
+    ReportDonorDetails($00026E28, 'No candidate 26E28');
+    ReportDonorDetails($0003857E, 'No candidate 3857E');
+    ReportDonorDetails($00046AC8, 'No candidate 46AC8');
+    ReportDonorDetails($00082A29, 'No candidate 82A29');
+    ReportDonorDetails($000D669D, 'No candidate D669D');
+    ReportDonorDetails($0006F435, 'Mirabelle generic unique 6F435');
+    ReportDonorDetails($0006F436, 'Mirabelle generic unique 6F436');
+    ReportDonorDetails($0006F437, 'Mirabelle generic unique 6F437');
+    ReportDonorDetails($0006F438, 'Mirabelle generic unique 6F438');
+    ReportDonorDetails($0006F44C, 'Mirabelle generic unique 6F44C');
+    ReportDonorDetails($0006F44D, 'Mirabelle generic unique 6F44D');
+    ReportDonorDetails($0006F44E, 'Mirabelle generic unique 6F44E');
+    ReportDonorDetails($000A6802, 'Mirabelle generic unique A6802');
+    ReportDonorDetails($000A6804, 'Mirabelle generic unique A6804');
+    ReportDonorDetails($000A6806, 'Mirabelle generic unique A6806');
+    ReportDonorDetails($000D67D1, 'Mirabelle Very good');
     ReportVanillaLinkedSharedInfoUsage;
     ReportLines.Add('ALL REUSABLE TEXT CANDIDATES:');
     ScanAllDialogue;

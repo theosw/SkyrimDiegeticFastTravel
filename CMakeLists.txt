@@ -19,9 +19,14 @@ if(DNT_PARCHMENT_BUILD_PLUGIN)
     set(ENABLE_SKYRIM_SE OFF CACHE BOOL "Do not build the SE variant" FORCE)
     set(ENABLE_SKYRIM_VR OFF CACHE BOOL "Do not build the VR variant" FORCE)
 
+    set(DNT_COMMONLIBSSE_NG_DEFAULT
+        "C:/Users/Theo/Documents/SKSE Plugins/FrameGenTest/extern/CommonLibSSE-NG")
+    if(DEFINED ENV{DNT_COMMONLIBSSE_NG_DIR})
+        set(DNT_COMMONLIBSSE_NG_DEFAULT "$ENV{DNT_COMMONLIBSSE_NG_DIR}")
+    endif()
     set(
         DNT_COMMONLIBSSE_NG_DIR
-        "C:/Users/Theo/Documents/SKSE Plugins/FrameGenTest/extern/CommonLibSSE-NG"
+        "${DNT_COMMONLIBSSE_NG_DEFAULT}"
         CACHE PATH
         "Path to a CommonLibSSE-NG checkout"
     )

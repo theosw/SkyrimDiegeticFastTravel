@@ -95,15 +95,18 @@ large, brittle Papyrus property arrays.
 
 xEdit's `-script` switch forces Script mode. In xEdit 4.1.x, the command-line
 parser only honors `-autoload` and `-autoexit` in Edit mode, and Quick Edit is
-explicitly incompatible with other tool modes. The release launcher therefore
-uses `-P` to preselect only CFTO and its dependencies, invokes that dialog's OK
-button through Windows UI Automation when Windows exposes the control, and
-closes xEdit only after the Pascal generator writes
-`xedit_generator.status`. Stock xEdit is briefly visible because a deliberately
-hidden modal selector is not present in the UI Automation tree. The current
-LoreRim executable has still required one manual OK click in practice. This is
-scoped GUI automation around a CLI limitation; the plugin work remains in the
-xEdit script.
+explicitly incompatible with other tool modes. The repository carries a narrow
+source patch that enables those two existing flags in Script mode. The launcher
+defaults to the locally built patched executable, uses `-P` to preselect only
+CFTO and its dependencies, runs hidden against copied staging data, and exits
+after the Pascal generator writes `xedit_generator.status`. Managed Windows UI
+Automation remains only as an explicit stock-executable fallback.
+
+The first full patched carriage run exposed a generator bug rather than a CLI
+bug: the script copied a complete player alias and then tried to rewrite its
+`Specific Reference` union through `ALFR`. xEdit correctly rejects editing that
+non-editable union container. Removing the redundant assignment made the full
+29-stop/812-route alpha build complete headlessly with 11 SEQ quest IDs.
 
 The behavior is visible in xEdit's own source:
 [`CheckForcedMode`](https://github.com/TES5Edit/TES5Edit/blob/fd1e36020b2b5b6217e553dc0038983146a2e2dd/xEdit/xeInit.pas#L708-L727),

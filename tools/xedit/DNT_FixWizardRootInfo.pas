@@ -6,7 +6,10 @@
     Sybille Stentor      -> College of Winterhold
     Wuunferth the Unliving -> College of Winterhold
     Calcelmo             -> College of Winterhold
-    College faculty      -> Whiterun, Riften, Solitude, Windhelm, or Markarth
+    Madena               -> College of Winterhold
+    Falion               -> College of Winterhold
+    College faculty      -> Whiterun, Riften, Solitude, Windhelm, Markarth,
+                            Dawnstar, or Morthal
 
   Terminal travel INFOs deliberately share response data from short vanilla
   INFOs for which the speaker's exact voice type has shipped FUZ/LIP data.
@@ -1404,8 +1407,9 @@ const
   HubResponse = 'Where do you need to go?';
 var
   HubInfo, WhiterunTopic, RiftenTopic, SolitudeTopic, WindhelmTopic,
-    MarkarthTopic, TargetLinks, FirstLink, SecondLink, ThirdLink, FourthLink,
-    FifthLink: IInterface;
+    MarkarthTopic, DawnstarTopic, MorthalTopic, TargetLinks, FirstLink,
+    SecondLink, ThirdLink, FourthLink, FifthLink, SixthLink,
+    SeventhLink: IInterface;
   ReadBackFlags: Cardinal;
 begin
   HubInfo := RequireInfo($000808, 'DNT_WG_Request_Phinis');
@@ -1414,6 +1418,8 @@ begin
   SolitudeTopic := RequireTopic($00080F, 'DNT_WG_ToSolitude');
   WindhelmTopic := RequireTopic($000813, 'DNT_WG_ToWindhelm');
   MarkarthTopic := RequireTopic($000817, 'DNT_WG_ToMarkarth');
+  DawnstarTopic := RequireTopic($000825, 'DNT_WG_ToDawnstar');
+  MorthalTopic := RequireTopic($000828, 'DNT_WG_ToMorthal');
 
   SetElementEditValues(HubInfo, 'RNAM', HubPrompt);
   if GetElementEditValues(HubInfo, 'RNAM') <> HubPrompt then
@@ -1446,16 +1452,16 @@ begin
   TargetLinks := ElementByPath(HubInfo, 'Link To');
   if not Assigned(TargetLinks) or (ElementCount(TargetLinks) < 1) then
     raise Exception.Create('Phinis hub has no reusable Link To entry');
-  while ElementCount(TargetLinks) > 5 do
+  while ElementCount(TargetLinks) > 7 do
     RemoveElement(TargetLinks, Pred(ElementCount(TargetLinks)));
-  while ElementCount(TargetLinks) < 5 do begin
-    FifthLink := ElementAssign(
+  while ElementCount(TargetLinks) < 7 do begin
+    SeventhLink := ElementAssign(
       TargetLinks,
       HighInteger,
       ElementByIndex(TargetLinks, 0),
       False
     );
-    if not Assigned(FifthLink) then
+    if not Assigned(SeventhLink) then
       raise Exception.Create('Could not extend Phinis hub links');
   end;
 
@@ -1464,23 +1470,29 @@ begin
   ThirdLink := ElementByIndex(TargetLinks, 2);
   FourthLink := ElementByIndex(TargetLinks, 3);
   FifthLink := ElementByIndex(TargetLinks, 4);
+  SixthLink := ElementByIndex(TargetLinks, 5);
+  SeventhLink := ElementByIndex(TargetLinks, 6);
 
   SetEditValue(FirstLink, Name(WhiterunTopic));
   SetEditValue(SecondLink, Name(RiftenTopic));
   SetEditValue(ThirdLink, Name(SolitudeTopic));
   SetEditValue(FourthLink, Name(WindhelmTopic));
   SetEditValue(FifthLink, Name(MarkarthTopic));
+  SetEditValue(SixthLink, Name(DawnstarTopic));
+  SetEditValue(SeventhLink, Name(MorthalTopic));
 
   TargetLinks := ElementByPath(HubInfo, 'Link To');
-  if not Assigned(TargetLinks) or (ElementCount(TargetLinks) <> 5) then
+  if not Assigned(TargetLinks) or (ElementCount(TargetLinks) <> 7) then
     raise Exception.Create(
-      'Phinis hub does not have exactly five Link To entries'
+      'Phinis hub does not have exactly seven Link To entries'
     );
   FirstLink := LinksTo(ElementByIndex(TargetLinks, 0));
   SecondLink := LinksTo(ElementByIndex(TargetLinks, 1));
   ThirdLink := LinksTo(ElementByIndex(TargetLinks, 2));
   FourthLink := LinksTo(ElementByIndex(TargetLinks, 3));
   FifthLink := LinksTo(ElementByIndex(TargetLinks, 4));
+  SixthLink := LinksTo(ElementByIndex(TargetLinks, 5));
+  SeventhLink := LinksTo(ElementByIndex(TargetLinks, 6));
   if not Assigned(FirstLink) or
     (FormID(FirstLink) <> FormID(WhiterunTopic)) then
     raise Exception.Create('Phinis first hub link is not Whiterun');
@@ -1496,10 +1508,16 @@ begin
   if not Assigned(FifthLink) or
     (FormID(FifthLink) <> FormID(MarkarthTopic)) then
     raise Exception.Create('Phinis fifth hub link is not Markarth');
+  if not Assigned(SixthLink) or
+    (FormID(SixthLink) <> FormID(DawnstarTopic)) then
+    raise Exception.Create('Phinis sixth hub link is not Dawnstar');
+  if not Assigned(SeventhLink) or
+    (FormID(SeventhLink) <> FormID(MorthalTopic)) then
+    raise Exception.Create('Phinis seventh hub link is not Morthal');
 
   AddMessage(
     '[DNT] DNT_WG_Request_Phinis faculty hub -> ' +
-    'whiterun,riften,solitude,windhelm,markarth; ' +
+    'whiterun,riften,solitude,windhelm,markarth,dawnstar,morthal; ' +
     'owned unvoiced response; rank>=3; flags=0x' +
     IntToHex(ReadBackFlags, 4)
   );
@@ -1520,7 +1538,8 @@ end;
 function Initialize: Integer;
 var
   FarengarRoot, WylandriahRoot, SybilleRoot, WuunferthRoot, CalcelmoRoot,
-    Farengar, Wylandriah, Sybille, Wuunferth, Calcelmo: IInterface;
+    MadenaRoot, FalionRoot, Farengar, Wylandriah, Sybille, Wuunferth,
+    Calcelmo, Madena, Falion: IInterface;
 begin
   Result := 1;
   StatusPath :=
@@ -1584,6 +1603,36 @@ begin
       $00081A,
       'DNT_WG_Request_Calcelmo'
     );
+    EnsureDestinationTopic(
+      $000825,
+      'DNT_WG_ToDawnstar',
+      'Dawnstar',
+      $000826,
+      'DNT_WG_Dawnstar_FromPhinis',
+      $000827,
+      'DNT_WG_Dawnstar_FromMirabelle'
+    );
+    EnsureDestinationTopic(
+      $000828,
+      'DNT_WG_ToMorthal',
+      'Morthal',
+      $000829,
+      'DNT_WG_Morthal_FromPhinis',
+      $00082A,
+      'DNT_WG_Morthal_FromMirabelle'
+    );
+    MadenaRoot := EnsureClonedInfo(
+      $000807,
+      'DNT_WG_Request_Wylandriah',
+      $00082B,
+      'DNT_WG_Request_Madena'
+    );
+    FalionRoot := EnsureClonedInfo(
+      $000807,
+      'DNT_WG_Request_Wylandriah',
+      $00082C,
+      'DNT_WG_Request_Falion'
+    );
     EnsureClonedInfo(
       $000806,
       'DNT_WG_Request_Farengar',
@@ -1615,6 +1664,18 @@ begin
       'DNT_WG_Request_Calcelmo_NoGold'
     );
     EnsureClonedInfo(
+      $00082B,
+      'DNT_WG_Request_Madena',
+      $00082D,
+      'DNT_WG_Request_Madena_NoGold'
+    );
+    EnsureClonedInfo(
+      $00082C,
+      'DNT_WG_Request_Falion',
+      $00082E,
+      'DNT_WG_Request_Falion_NoGold'
+    );
+    EnsureClonedInfo(
       $00080B,
       'DNT_WG_Whiterun_FromPhinis',
       $000820,
@@ -1643,6 +1704,18 @@ begin
       'DNT_WG_Markarth_FromPhinis',
       $000824,
       'DNT_WG_Markarth_NoGold'
+    );
+    EnsureClonedInfo(
+      $000826,
+      'DNT_WG_Dawnstar_FromPhinis',
+      $00082F,
+      'DNT_WG_Dawnstar_NoGold'
+    );
+    EnsureClonedInfo(
+      $000829,
+      'DNT_WG_Morthal_FromPhinis',
+      $000830,
+      'DNT_WG_Morthal_NoGold'
     );
     ConfigureServiceObjectProperty(
       'FarePaymentSound',
@@ -1673,6 +1746,18 @@ begin
       $0003692A,
       'REFR',
       'MarkarthCastleWizardVendorMarkerREF'
+    );
+    ConfigureServiceObjectProperty(
+      'DawnstarMarker',
+      $000877B4,
+      'REFR',
+      'MadenaServiceMarkerREF'
+    );
+    ConfigureServiceObjectProperty(
+      'MorthalMarker',
+      $000EB7CC,
+      'REFR',
+      'MorthalCarriageEastDestinationMarker'
     );
     ConfigureHubMenu;
     FarengarRoot := RequireInfo($000806, 'DNT_WG_Request_Farengar');
@@ -1767,6 +1852,42 @@ begin
       $000DBA22,
       $0001F319
     );
+    Madena := RequireSkyrimRecord(
+      $0001361D,
+      'NPC_',
+      'Madena'
+    );
+    ConfigureExactSpeaker(MadenaRoot, Madena);
+    ConfigureDirectRoute(
+      $00082B,
+      'DNT_WG_Request_Madena',
+      $00080A,
+      'DNT_WG_College_FromWylandriah',
+      'Can you teleport me to the College of Winterhold? (250 gold)',
+      'Of course.',
+      'college',
+      'Skyrim.esm',
+      $000DBA22,
+      $0001F319
+    );
+    Falion := RequireSkyrimRecord(
+      $000135E9,
+      'NPC_',
+      'Falion'
+    );
+    ConfigureExactSpeaker(FalionRoot, Falion);
+    ConfigureDirectRoute(
+      $00082C,
+      'DNT_WG_Request_Falion',
+      $00080A,
+      'DNT_WG_College_FromWylandriah',
+      'Can you teleport me to the College of Winterhold? (250 gold)',
+      'Of course.',
+      'college',
+      'Skyrim.esm',
+      $000DBA22,
+      $0001F319
+    );
     ConfigureDirectDenial(
       $00081B,
       'DNT_WG_Request_Farengar_NoGold',
@@ -1825,6 +1946,30 @@ begin
       $000C6E2D,
       $000C6E04,
       Calcelmo,
+      False
+    );
+    ConfigureDirectDenial(
+      $00082D,
+      'DNT_WG_Request_Madena_NoGold',
+      'Can you teleport me to the College of Winterhold? (250 gold)',
+      'I''m sorry, but you don''t seem to have enough gold to pay for that.',
+      'college',
+      'Skyrim.esm',
+      $000C6E2D,
+      $000C6E04,
+      Madena,
+      False
+    );
+    ConfigureDirectDenial(
+      $00082E,
+      'DNT_WG_Request_Falion_NoGold',
+      'Can you teleport me to the College of Winterhold? (250 gold)',
+      'It can''t be helped.',
+      'college',
+      'Skyrim.esm',
+      $000DBA24,
+      $0001F319,
+      Falion,
       False
     );
     ConfigureTravelInfo(
@@ -1917,6 +2062,42 @@ begin
       'Send me to Markarth. (250 gold)',
       'markarth'
     );
+    ConfigureTravelInfo(
+      $000826,
+      'DNT_WG_Dawnstar_FromPhinis',
+      'Send me to Dawnstar. (250 gold)',
+      'Of course.',
+      'dawnstar',
+      'Skyrim.esm',
+      $000DBA22,
+      $0001F319
+    );
+    ConfigureMirabelleTravelInfo(
+      $000826,
+      'DNT_WG_Dawnstar_FromPhinis',
+      $000827,
+      'DNT_WG_Dawnstar_FromMirabelle',
+      'Send me to Dawnstar. (250 gold)',
+      'dawnstar'
+    );
+    ConfigureTravelInfo(
+      $000829,
+      'DNT_WG_Morthal_FromPhinis',
+      'Send me to Morthal. (250 gold)',
+      'Of course.',
+      'morthal',
+      'Skyrim.esm',
+      $000DBA22,
+      $0001F319
+    );
+    ConfigureMirabelleTravelInfo(
+      $000829,
+      'DNT_WG_Morthal_FromPhinis',
+      $00082A,
+      'DNT_WG_Morthal_FromMirabelle',
+      'Send me to Morthal. (250 gold)',
+      'morthal'
+    );
     ConfigureFacultyDenial(
       $000820,
       'DNT_WG_Whiterun_NoGold',
@@ -1947,11 +2128,25 @@ begin
       'Send me to Markarth. (250 gold)',
       'markarth'
     );
+    ConfigureFacultyDenial(
+      $00082F,
+      'DNT_WG_Dawnstar_NoGold',
+      'Send me to Dawnstar. (250 gold)',
+      'dawnstar'
+    );
+    ConfigureFacultyDenial(
+      $000830,
+      'DNT_WG_Morthal_NoGold',
+      'Send me to Morthal. (250 gold)',
+      'morthal'
+    );
     UpdateDestinationTopicCount($000803, 'DNT_WG_ToWhiterun');
     UpdateDestinationTopicCount($000804, 'DNT_WG_ToRiften');
     UpdateDestinationTopicCount($00080F, 'DNT_WG_ToSolitude');
     UpdateDestinationTopicCount($000813, 'DNT_WG_ToWindhelm');
     UpdateDestinationTopicCount($000817, 'DNT_WG_ToMarkarth');
+    UpdateDestinationTopicCount($000825, 'DNT_WG_ToDawnstar');
+    UpdateDestinationTopicCount($000828, 'DNT_WG_ToMorthal');
 
     SavePatchedPlugin;
     WriteStatus('success');
