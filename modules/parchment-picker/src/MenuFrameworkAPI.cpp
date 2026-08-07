@@ -42,9 +42,14 @@ bool DNT::MenuFramework::API::Resolve()
     setItemDefaultFocus_ = ResolveFunction<ActionFn>("igSetItemDefaultFocus");
     isItemHovered_ = ResolveFunction<ItemStateFn>("igIsItemHovered");
     isItemFocused_ = ResolveFunction<FocusedFn>("igIsItemFocused");
+    pushStyleColor_ = ResolveFunction<PushStyleColorFn>("igPushStyleColor_U32");
+    popStyleColor_ = ResolveFunction<PopStyleColorFn>("igPopStyleColor");
+    setWindowFontScale_ = ResolveFunction<SetWindowFontScaleFn>("igSetWindowFontScale");
+    calcTextSize_ = ResolveFunction<CalcTextSizeFn>("igCalcTextSize");
     textUnformatted_ = ResolveFunction<TextUnformattedFn>("igTextUnformatted");
     getForegroundDrawList_ = ResolveFunction<GetForegroundDrawListFn>("igGetForegroundDrawList_Nil");
     addLine_ = ResolveFunction<AddLineFn>("ImDrawList_AddLine");
+    addImage_ = ResolveFunction<AddImageFn>("ImDrawList_AddImage");
     addPolyline_ = ResolveFunction<AddPolylineFn>("ImDrawList_AddPolyline");
     addConcavePolyFilled_ = ResolveFunction<AddConcavePolyFilledFn>("ImDrawList_AddConcavePolyFilled");
     addTriangle_ = ResolveFunction<AddTriangleFn>("ImDrawList_AddTriangle");
@@ -61,7 +66,8 @@ bool DNT::MenuFramework::API::IsReady() const
            setNextWindowPos_ && setNextWindowSize_ && setNextWindowBgAlpha_ && begin_ && end_ &&
            setCursorScreenPos_ && getMousePos_ && setMouseCursor_ && image_ && button_ &&
            invisibleButton_ && setItemDefaultFocus_ && isItemHovered_ && isItemFocused_ &&
-           textUnformatted_ && getForegroundDrawList_ && addLine_ && addPolyline_ &&
+           pushStyleColor_ && popStyleColor_ && setWindowFontScale_ && calcTextSize_ && textUnformatted_ &&
+           getForegroundDrawList_ && addLine_ && addImage_ && addPolyline_ &&
            addConcavePolyFilled_ && addTriangle_ && addTriangleFilled_ && addCircle_ &&
            addCircleFilled_;
 }
@@ -150,10 +156,10 @@ void DNT::MenuFramework::API::Image(
     const Texture a_texture,
     const Vec2 a_size,
     const Vec2 a_uv0,
-    const Vec2 a_uv1) const
+    const Vec2 a_uv1,
+    const Vec4 a_tint) const
 {
-    image_(a_texture, a_size, a_uv0, a_uv1,
-        Vec4{ 1.0F, 1.0F, 1.0F, 1.0F }, Vec4{});
+    image_(a_texture, a_size, a_uv0, a_uv1, a_tint, Vec4{});
 }
 
 bool DNT::MenuFramework::API::Button(const std::string_view a_label, const Vec2 a_size) const
@@ -185,6 +191,31 @@ bool DNT::MenuFramework::API::IsItemFocused() const
     return isItemFocused_();
 }
 
+void DNT::MenuFramework::API::PushStyleColor(
+    const std::int32_t a_styleIndex,
+    const Color a_color) const
+{
+    pushStyleColor_(a_styleIndex, a_color);
+}
+
+void DNT::MenuFramework::API::PopStyleColor(const std::int32_t a_count) const
+{
+    popStyleColor_(a_count);
+}
+
+void DNT::MenuFramework::API::SetWindowFontScale(const float a_scale) const
+{
+    setWindowFontScale_(a_scale);
+}
+
+DNT::MenuFramework::Vec2 DNT::MenuFramework::API::CalcTextSize(const std::string_view a_text) const
+{
+    const auto text = std::string(a_text);
+    Vec2 size;
+    calcTextSize_(&size, text.c_str(), nullptr, false, -1.0F);
+    return size;
+}
+
 void DNT::MenuFramework::API::TextUnformatted(const std::string_view a_text) const
 {
     const auto text = std::string(a_text);
@@ -204,6 +235,18 @@ void DNT::MenuFramework::API::AddLine(
     const float a_thickness) const
 {
     addLine_(a_drawList, a_start, a_end, a_color, a_thickness);
+}
+
+void DNT::MenuFramework::API::AddImage(
+    const DrawList a_drawList,
+    const Texture a_texture,
+    const Vec2 a_min,
+    const Vec2 a_max,
+    const Vec2 a_uv0,
+    const Vec2 a_uv1,
+    const Color a_tint) const
+{
+    addImage_(a_drawList, a_texture, a_min, a_max, a_uv0, a_uv1, a_tint);
 }
 
 void DNT::MenuFramework::API::AddPolyline(

@@ -42,6 +42,10 @@ if ($FullBuild) {
         & (Join-Path $PSScriptRoot "Build-ParchmentPicker.ps1") `
             -LoreRimRoot $LoreRimRoot
     }
+    Invoke-Check "Lake Honrich boat build and isolated xEdit audit" {
+        & (Join-Path $PSScriptRoot "Build-BoatHonrich.ps1") `
+            -LoreRimRoot $LoreRimRoot
+    }
 }
 
 if ($IncludeBcdAdapter) {

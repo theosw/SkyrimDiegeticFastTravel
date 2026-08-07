@@ -15,6 +15,7 @@ $statusPath = Join-Path $buildRoot "wizard-map-adapter-audit.status"
 $errorPath = Join-Path $buildRoot "wizard-map-adapter-audit.error"
 $reportPath = Join-Path $buildRoot "wizard-map-adapter-audit.report.txt"
 $scriptPath = Join-Path $PSScriptRoot "xedit\DNT_AuditWizardMapAdapter.pas"
+$seqPath = Join-Path $moduleRoot "mod\SEQ\DiegeticTravelWizardMap.seq"
 
 function Resolve-ProjectPath([string]$Path) {
     if ([System.IO.Path]::IsPathRooted($Path)) {
@@ -147,4 +148,28 @@ if (-not (Test-Path -LiteralPath $reportPath -PathType Leaf)) {
     throw "Wizard map-adapter audit did not create its report."
 }
 
-Get-Content -LiteralPath $reportPath
+$report = Get-Content -LiteralPath $reportPath
+$questIdLine = @($report | Where-Object {
+    $_ -match '^QUEST_FIXED_FORM_ID='
+})
+if ($questIdLine.Count -ne 1) {
+    throw "Wizard map-adapter audit does not identify one quest FormID."
+}
+if (-not (Test-Path -LiteralPath $seqPath -PathType Leaf)) {
+    throw "Wizard map-adapter SEQ is missing: $seqPath"
+}
+$seqBytes = [System.IO.File]::ReadAllBytes($seqPath)
+if ($seqBytes.Length -ne 4) {
+    throw "Wizard map-adapter SEQ is not exactly one FormID."
+}
+$expectedQuestId = [Convert]::ToUInt32(
+    ($questIdLine[0] -split '=', 2)[1],
+    16
+)
+$actualQuestId = [BitConverter]::ToUInt32($seqBytes, 0)
+if ($actualQuestId -ne $expectedQuestId) {
+    throw ("Wizard map-adapter SEQ mismatch: expected {0:X8}, got {1:X8}" -f `
+        $expectedQuestId, $actualQuestId)
+}
+$report
+Write-Host ("PASS SEQ -> start-game quest {0:X8}" -f $actualQuestId)

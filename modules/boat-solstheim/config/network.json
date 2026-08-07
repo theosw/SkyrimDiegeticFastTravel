@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "provider": "boat",
+  "lane": "solstheim",
+  "fare_global": "00AA12:CFTO.esp",
+  "fare_default": 50,
+  "time_passage": "game_fast_travel",
+  "map": {
+    "texture": "Data/textures/dlc02/clutter/dlc2mapsolstheim02.dds",
+    "uv_crop": [0.5, 0.0, 1.0, 1.0],
+    "art_aspect_ratio": 1.0,
+    "presentation_note": "square visual correction of the source's compressed 1:2 physical-map panel",
+    "asset_policy": "reference-only; do not package the DDS"
+  },
+  "ui_elements": [
+    {
+      "id": "fare_label",
+      "name": "Payment label",
+      "sample": "Raven Rock to Skaal Village    50 gold",
+      "map_position": [0.5, 0.93]
+    }
+  ],
+  "stops": [
+    {
+      "id": "raven_rock",
+      "name": "Raven Rock",
+      "service_npc": "014C6E:CFTO.esp",
+      "arrival_marker": "014C72:CFTO.esp",
+      "map_position": [0.239171, 0.676223]
+    },
+    {
+      "id": "tel_mithryn",
+      "name": "Tel Mithryn",
+      "service_npc": "014C78:CFTO.esp",
+      "arrival_marker": "014C7A:CFTO.esp",
+      "follower_marker": "195C44:CFTO.esp",
+      "map_position": [0.705729, 0.771395]
+    },
+    {
+      "id": "skaal_village",
+      "name": "Skaal Village",
+      "service_npc": "014C6C:CFTO.esp",
+      "arrival_marker": "014C6B:CFTO.esp",
+      "follower_marker": "195C45:CFTO.esp",
+      "map_position": [0.813066, 0.347056]
+    }
+  ],
+  "deferred_stops": [
+    {
+      "id": "northshore_landing",
+      "reason": "CFTO exposes this as a destination-only extension with no public Route 4 ferryman."
+    },
+    {
+      "id": "bujolds_retreat",
+      "reason": "CFTO exposes this as a destination-only extension with no public Route 4 ferryman."
+    }
+  ]
+}

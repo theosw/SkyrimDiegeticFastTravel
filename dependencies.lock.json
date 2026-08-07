@@ -28,6 +28,12 @@
       "path": "mods/RUSTIC MAPS/textures/dungeons/imperial/battlemap01.dds",
       "sha256": "C77E6B93129577CD23C6AC733310A5EA6A028F4BE00B472F9AA62018C4C239F8"
     },
+    "wizardArtwork": {
+      "name": "Skyrim Paper Map by Caro Tuts for FWMF",
+      "version": "1.72.0.0",
+      "path": "mods/Skyrim Paper Map by Caro Tuts for FWMF/textures/terrain/tamriel/skyrim.dds",
+      "sha256": "6C53FA2E7D036C9F2C07F180AB6B6684A2D2AAFCCA27360D2C507B682229F30E"
+    },
     "wizardCore": {
       "version": "1.0",
       "path": "mods/houseCARL - DiegeticTravelWizardGuides/DiegeticTravelWizardGuides.esp",
@@ -40,6 +46,29 @@
       "commit": "b93280e832f263dbef44e44cbe2936622a02f91a"
     },
     "vcpkgBaseline": "1dc5ee30eb1032221d29f281f4a94b73f06b4284"
+  },
+  "assetSources": {
+    "wizardTravelMarker": {
+      "name": "Dragonborn Reskin - Wheeler",
+      "version": "1.9.1.0",
+      "author": "borokoshow",
+      "url": "https://www.nexusmods.com/skyrimspecialedition/mods/100043",
+      "originalFile": "KWD_DBWR_ApparitionTravel.svg",
+      "repositoryPath": "assets/third-party/dragonborn-wheeler-reskin/apparition-travel.svg",
+      "sha256": "CC4197AA9772BBFE2EC37D612EEE3EEA51EB4D2937439995776B5C7A923ECE5C",
+      "permission": "Asset use and modification allowed with credit; sale prohibited; Donation Points allowed"
+    },
+    "nordenMapMarkers": {
+      "name": "Norden UI",
+      "version": "1.2.5.0",
+      "nexusModId": 166086,
+      "url": "https://www.nexusmods.com/skyrimspecialedition/mods/166086",
+      "originalFile": "Interface/skyui/mapmarkerart.swf",
+      "installedPath": "mods/Norden UI 21x9/Interface/skyui/mapmarkerart.swf",
+      "sha256": "AF39A7C181E8BF6187E389CC6D5F333780F11057C562673BC40A78490998B1AA",
+      "repositoryPath": "assets/norden-interface/carriage-markers",
+      "permission": "Use and redistribution permission supplied directly by the Norden UI author to the project owner"
+    }
   },
   "runtimeRelocations": {
     "scriptCompileAndRun": {

@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "provider": "carriage",
+  "slice": "hold_capitals",
+  "authority": "DiegeticTravel.esp:DNT_TravelCoordinator",
+  "execution": "CFTO KmodCarriageDestination plus driver update",
+  "map": {
+    "texture": "Data/textures/dungeons/imperial/battlemap01.dds",
+    "uv_crop": [0.0, 0.0, 1.0, 0.736328],
+    "art_aspect_ratio": 1.35809,
+    "asset_policy": "reference-only; do not package the DDS"
+  },
+  "stops": [
+    { "id": "dawnstar", "name": "Dawnstar", "map_position": [0.570, 0.160] },
+    { "id": "falkreath", "name": "Falkreath", "map_position": [0.443, 0.792] },
+    { "id": "markarth", "name": "Markarth", "map_position": [0.079, 0.474] },
+    { "id": "morthal", "name": "Morthal", "map_position": [0.402, 0.298] },
+    { "id": "riften", "name": "Riften", "map_position": [0.936, 0.828] },
+    { "id": "solitude", "name": "Solitude", "map_position": [0.330, 0.150] },
+    { "id": "whiterun", "name": "Whiterun", "map_position": [0.554, 0.507] },
+    { "id": "windhelm", "name": "Windhelm", "map_position": [0.823, 0.382] },
+    { "id": "winterhold", "name": "Winterhold", "map_position": [0.752, 0.167] }
+  ],
+  "deferred_ui_stops": {
+    "reason": "Prove dynamic quote and CFTO handoff with nine capitals before placing the remaining 18 CFTO destinations on a dense parchment.",
+    "count": 18
+  }
+}

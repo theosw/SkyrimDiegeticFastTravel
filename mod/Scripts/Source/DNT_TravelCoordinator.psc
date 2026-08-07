@@ -5,6 +5,7 @@ String Property DialoguePath = "Data/SKSE/Plugins/DiegeticTravel/dialogue_runtim
 Int _dialogue
 Actor _preparedSpeaker
 Bool _quotesReady = False
+Bool _quotesPreparing = False
 
 Event OnInit()
     LoadDialogue()
@@ -95,26 +96,50 @@ Bool Function PreloadForSpeaker(ObjectReference speakerRef)
     If !service
         _preparedSpeaker = None
         _quotesReady = False
+        _quotesPreparing = False
         Return False
     EndIf
 
+    If _quotesPreparing
+        Int waitTicks = 0
+        While _quotesPreparing && waitTicks < 300
+            Utility.Wait(0.1)
+            waitTicks += 1
+        EndWhile
+        If _quotesReady && _preparedSpeaker == speaker
+            Debug.Trace("[DNT] MENU_QUOTES_COALESCED speaker=" + speaker + " waitTicks=" + waitTicks)
+            Return True
+        EndIf
+        If _quotesPreparing
+            Debug.Trace("[DNT] MENU_QUOTES_TIMEOUT speaker=" + speaker + " waitTicks=" + waitTicks, 1)
+            Return False
+        EndIf
+    EndIf
+
+    _preparedSpeaker = speaker
+    _quotesReady = False
+    _quotesPreparing = True
     ClearDestinationGlobals()
     Int availableCount = service.RefreshQuotesForSpeaker(speaker)
-    _preparedSpeaker = speaker
     _quotesReady = True
+    _quotesPreparing = False
     Debug.Trace("[DNT] MENU_QUOTES_READY origin=" + service.OriginId + " available=" + availableCount + " speaker=" + speaker)
     Return True
 EndFunction
 
-Function PrepareForSpeaker(ObjectReference speakerRef)
+Bool Function EnsureQuotesForSpeaker(ObjectReference speakerRef)
     Actor speaker = speakerRef as Actor
     If speaker && _quotesReady && _preparedSpeaker == speaker
         Debug.Trace("[DNT] MENU_QUOTES_REUSED speaker=" + speaker)
-        Return
+        Return True
     EndIf
+    Return PreloadForSpeaker(speakerRef)
+EndFunction
 
-    Debug.Trace("[DNT] MENU_QUOTES_FALLBACK speaker=" + speaker)
-    PreloadForSpeaker(speakerRef)
+Function PrepareForSpeaker(ObjectReference speakerRef)
+    If !EnsureQuotesForSpeaker(speakerRef)
+        Debug.Trace("[DNT] MENU_QUOTES_FALLBACK_FAILED speaker=" + (speakerRef as Actor), 1)
+    EndIf
 EndFunction
 
 Bool Function Purchase(String destinationId, ObjectReference speakerRef)

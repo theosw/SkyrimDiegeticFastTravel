@@ -2,6 +2,9 @@
 
 #include <algorithm>
 #include <cmath>
+#include <functional>
+#include <limits>
+#include <queue>
 #include <utility>
 
 namespace
@@ -31,6 +34,25 @@ namespace
         return std::isfinite(a_x) && std::isfinite(a_y) &&
                a_x >= 0.0F && a_x <= 1.0F &&
                a_y >= 0.0F && a_y <= 1.0F;
+    }
+
+    constexpr float RoutePointTolerance = 0.0001F;
+
+    bool SameRoutePoint(
+        const DNT::Parchment::RoutePoint& a_left,
+        const DNT::Parchment::RoutePoint& a_right)
+    {
+        return std::abs(a_left.normalizedX - a_right.normalizedX) <= RoutePointTolerance &&
+               std::abs(a_left.normalizedY - a_right.normalizedY) <= RoutePointTolerance;
+    }
+
+    float RouteDistance(
+        const DNT::Parchment::RoutePoint& a_left,
+        const DNT::Parchment::RoutePoint& a_right)
+    {
+        return std::hypot(
+            a_left.normalizedX - a_right.normalizedX,
+            a_left.normalizedY - a_right.normalizedY);
     }
 
     bool HasPrefix(const std::string_view a_value, const std::string_view a_prefix)
@@ -80,6 +102,21 @@ bool DNT::Parchment::ValidateRequestHeader(const Request& a_request, std::string
         a_error = "texture path exceeds 512 characters";
         return false;
     }
+    if (a_request.overlayTexturePath.size() > 512) {
+        a_error = "overlay texture path exceeds 512 characters";
+        return false;
+    }
+    if (a_request.idleMarkerTexturePath.size() > 512 ||
+        a_request.selectedMarkerTexturePath.size() > 512 ||
+        a_request.originMarkerTexturePath.size() > 512) {
+        a_error = "marker texture path exceeds 512 characters";
+        return false;
+    }
+    if (a_request.idleMarkerTexturePath.empty() !=
+        a_request.selectedMarkerTexturePath.empty()) {
+        a_error = "idle and selected marker texture paths must be set together";
+        return false;
+    }
     if (!std::isfinite(a_request.artAspectRatio) || a_request.artAspectRatio < 0.5F ||
         a_request.artAspectRatio > 3.0F) {
         a_error = "art aspect ratio must be between 0.5 and 3.0";
@@ -99,6 +136,86 @@ bool DNT::Parchment::ValidateRequestHeader(const Request& a_request, std::string
         a_error = "route origin coordinates must be normalized to [0, 1]";
         return false;
     }
+    if (a_request.paymentLabelPosition &&
+        !IsNormalizedPoint(
+            a_request.paymentLabelPosition->normalizedX,
+            a_request.paymentLabelPosition->normalizedY)) {
+        a_error = "payment label coordinates must be normalized to [0, 1]";
+        return false;
+    }
+    return true;
+}
+
+bool DNT::Parchment::SetSourceLabel(
+    Request& a_request,
+    std::string a_sourceLabel,
+    std::string& a_error)
+{
+    if (!a_request.sourceLabel.empty()) {
+        a_error = "source label is already set";
+        return false;
+    }
+    a_sourceLabel = TrimLabel(std::move(a_sourceLabel));
+    if (!HasPrintableLabel(a_sourceLabel)) {
+        a_error = "source label is empty or too long";
+        return false;
+    }
+    a_request.sourceLabel = std::move(a_sourceLabel);
+    return true;
+}
+
+bool DNT::Parchment::SetOverlayTexture(
+    Request& a_request,
+    std::string a_texturePath,
+    std::string& a_error)
+{
+    if (!a_request.overlayTexturePath.empty()) {
+        a_error = "overlay texture is already set";
+        return false;
+    }
+    if (a_texturePath.empty() || a_texturePath.size() > 512) {
+        a_error = "overlay texture path must contain 1-512 characters";
+        return false;
+    }
+    a_request.overlayTexturePath = std::move(a_texturePath);
+    return true;
+}
+
+bool DNT::Parchment::SetMarkerTextures(
+    Request& a_request,
+    std::string a_idleTexturePath,
+    std::string a_selectedTexturePath,
+    std::string& a_error)
+{
+    if (!a_request.idleMarkerTexturePath.empty() ||
+        !a_request.selectedMarkerTexturePath.empty()) {
+        a_error = "marker textures are already set";
+        return false;
+    }
+    if (a_idleTexturePath.empty() || a_idleTexturePath.size() > 512 ||
+        a_selectedTexturePath.empty() || a_selectedTexturePath.size() > 512) {
+        a_error = "marker texture paths must each contain 1-512 characters";
+        return false;
+    }
+    a_request.idleMarkerTexturePath = std::move(a_idleTexturePath);
+    a_request.selectedMarkerTexturePath = std::move(a_selectedTexturePath);
+    return true;
+}
+
+bool DNT::Parchment::SetOriginMarkerTexture(
+    Request& a_request,
+    std::string a_texturePath,
+    std::string& a_error)
+{
+    if (!a_request.originMarkerTexturePath.empty()) {
+        a_error = "origin marker texture is already set";
+        return false;
+    }
+    if (a_texturePath.empty() || a_texturePath.size() > 512) {
+        a_error = "origin marker texture path must contain 1-512 characters";
+        return false;
+    }
+    a_request.originMarkerTexturePath = std::move(a_texturePath);
     return true;
 }
 
@@ -113,6 +230,77 @@ bool DNT::Parchment::SetRouteOrigin(Request& a_request, const RouteOrigin a_orig
         return false;
     }
     a_request.routeOrigin = a_origin;
+    return true;
+}
+
+bool DNT::Parchment::SetPaymentLabelPosition(
+    Request& a_request,
+    const RoutePoint a_position,
+    std::string& a_error)
+{
+    if (a_request.paymentLabelPosition) {
+        a_error = "payment label position is already set";
+        return false;
+    }
+    if (!IsNormalizedPoint(a_position.normalizedX, a_position.normalizedY)) {
+        a_error = "payment label coordinates must be normalized to [0, 1]";
+        return false;
+    }
+    a_request.paymentLabelPosition = a_position;
+    return true;
+}
+
+bool DNT::Parchment::AddRouteSegment(Request& a_request, const RouteSegment a_segment, std::string& a_error)
+{
+    if (a_request.routeSegments.size() >= MaxRouteSegments) {
+        a_error = "route segment limit exceeded";
+        return false;
+    }
+    if (!IsNormalizedPoint(a_segment.start.normalizedX, a_segment.start.normalizedY) ||
+        !IsNormalizedPoint(a_segment.end.normalizedX, a_segment.end.normalizedY)) {
+        a_error = "route segment coordinates must be normalized to [0, 1]";
+        return false;
+    }
+    if (SameRoutePoint(a_segment.start, a_segment.end)) {
+        a_error = "route segment endpoints must be distinct";
+        return false;
+    }
+    const auto duplicate = std::ranges::any_of(
+        a_request.routeSegments,
+        [&](const RouteSegment& a_existing) {
+            return (SameRoutePoint(a_existing.start, a_segment.start) &&
+                    SameRoutePoint(a_existing.end, a_segment.end)) ||
+                   (SameRoutePoint(a_existing.start, a_segment.end) &&
+                    SameRoutePoint(a_existing.end, a_segment.start));
+        });
+    if (duplicate) {
+        a_error = "route segment is already present";
+        return false;
+    }
+    a_request.routeSegments.push_back(a_segment);
+    return true;
+}
+
+bool DNT::Parchment::AddRouteLandmark(
+    Request& a_request,
+    const RoutePoint a_landmark,
+    std::string& a_error)
+{
+    if (a_request.routeLandmarks.size() >= MaxRouteLandmarks) {
+        a_error = "route landmark limit exceeded";
+        return false;
+    }
+    if (!IsNormalizedPoint(a_landmark.normalizedX, a_landmark.normalizedY)) {
+        a_error = "route landmark coordinates must be normalized to [0, 1]";
+        return false;
+    }
+    if (std::ranges::any_of(a_request.routeLandmarks, [&](const RoutePoint& a_existing) {
+            return SameRoutePoint(a_existing, a_landmark);
+        })) {
+        a_error = "route landmark is already present";
+        return false;
+    }
+    a_request.routeLandmarks.push_back(a_landmark);
     return true;
 }
 
@@ -139,6 +327,10 @@ bool DNT::Parchment::AddDestination(Request& a_request, Destination a_destinatio
         a_error = "destination coordinates must be normalized to [0, 1]";
         return false;
     }
+    if (a_destination.idleMarkerTexturePath.size() > 512) {
+        a_error = "destination marker texture path exceeds 512 characters";
+        return false;
+    }
     const auto duplicate = std::ranges::find(a_request.destinations, a_destination.id, &Destination::id);
     if (duplicate != a_request.destinations.end()) {
         a_error = "destination IDs must be unique";
@@ -146,6 +338,32 @@ bool DNT::Parchment::AddDestination(Request& a_request, Destination a_destinatio
     }
 
     a_request.destinations.push_back(std::move(a_destination));
+    return true;
+}
+
+bool DNT::Parchment::SetDestinationMarkerTexture(
+    Request& a_request,
+    const std::string_view a_destinationId,
+    std::string a_texturePath,
+    std::string& a_error)
+{
+    const auto destination = std::ranges::find(
+        a_request.destinations,
+        a_destinationId,
+        &Destination::id);
+    if (destination == a_request.destinations.end()) {
+        a_error = "destination marker target was not found";
+        return false;
+    }
+    if (!destination->idleMarkerTexturePath.empty()) {
+        a_error = "destination marker texture is already set";
+        return false;
+    }
+    if (a_texturePath.empty() || a_texturePath.size() > 512) {
+        a_error = "destination marker texture path must contain 1-512 characters";
+        return false;
+    }
+    destination->idleMarkerTexturePath = std::move(a_texturePath);
     return true;
 }
 
@@ -158,11 +376,153 @@ bool DNT::Parchment::ValidateReadyRequest(const Request& a_request, std::string&
         a_error = "request has no destinations";
         return false;
     }
+    if (!HasPrintableLabel(a_request.sourceLabel)) {
+        a_error = "request has no source label";
+        return false;
+    }
     if (a_request.destinations.size() > MaxDestinations) {
         a_error = "destination limit exceeded";
         return false;
     }
+    if (a_request.routeSegments.size() > MaxRouteSegments) {
+        a_error = "route segment limit exceeded";
+        return false;
+    }
+    if (a_request.routeLandmarks.size() > MaxRouteLandmarks) {
+        a_error = "route landmark limit exceeded";
+        return false;
+    }
+    if (std::ranges::any_of(a_request.destinations, [](const Destination& a_destination) {
+            return a_destination.idleMarkerTexturePath.size() > 512;
+        })) {
+        a_error = "destination marker texture path exceeds 512 characters";
+        return false;
+    }
+    if (std::ranges::any_of(a_request.routeLandmarks, [](const RoutePoint& a_landmark) {
+            return !IsNormalizedPoint(a_landmark.normalizedX, a_landmark.normalizedY);
+        })) {
+        a_error = "route landmark coordinates must be normalized to [0, 1]";
+        return false;
+    }
+    if (!a_request.routeSegments.empty()) {
+        if (!a_request.routeOrigin) {
+            a_error = "an explicit route network requires a route origin";
+            return false;
+        }
+        for (const auto& destination : a_request.destinations) {
+            if (FindRoutePath(a_request, destination).size() < 2) {
+                a_error = "route network does not connect every destination to the origin";
+                return false;
+            }
+        }
+    }
     return true;
+}
+
+std::vector<DNT::Parchment::RoutePoint> DNT::Parchment::FindRoutePath(
+    const Request& a_request,
+    const Destination& a_destination)
+{
+    if (!a_request.routeOrigin || a_request.routeSegments.empty()) {
+        return {};
+    }
+
+    std::vector<RoutePoint> nodes;
+    const auto nodeIndex = [&](const RoutePoint& a_point) -> std::size_t {
+        const auto found = std::ranges::find_if(nodes, [&](const RoutePoint& a_node) {
+            return SameRoutePoint(a_node, a_point);
+        });
+        if (found != nodes.end()) {
+            return static_cast<std::size_t>(std::distance(nodes.begin(), found));
+        }
+        nodes.push_back(a_point);
+        return nodes.size() - 1;
+    };
+
+    struct Edge
+    {
+        std::size_t destination{ 0 };
+        float distance{ 0.0F };
+    };
+    std::vector<std::pair<std::size_t, std::size_t>> indexedSegments;
+    indexedSegments.reserve(a_request.routeSegments.size());
+    for (const auto& segment : a_request.routeSegments) {
+        indexedSegments.emplace_back(nodeIndex(segment.start), nodeIndex(segment.end));
+    }
+
+    const RoutePoint originPoint{
+        a_request.routeOrigin->normalizedX,
+        a_request.routeOrigin->normalizedY
+    };
+    const RoutePoint destinationPoint{
+        a_destination.normalizedX,
+        a_destination.normalizedY
+    };
+    const auto findExistingNode = [&](const RoutePoint& a_point) -> std::optional<std::size_t> {
+        const auto found = std::ranges::find_if(nodes, [&](const RoutePoint& a_node) {
+            return SameRoutePoint(a_node, a_point);
+        });
+        if (found == nodes.end()) {
+            return std::nullopt;
+        }
+        return static_cast<std::size_t>(std::distance(nodes.begin(), found));
+    };
+    const auto originIndex = findExistingNode(originPoint);
+    const auto destinationIndex = findExistingNode(destinationPoint);
+    if (!originIndex || !destinationIndex) {
+        return {};
+    }
+
+    std::vector<std::vector<Edge>> adjacency(nodes.size());
+    for (std::size_t index = 0; index < indexedSegments.size(); ++index) {
+        const auto [start, end] = indexedSegments[index];
+        const auto distance = RouteDistance(nodes[start], nodes[end]);
+        adjacency[start].push_back({ end, distance });
+        adjacency[end].push_back({ start, distance });
+    }
+
+    constexpr auto noPrevious = std::numeric_limits<std::size_t>::max();
+    std::vector<float> distances(nodes.size(), std::numeric_limits<float>::infinity());
+    std::vector<std::size_t> previous(nodes.size(), noPrevious);
+    using QueueEntry = std::pair<float, std::size_t>;
+    std::priority_queue<QueueEntry, std::vector<QueueEntry>, std::greater<>> pending;
+    distances[*originIndex] = 0.0F;
+    pending.emplace(0.0F, *originIndex);
+
+    while (!pending.empty()) {
+        const auto [distance, current] = pending.top();
+        pending.pop();
+        if (distance > distances[current]) {
+            continue;
+        }
+        if (current == *destinationIndex) {
+            break;
+        }
+        for (const auto& edge : adjacency[current]) {
+            const auto candidate = distance + edge.distance;
+            if (candidate < distances[edge.destination]) {
+                distances[edge.destination] = candidate;
+                previous[edge.destination] = current;
+                pending.emplace(candidate, edge.destination);
+            }
+        }
+    }
+    if (!std::isfinite(distances[*destinationIndex])) {
+        return {};
+    }
+
+    std::vector<RoutePoint> path;
+    for (auto current = *destinationIndex;; current = previous[current]) {
+        path.push_back(nodes[current]);
+        if (current == *originIndex) {
+            break;
+        }
+        if (previous[current] == noPrevious) {
+            return {};
+        }
+    }
+    std::ranges::reverse(path);
+    return path;
 }
 
 bool DNT::Parchment::ValidatePresentation(
@@ -239,4 +599,38 @@ DNT::Parchment::Layout DNT::Parchment::ComputeLayout(
         .markerWidth = 168.0F * scale,
         .markerHeight = 38.0F * scale
     };
+}
+
+std::vector<float> DNT::Parchment::ComputeDestinationHitSizes(
+    const Request& a_request,
+    const Layout& a_layout)
+{
+    std::vector<float> sizes;
+    sizes.reserve(a_request.destinations.size());
+    const auto preferredSize = std::max(a_layout.markerHeight * 2.65F, 84.0F);
+    if (a_request.destinations.size() < 2) {
+        sizes.assign(a_request.destinations.size(), preferredSize);
+        return sizes;
+    }
+
+    constexpr float separationMargin = 0.88F;
+    for (std::size_t index = 0; index < a_request.destinations.size(); ++index) {
+        const auto& destination = a_request.destinations[index];
+        auto nearestSeparation = std::numeric_limits<float>::infinity();
+        for (std::size_t otherIndex = 0; otherIndex < a_request.destinations.size(); ++otherIndex) {
+            if (index == otherIndex) {
+                continue;
+            }
+            const auto& other = a_request.destinations[otherIndex];
+            const auto horizontal = std::abs(
+                destination.normalizedX - other.normalizedX) * a_layout.width;
+            const auto vertical = std::abs(
+                destination.normalizedY - other.normalizedY) * a_layout.height;
+            nearestSeparation = std::min(
+                nearestSeparation,
+                std::max(horizontal, vertical));
+        }
+        sizes.push_back(std::min(preferredSize, nearestSeparation * separationMargin));
+    }
+    return sizes;
 }

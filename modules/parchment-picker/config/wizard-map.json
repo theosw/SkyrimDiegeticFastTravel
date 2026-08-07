@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "provider": "college",
+  "map": {
+    "texture": "Data/textures/terrain/tamriel/skyrim.dds",
+    "uv_crop": [
+      0.088379,
+      0.187012,
+      0.932129,
+      0.783691
+    ],
+    "art_aspect_ratio": 1.414075,
+    "asset_policy": "reference-only; do not package the DDS"
+  },
+  "icon_themes": {
+    "default": "norden",
+    "fallback": "vanilla"
+  },
+  "ui_elements": [
+    {
+      "id": "fare_label",
+      "name": "Payment label",
+      "sample": "College of Winterhold to Whiterun    250 gold",
+      "map_position": [
+        0.61647,
+        0.92423
+      ]
+    }
+  ],
+  "stops": [
+    {
+      "id": "college",
+      "name": "College of Winterhold",
+      "type": "origin",
+      "map_position": [
+        0.750802,
+        0.167836
+      ]
+    },
+    {
+      "id": "whiterun",
+      "name": "Whiterun",
+      "type": "capital",
+      "map_position": [
+        0.532756,
+        0.54829
+      ]
+    },
+    {
+      "id": "riften",
+      "name": "Riften",
+      "type": "capital",
+      "map_position": [
+        0.880078,
+        0.833512
+      ]
+    },
+    {
+      "id": "solitude",
+      "name": "Solitude",
+      "type": "capital",
+      "map_position": [
+        0.365471,
+        0.191247
+      ]
+    },
+    {
+      "id": "windhelm",
+      "name": "Windhelm",
+      "type": "capital",
+      "map_position": [
+        0.793249,
+        0.410699
+      ]
+    },
+    {
+      "id": "markarth",
+      "name": "Markarth",
+      "type": "capital",
+      "map_position": [
+        0.094238,
+        0.507741
+      ]
+    },
+    {
+      "id": "dawnstar",
+      "name": "Dawnstar",
+      "type": "capital",
+      "map_position": [
+        0.557529,
+        0.185081
+      ]
+    },
+    {
+      "id": "morthal",
+      "name": "Morthal",
+      "type": "capital",
+      "map_position": [
+        0.400452,
+        0.31111
+      ]
+    }
+  ]
+}

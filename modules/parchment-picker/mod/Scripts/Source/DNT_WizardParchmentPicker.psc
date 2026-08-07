@@ -7,16 +7,16 @@ String MirabellePresentationVoice = "Voice/Skyrim.esm/FemaleUniqueMirabelleErvin
 String MirabellePresentationSubtitle = "Very good. Then we're done here."
 Float MirabellePresentationDurationSeconds = 2.147846
 
-; LoreRim already supplies this loose BC7 texture through RUSTIC MAPS. The
-; picker references it but never redistributes it.
-String Property TexturePath = "Data/textures/dungeons/imperial/battlemap01.dds" Auto
-Float Property ArtAspectRatio = 1.358090 Auto
-Float Property TextureUvMinX = 0.0 Auto
-Float Property TextureUvMinY = 0.0 Auto
-Float Property TextureUvMaxX = 1.0 Auto
-; The source is square; its useful parchment ends at source row 3016. Cropping
-; there excludes the opaque backing strip below the ragged paper edge.
-Float Property TextureUvMaxY = 0.736328 Auto
+; LoreRim already supplies this loose BC7 texture through Skyrim Paper Map by
+; Caro Tuts for FWMF. The picker references it but never redistributes it.
+String Property TexturePath = "Data/textures/terrain/tamriel/skyrim.dds" Auto
+Float Property ArtAspectRatio = 1.414075 Auto
+; The source is square. These bounds isolate the 1728x1222 map illustration
+; inside its black texture padding.
+Float Property TextureUvMinX = 0.088379 Auto
+Float Property TextureUvMinY = 0.187012 Auto
+Float Property TextureUvMaxX = 0.932129 Auto
+Float Property TextureUvMaxY = 0.783691 Auto
 
 ObjectReference CurrentSource
 String ActiveRequest = ""
@@ -81,9 +81,13 @@ Function OpenMap(ObjectReference SourceRef)
 
     ; Use the artwork profile explicitly so an existing save cannot retain the
     ; previous 4:3/0.75 auto-property values.
-    Float EffectiveArtAspectRatio = 1.358090
-    Float EffectiveTextureUvMaxY = 0.736328
-    If !DNT_ParchmentNative.BeginRequest(ActiveRequest, "college", SourceRef, TexturePath, EffectiveArtAspectRatio, TextureUvMinX, TextureUvMinY, TextureUvMaxX, EffectiveTextureUvMaxY)
+    String EffectiveTexturePath = "Data/textures/terrain/tamriel/skyrim.dds"
+    Float EffectiveArtAspectRatio = 1.414075
+    Float EffectiveTextureUvMinX = 0.088379
+    Float EffectiveTextureUvMinY = 0.187012
+    Float EffectiveTextureUvMaxX = 0.932129
+    Float EffectiveTextureUvMaxY = 0.783691
+    If !DNT_ParchmentNative.BeginRequest(ActiveRequest, "college", SourceRef, EffectiveTexturePath, EffectiveArtAspectRatio, EffectiveTextureUvMinX, EffectiveTextureUvMinY, EffectiveTextureUvMaxX, EffectiveTextureUvMaxY)
         AbortOpen("begin_failed")
         Return
     EndIf
@@ -91,14 +95,32 @@ Function OpenMap(ObjectReference SourceRef)
     ; Papyrus interns string constants case-insensitively. The trailing space
     ; keeps each display label distinct from its lowercase service ID; the
     ; native boundary trims it before rendering.
-    Bool AddedAll = DNT_ParchmentNative.SetRouteOrigin(ActiveRequest, 0.752, 0.167)
-    AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "whiterun", "Whiterun ", Service.GetFare("whiterun"), 0.554, 0.507) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "riften", "Riften ", Service.GetFare("riften"), 0.921, 0.806) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "solitude", "Solitude ", Service.GetFare("solitude"), 0.330, 0.150) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "windhelm", "Windhelm ", Service.GetFare("windhelm"), 0.812, 0.372) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "markarth", "Markarth ", Service.GetFare("markarth"), 0.079, 0.474) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "dawnstar", "Dawnstar ", Service.GetFare("dawnstar"), 0.570, 0.177) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "morthal", "Morthal ", Service.GetFare("morthal"), 0.402, 0.298) && AddedAll
+    ; The beta uses one consistent vanilla map-marker language. Every neutral
+    ; destination owns its city/castle marker and keeps that identity while
+    ; highlighted. The vanilla Winterhold castle identifies only the College
+    ; origin. Whiterun remains the generic fallback if a destination texture
+    ; cannot be loaded.
+    Bool AddedAll = DNT_ParchmentNative.SetMarkerTextures(ActiveRequest, "Data/textures/DiegeticTravel/whiterun-dragonsreach.dds", "Data/textures/DiegeticTravel/whiterun-dragonsreach.dds")
+    AddedAll = DNT_ParchmentNative.SetOriginMarkerTexture(ActiveRequest, "Data/textures/DiegeticTravel/winterhold-college.dds") && AddedAll
+    AddedAll = DNT_ParchmentNative.SetSourceLabel(ActiveRequest, "College of Winterhold") && AddedAll
+    AddedAll = DNT_ParchmentNative.SetPaymentLabelPosition(ActiveRequest, 0.616470, 0.924230) && AddedAll
+    ; Positions are calculated from the FWMF Tamriel quad and the exact vanilla
+    ; map-marker world coordinates, then normalized into the crop above.
+    AddedAll = DNT_ParchmentNative.SetRouteOrigin(ActiveRequest, 0.750802, 0.167836) && AddedAll
+    AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "whiterun", "Whiterun ", Service.GetFare("whiterun"), 0.532756, 0.548290) && AddedAll
+    AddedAll = DNT_ParchmentNative.SetDestinationMarkerTexture(ActiveRequest, "whiterun", "Data/textures/DiegeticTravel/whiterun-dragonsreach.dds") && AddedAll
+    AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "riften", "Riften ", Service.GetFare("riften"), 0.880078, 0.833512) && AddedAll
+    AddedAll = DNT_ParchmentNative.SetDestinationMarkerTexture(ActiveRequest, "riften", "Data/textures/DiegeticTravel/riften-mistveil-keep.dds") && AddedAll
+    AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "solitude", "Solitude ", Service.GetFare("solitude"), 0.365471, 0.191247) && AddedAll
+    AddedAll = DNT_ParchmentNative.SetDestinationMarkerTexture(ActiveRequest, "solitude", "Data/textures/DiegeticTravel/solitude-blue-palace.dds") && AddedAll
+    AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "windhelm", "Windhelm ", Service.GetFare("windhelm"), 0.793249, 0.410699) && AddedAll
+    AddedAll = DNT_ParchmentNative.SetDestinationMarkerTexture(ActiveRequest, "windhelm", "Data/textures/DiegeticTravel/windhelm-palace-of-the-kings.dds") && AddedAll
+    AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "markarth", "Markarth ", Service.GetFare("markarth"), 0.094238, 0.507741) && AddedAll
+    AddedAll = DNT_ParchmentNative.SetDestinationMarkerTexture(ActiveRequest, "markarth", "Data/textures/DiegeticTravel/markarth-understone-keep.dds") && AddedAll
+    AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "dawnstar", "Dawnstar ", Service.GetFare("dawnstar"), 0.557529, 0.185081) && AddedAll
+    AddedAll = DNT_ParchmentNative.SetDestinationMarkerTexture(ActiveRequest, "dawnstar", "Data/textures/DiegeticTravel/dawnstar-white-hall.dds") && AddedAll
+    AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "morthal", "Morthal ", Service.GetFare("morthal"), 0.400452, 0.311110) && AddedAll
+    AddedAll = DNT_ParchmentNative.SetDestinationMarkerTexture(ActiveRequest, "morthal", "Data/textures/DiegeticTravel/morthal-highmoon-hall.dds") && AddedAll
 
     If !AddedAll
         DNT_ParchmentNative.Cancel(ActiveRequest)

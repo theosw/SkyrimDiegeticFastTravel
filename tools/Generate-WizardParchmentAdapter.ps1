@@ -19,6 +19,8 @@ $scriptPath = Join-Path $PSScriptRoot `
     "xedit\DNT_GenerateWizardParchmentAdapter.pas"
 $pluginOutput = Join-Path $modRoot "DiegeticTravelWizardParchment.esp"
 $seqOutput = Join-Path $modRoot "SEQ\DiegeticTravelWizardParchment.seq"
+$seqFormIdsPath = Join-Path $buildRoot `
+    "wizard-parchment-seq-formids.txt"
 
 function Resolve-ProjectPath([string]$Path) {
     if ([System.IO.Path]::IsPathRooted($Path)) {
@@ -51,7 +53,13 @@ foreach ($required in @($xeditPath, $scriptPath)) {
 if (Test-Path -LiteralPath $generationRoot) {
     Remove-Item -LiteralPath $generationRoot -Recurse -Force
 }
-foreach ($resultFile in @($statusPath, $errorPath)) {
+foreach ($resultFile in @(
+    $statusPath,
+    $errorPath,
+    $pluginOutput,
+    $seqOutput,
+    $seqFormIdsPath
+)) {
     if (Test-Path -LiteralPath $resultFile -PathType Leaf) {
         Remove-Item -LiteralPath $resultFile -Force
     }
@@ -142,11 +150,27 @@ if ($terminalStatus -ne "success") {
     throw "Wizard parchment generation did not report success."
 }
 
-foreach ($outputPath in @($pluginOutput, $seqOutput)) {
+foreach ($outputPath in @($pluginOutput, $seqFormIdsPath)) {
     if (-not (Test-Path -LiteralPath $outputPath -PathType Leaf)) {
         throw "Wizard parchment generation did not create: $outputPath"
     }
 }
 
+$seqFormIds = @(
+    Get-Content -LiteralPath $seqFormIdsPath |
+        ForEach-Object { $_.Trim() } |
+        Where-Object { $_ -ne "" }
+)
+if ($seqFormIds.Count -ne 1 -or $seqFormIds[0] -notmatch "^[0-9A-Fa-f]{8}$") {
+    throw "Wizard parchment generator did not report one valid SEQ FormID."
+}
+$formId = [Convert]::ToUInt32($seqFormIds[0], 16)
+$seqBytes = [byte[]]::new(4)
+$seqBytes[0] = [byte]($formId -band 0xFF)
+$seqBytes[1] = [byte](($formId -shr 8) -band 0xFF)
+$seqBytes[2] = [byte](($formId -shr 16) -band 0xFF)
+$seqBytes[3] = [byte](($formId -shr 24) -band 0xFF)
+[System.IO.File]::WriteAllBytes($seqOutput, $seqBytes)
+
 Write-Host "Generated wizard parchment adapter: $pluginOutput"
-Write-Host "Generated wizard parchment adapter SEQ: $seqOutput"
+Write-Host "Generated wizard parchment adapter SEQ: $seqOutput ($($seqFormIds[0]))"

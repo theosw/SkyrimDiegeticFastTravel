@@ -15,3 +15,6 @@ Learning Sources/
 
 # Native debug symbols are local build artifacts.
 *.pdb
+
+# Local gameplay/test watcher output is evidence for the current machine only.
+logs/

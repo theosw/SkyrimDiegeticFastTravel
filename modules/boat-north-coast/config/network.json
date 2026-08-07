@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "provider": "boat",
+  "lane": "north_coast",
+  "fare_global": "00AA12:CFTO.esp",
+  "fare_default": 50,
+  "time_passage": "game_fast_travel",
+  "map": {
+    "texture": "Data/textures/dungeons/imperial/battlemap01.dds",
+    "uv_crop": [0.0, 0.0, 1.0, 0.736328],
+    "art_aspect_ratio": 1.35809,
+    "asset_policy": "base map is reference-only; route artwork is deferred until after beta"
+  },
+  "ui_elements": [
+    {
+      "id": "fare_label",
+      "name": "Payment label",
+      "sample": "Dawnstar to Solitude    50 gold",
+      "map_position": [0.569053, 0.905747]
+    }
+  ],
+  "stops": [
+    {
+      "id": "dawnstar",
+      "name": "Dawnstar",
+      "service_npc": "00AA07:CFTO.esp",
+      "arrival_marker": "00FB1F:CFTO.esp",
+      "map_position": [0.562613, 0.139944]
+    },
+    {
+      "id": "solitude",
+      "name": "Solitude",
+      "service_npc": "00AA08:CFTO.esp",
+      "arrival_marker": "00FB1E:CFTO.esp",
+      "map_position": [0.343646, 0.176873]
+    },
+    {
+      "id": "windhelm",
+      "name": "Windhelm",
+      "service_npc": "00AA09:CFTO.esp",
+      "arrival_marker": "00FB1D:CFTO.esp",
+      "map_position": [0.825231, 0.399423]
+    },
+    {
+      "id": "morthal",
+      "name": "Morthal",
+      "service_npc": "00AA0B:CFTO.esp",
+      "arrival_marker": "00FB17:CFTO.esp",
+      "map_position": [0.40447, 0.256564]
+    },
+    {
+      "id": "solitude_lighthouse",
+      "name": "Solitude Lighthouse",
+      "service_npc": "014C5A:CFTO.esp",
+      "arrival_marker": "019DB2:CFTO.esp",
+      "map_position": [0.38014, 0.082606]
+    },
+    {
+      "id": "winterhold",
+      "name": "Winterhold",
+      "service_npc": "158FFC:CFTO.esp",
+      "arrival_marker": "038413:CFTO.esp",
+      "map_position": [0.730059, 0.137028]
+    },
+    {
+      "id": "dragon_bridge",
+      "name": "Dragon Bridge",
+      "service_npc": "2D4C09:CFTO.esp",
+      "arrival_marker": "29D0A4:CFTO.esp",
+      "map_position": [0.243465, 0.226437]
+    }
+  ],
+  "excluded_route_members": [
+    {
+      "id": "volkihar_ferryman",
+      "service_npc": "1F0E6A:CFTO.esp",
+      "reason": "Quest-special Castle Volkihar provider with a distinct prompt and extra fare."
+    }
+  ],
+  "deferred_stops": [
+    {
+      "id": "frostflow_lighthouse",
+      "reason": "Destination-only Route 1 extension with no public return provider."
+    },
+    {
+      "id": "icewater_jetty",
+      "reason": "Castle Volkihar quest-special destination using KmodFerryCostExtra."
+    },
+    {
+      "id": "windstad_manor",
+      "reason": "Private Hearthfire provider gated by ownership and ferryman construction."
+    }
+  ]
+}

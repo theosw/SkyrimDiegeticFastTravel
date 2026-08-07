@@ -14,7 +14,7 @@ param(
     [switch]$RequireParchmentPicker,
     [string]$ParchmentModName = "DiegeticTravel - Parchment Picker Test",
     [string]$ParchmentPluginName = "DiegeticTravelWizardParchment.esp",
-    [string]$ParchmentArtworkModName = "RUSTIC MAPS",
+    [string]$ParchmentArtworkModName = "Skyrim Paper Map by Caro Tuts for FWMF",
     [string]$OriginalModName = "DiegeticTravel",
     [string]$OriginalPluginName = "DiegeticTravel.esp",
     [string]$AuditModName = "houseCARL - houseCARL_PapyrusAudit",
@@ -80,7 +80,7 @@ function Assert-TestReady {
             throw "Enable '$ParchmentPluginName' in the MO2 right pane."
         }
         if ($modlist -notcontains "+$ParchmentArtworkModName") {
-            throw "Enable '$ParchmentArtworkModName'; the parchment picker references its loose battle-map texture."
+            throw "Enable '$ParchmentArtworkModName'; the wizard picker references its loose formal-map texture."
         }
     }
     if ($modlist -contains "+$AuditModName") {
@@ -120,8 +120,9 @@ function Assert-TestReady {
             (Join-Path $parchmentRoot "Scripts\DNT_WizardParchmentFragment.pex"),
             (Join-Path $parchmentRoot "Scripts\DNT_WizardParchmentPicker.pex"),
             (Join-Path $parchmentRoot "SKSE\Plugins\DNTParchmentPicker.dll"),
+            (Join-Path $parchmentRoot "textures\DiegeticTravel\winterhold-college.dds"),
             (Join-Path (Join-Path (Join-Path $instanceRoot "mods") $ParchmentArtworkModName) `
-                "textures\dungeons\imperial\battlemap01.dds")
+                "textures\terrain\tamriel\skyrim.dds")
         )
     }
     foreach ($requiredWizardFile in $requiredWizardFiles) {

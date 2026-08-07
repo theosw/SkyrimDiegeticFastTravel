@@ -124,7 +124,21 @@ $null = Assert-Hash "SKSE" $runtime.skse
 $addressLibraryPath = Assert-Hash "Address Library" $runtime.addressLibrary
 $null = Assert-Hash "SKSE Menu Framework" $runtime.menuFramework
 $null = Assert-Hash "RUSTIC MAPS artwork" $runtime.artwork
+$null = Assert-Hash "Caro Tuts wizard artwork" $runtime.wizardArtwork
 $null = Assert-Hash "Wizard core" $runtime.wizardCore
+
+$wizardMarkerSource = $lock.assetSources.wizardTravelMarker
+$wizardMarkerSourcePath = [System.IO.Path]::GetFullPath((Join-Path `
+    $projectRoot `
+    ($wizardMarkerSource.repositoryPath -replace '/', '\')))
+if (-not (Test-Path -LiteralPath $wizardMarkerSourcePath -PathType Leaf)) {
+    throw "Credited wizard-marker source was not found: $wizardMarkerSourcePath"
+}
+$wizardMarkerSourceHash = (Get-FileHash -LiteralPath `
+    $wizardMarkerSourcePath -Algorithm SHA256).Hash
+if ($wizardMarkerSourceHash -ne $wizardMarkerSource.sha256) {
+    throw "Credited wizard-marker source hash mismatch. Expected $($wizardMarkerSource.sha256), found $wizardMarkerSourceHash"
+}
 
 if (-not (Test-Path -LiteralPath $CommonLibRoot -PathType Container)) {
     throw "CommonLibSSE-NG checkout was not found: $CommonLibRoot"
@@ -178,6 +192,7 @@ if ($vcpkg.'builtin-baseline' -ne $lock.buildDependencies.vcpkgBaseline) {
 Write-Host "Native dependency audit passed."
 Write-Host "Skyrim runtime: $skyrimVersion"
 Write-Host "CommonLib commit: $commonLibCommit"
+Write-Host "Credited wizard marker source: $($wizardMarkerSource.name) $($wizardMarkerSource.version) ($wizardMarkerSourceHash)"
 Write-Host "CompileAndRun legacy ID $($relocation.legacyAeId): absent (expected)"
 Write-Host "CompileAndRun modern ID $($relocation.modernAeId): $modernOffsetHex"
 Write-Host "Rejected fallback target ID $($relocation.nextLegacyId): $nextLegacyOffsetHex"

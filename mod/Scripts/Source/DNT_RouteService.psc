@@ -9,6 +9,11 @@ String Property RuntimePath = "Data/SKSE/Plugins/DiegeticTravel/runtime.json" Au
 Int _runtime
 Int _lastFare = -1
 Float _lastHours = 0.0
+String[] _batchHazardIds
+Int[] _batchHazardPhases
+Int _batchHazardCount = 0
+Int _batchWarMultiplier = 1
+Bool _quoteBatchActive = False
 
 Event OnInit()
     LoadRuntime()
@@ -100,6 +105,47 @@ Int Function GetHazardPhase(Int hazard)
     Return 1
 EndFunction
 
+Function BeginQuoteBatch()
+    _batchHazardIds = new String[36]
+    _batchHazardPhases = new Int[36]
+    _batchHazardCount = 0
+    _batchWarMultiplier = 1
+    _quoteBatchActive = True
+    If EnsureRuntime()
+        Int rules = JMap.getObj(_runtime, "rules")
+        _batchWarMultiplier = GetWarMultiplier(rules)
+    EndIf
+EndFunction
+
+Function EndQuoteBatch()
+    _quoteBatchActive = False
+    _batchHazardCount = 0
+    ; Typed Papyrus arrays cannot be assigned None without runtime cast errors.
+    ; Keep the small cache allocated and reset only its logical count.
+EndFunction
+
+Int Function GetHazardPhaseForQuote(String hazardId, Int hazard)
+    If !_quoteBatchActive
+        Return GetHazardPhase(hazard)
+    EndIf
+
+    Int index = 0
+    While index < _batchHazardCount
+        If _batchHazardIds[index] == hazardId
+            Return _batchHazardPhases[index]
+        EndIf
+        index += 1
+    EndWhile
+
+    Int phase = GetHazardPhase(hazard)
+    If _batchHazardCount < 36
+        _batchHazardIds[_batchHazardCount] = hazardId
+        _batchHazardPhases[_batchHazardCount] = phase
+        _batchHazardCount += 1
+    EndIf
+    Return phase
+EndFunction
+
 Bool Function IsDestinationAvailable(String destinationId)
     If !EnsureRuntime()
         Return False
@@ -141,8 +187,10 @@ Bool Function QuoteCarriageRoute(String routeId)
     Int candidates = JMap.getObj(route, "candidates")
     Int baseCost = JMap.getInt(rules, "base_cost", 50)
     Int hazardCost = JMap.getInt(rules, "hazard_cost", 100)
-    Int refuseMultiplier = JMap.getInt(rules, "refuse_multiplier", 2)
     Int warMultiplier = GetWarMultiplier(rules)
+    If _quoteBatchActive
+        warMultiplier = _batchWarMultiplier
+    EndIf
 
     Int candidateIndex = 0
     Int candidateCount = JArray.count(candidates)
@@ -153,26 +201,21 @@ Bool Function QuoteCarriageRoute(String routeId)
         Int candidateHazards = JMap.getObj(candidate, "hazards")
         Int hazardIndex = 0
         Int hazardCount = JArray.count(candidateHazards)
-        Bool blocked = False
-
-        While hazardIndex < hazardCount && !blocked
+        While hazardIndex < hazardCount
             String hazardId = JArray.getStr(candidateHazards, hazardIndex)
             Int hazard = JMap.getObj(allHazards, hazardId)
-            Int phase = GetHazardPhase(hazard)
+            Int phase = GetHazardPhaseForQuote(hazardId, hazard)
 
-            ; Unknown is conservative: price it as active and let chokepoints refuse.
+            ; Beta policy: unknown and active hazards affect price, but do not
+            ; hide an otherwise executable CFTO destination from the map.
             If phase == 1 || phase == 3
                 Int multiplier = JMap.getInt(hazard, "mult", 1)
-                If JMap.getStr(hazard, "role") == "chokepoint" && multiplier >= refuseMultiplier
-                    blocked = True
-                Else
-                    fare += hazardCost * multiplier
-                EndIf
+                fare += hazardCost * multiplier
             EndIf
             hazardIndex += 1
         EndWhile
 
-        If !blocked && (_lastFare < 0 || fare < _lastFare || (fare == _lastFare && hours < _lastHours))
+        If _lastFare < 0 || fare < _lastFare || (fare == _lastFare && hours < _lastHours)
             _lastFare = fare
             _lastHours = hours
         EndIf

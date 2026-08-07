@@ -11,7 +11,7 @@ const
 
 var
   OutputFile, SkyrimFile, WizardFile, BCDFile: IInterface;
-  StatusPath, ErrorPath, PluginOutputPath, SeqOutputPath: string;
+  StatusPath, ErrorPath, PluginOutputPath, SeqFormIDsPath: string;
 
 procedure WriteTextFile(const Path, TextValue: string);
 var
@@ -411,17 +411,16 @@ begin
   end;
 end;
 
-procedure SaveGeneratedSeq(QuestRecord: IInterface);
+procedure SaveGeneratedSeqFormID(QuestRecord: IInterface);
 var
-  OutputStream: TFileStream;
-  FixedID: Cardinal;
+  SeqFormIDs: TStringList;
 begin
-  FixedID := FixedFormID(QuestRecord);
-  OutputStream := TFileStream.Create(SeqOutputPath, fmCreate);
+  SeqFormIDs := TStringList.Create;
   try
-    OutputStream.WriteBuffer(FixedID, 4);
+    SeqFormIDs.Add(IntToHex(FixedFormID(QuestRecord), 8));
+    SeqFormIDs.SaveToFile(SeqFormIDsPath);
   finally
-    OutputStream.Free;
+    SeqFormIDs.Free;
   end;
 end;
 
@@ -435,8 +434,8 @@ begin
   ErrorPath := ScriptsPath + '..\..\build\wizard-map-adapter.error';
   PluginOutputPath := ScriptsPath +
     '..\..\modules\wizard-map-picker\mod\DiegeticTravelWizardMap.esp';
-  SeqOutputPath := ScriptsPath +
-    '..\..\modules\wizard-map-picker\mod\SEQ\DiegeticTravelWizardMap.seq';
+  SeqFormIDsPath := ScriptsPath +
+    '..\..\build\wizard-map-adapter-seq-formids.txt';
   WriteTextFile(StatusPath, 'running');
 
   try
@@ -512,7 +511,7 @@ begin
 
     ConfigureMapDialogue(MapQuest);
     SaveGeneratedPlugin;
-    SaveGeneratedSeq(MapQuest);
+    SaveGeneratedSeqFormID(MapQuest);
     WriteTextFile(StatusPath, 'success');
     AddMessage('[DNT] Generated wizard BCD map-picker adapter');
   except

@@ -7,16 +7,19 @@ crest centers, Winterhold origin, and route behavior are also visually proven.
 The stronger gold/red visibility treatment and Norden-style monochrome cursor
 are now gameplay-proven. No-default-focus startup, the translucent cursor
 center, and Escape cancellation are also gameplay-proven. Dawnstar and Morthal
-form the current seven-route offline candidate and remain visually unproven.
+form the current seven-route wizard candidate. Provider-defined route graphs,
+shortest-path hover highlighting, the ten-segment Lake Honrich ring, and the
+23-segment northern-coast water network are offline-proven and await one live
+visual pass.
 
 Candidate artifacts:
 
 - `DiegeticTravelWizardParchment.esp` SHA-256
-  `90DB9BF3FFE1823D0403D4739BF694B8FACC89E498276C66363C5E3C4D760E0B`;
+  `5A6E8305BB1C0E9EDD62A32B3C144700AA788AD427F968F2451BD3742018A8CC`;
 - `DNTParchmentPicker.dll` SHA-256
-  `506A373F5899D13C519F44E992755296BA28D2866483F0895979F6C83F1025CF`;
+  `6A049AB1A2D3732904B1809FA468146DA1C8742741DA19D90B6BFD780EAE3A22`;
 - `dist/DiegeticTravelParchmentPicker-offline-candidate.zip` SHA-256
-  `3335140DEAD3319BFC5E2E202A6AF65AD555D38DA182C867615082E61769D83B`.
+  `A454A384E121E6936997BE192ACB1849CAE937BC9761747AE67EF03AB11176E9`.
 
 ## Accepted architecture
 
@@ -27,6 +30,13 @@ for payment, time, route rules, and movement.
 
 This preserves the live-proven wizard service and avoids coupling the new UI to
 Better Carriage Destinations or Skyrim's native MapMenu.
+
+Providers may optionally add an undirected normalized route graph after
+setting the origin. The picker draws each shared segment once in gold and uses
+Dijkstra shortest-path selection to redraw only the hovered/focused journey in
+red. Ready validation rejects duplicate or zero-length segments and any graph
+that does not connect every offered destination. Providers without a graph
+retain the gameplay-proven straight origin-to-destination spokes.
 
 ## Asset policy
 
@@ -51,6 +61,28 @@ SHA-256 is
 Gamwich's page says not to repurpose or repost the textures without permission,
 so this is local-test evidence only until release permission is clarified:
 https://www.nexusmods.com/skyrimspecialedition/mods/42614
+
+The current wizard beta candidate uses a separate formal-map profile. It
+references LoreRim's installed Skyrim Paper Map by Caro Tuts for FWMF texture
+at `Data/textures/terrain/tamriel/skyrim.dds`, crops the useful illustration to
+`(0.088379,0.187012)-(0.932129,0.783691)`, and renders it at aspect `1.414075`.
+The FWMF terrain quad proves the full texture transform:
+`u=(worldX+262000)/524000` and `v=(262000-worldY)/524000`. Exact vanilla map
+marker reference positions are transformed through that formula and then into
+the crop, producing deterministic coordinates for the College and all seven
+wizard destinations. The Caro Tuts texture remains external and is pinned only
+as a local runtime dependency. Boats and carriages continue using the rougher
+RUSTIC MAPS profile.
+
+The provider passes the formal texture path and crop through local effective
+values so existing-save auto-properties cannot silently retain the earlier
+`battlemap01.dds` profile. Destination-specific hold icons also remain in place
+while hovered; selection is conveyed by the existing red halo instead of
+swapping every destination to the College icon.
+
+An MCM artwork switch is intentionally deferred. The provider API already owns
+texture, crop, aspect, and destination coordinates, but a second complete and
+tested theme is required before exposing a user-facing selector.
 
 ## Framework evidence
 
@@ -83,8 +115,8 @@ than treating the packaging label and runtime API value as interchangeable.
   cancel, result-event handoff, funded Whiterun travel, and underfunded
   Whiterun/Solitude denial. Later passes proved the ASCII footer, funded
   Solitude/Markarth travel, and exact hide/restore of 12 LoreRim HUD movies.
-- Still pending: Dawnstar/Morthal crest alignment, the replacement Morthal
-  carriage-marker arrival, controller-B
+- Still pending: the formal Caro Tuts map crop/marker alignment in gameplay,
+  the replacement Morthal carriage-marker arrival, controller-B
   cancellation, keyboard/controller destination activation, missing-art
   fallback, and the seven-choice dialogue fallback.
 
@@ -144,7 +176,7 @@ Framework's ImGui layer; the framework API can choose ImGui/Windows cursor
 shapes but cannot reuse that SWF above the parchment. The candidate therefore
 draws a matching monochrome arrow silhouette and palette with framework
 polyline and concave-fill primitives. No cursor file is copied or shipped. The
-The monitored pass visually approved the gold/red presentation and confirmed
+monitored pass visually approved the gold/red presentation and confirmed
 the new monochrome cursor. It logged one clean cancel followed by a successful
 Markarth selection/trip, restored all 12 HUD layers exactly, and emitted no DNT
 error or warning.
@@ -162,6 +194,33 @@ translucent cursor looked good. Markarth parchment travel and Calcelmo's direct
 College return completed, then separate parchment opens proved Escape and
 close-button cancellation. Every completion restored all 12 HUD layers exactly
 and no DNT error/warning appeared.
+
+The next offline polish candidate replaces the target-like hovered `X` with a
+provider-neutral ferry symbol. Local FFDec inspection proved that Norden's
+active `PlayerSet` asset is itself the red `X`; `Shipwreck` is a small boat,
+`Docks` is an anchor, and CoMAP adds `ActualShipwreck` and `FishingSpot`.
+BOOBIES/Immersive Icons is an inventory icon library and exposes no reusable
+helmet marker. Because all of those candidates are embedded SWF vectors, the
+ImGui picker cannot address an individual symbol directly without copying art
+or adding a Scaleform bridge. The picker instead draws fixed-size original
+resolution-independent sailboats in parchment ivory at every destination,
+independent of their collision-safe hover-box sizes. The active destination
+switches to an original high-sided shipwreck silhouette at the same scale,
+with a crimson outline and diffuse route glow; the former sharp bright-red
+route core is deliberately absent. A compact traveler medallion marks the
+route origin.
+
+North Coast Dawnstar presentation is positioned at `(0.562012,0.130000)`, a
+small northward move toward the shoreline. Its explicit graph endpoint and
+source-origin coordinate use the same value so the visual route remains
+connected in either travel direction.
+
+Requests now carry a validated source label before `Show`. The hover footer is
+formatted as `Source to Destination    Fare gold` and moved from the screen
+edge to the parchment's lower-left writing area. The native DLL, wizard
+adapter, all four boat providers, future carriage provider, Papyrus compiles,
+xEdit audits, and core tests pass offline. This visual/placement revision is
+deployed to the owned test mods but remains pending gameplay proof.
 
 Controller navigation and B cancellation are intentionally deferred while the
 two controller mods are disabled. Revisit them only with the intended

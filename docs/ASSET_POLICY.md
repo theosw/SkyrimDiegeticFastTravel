@@ -1,22 +1,60 @@
 # Asset and dependency policy
 
-This repository ships its own source, generated plugins, Papyrus bytecode, and
-native DLL. It does not redistribute Bethesda audio or third-party map art.
+This repository ships its own source, generated plugins, Papyrus bytecode,
+native DLL, explicitly allowlisted original artwork, and approved dependency
+notices. It does not redistribute Bethesda audio or third-party map art without
+permission.
+
+## Bundled and credited
+
+- The source for `boat-route-chalk-overlay.dds` is user-authored artwork for
+  this project. It is retained as a post-release authoring source, but the beta
+  package does not build, activate, or ship the DDS.
+- `docks-marker.dds` uses an AI-generated general anchor design that the mod
+  author edited and touched up in Krita. Its transparent 512-square build
+  source is retained at `assets/user-authored/stylized-docks-marker.png`.
+- `shipwreck-marker.dds` uses AI-assisted boat artwork supplied and edited by
+  the mod author. Its transparent 512-square build source is retained at
+  `assets/user-authored/stylized-ship-marker.png`.
+- The unused `winterhold-marker.png` and `wizard-hat-marker.png` experiments use
+  AI-assisted designs supplied by the mod author. Their pinned authoring sources
+  remain under `assets/user-authored/`, but the vanilla-icon beta does not
+  encode or bundle them.
+- Eight hold-capital fallback markers are neutral-frame derivatives of the
+  castle symbols in Skyrim's vanilla `interface/map.swf`. Their exact source
+  archive/member hashes, character IDs, SVGs, and normalized PNGs are retained
+  under `assets/vanilla-interface/hold-capitals/`.
+- The carriage beta uses fourteen exact discovered-map symbols from Norden UI
+  1.2.5: nine capital markers plus Town, Settlement, Farm, Wood Mill, and Mine.
+  The project owner has direct use/redistribution permission from the Norden UI
+  author. Exported, hash-pinned SVG sources are retained under
+  `assets/norden-interface/carriage-markers/`; the installed source SWF hash and
+  Nexus identity are pinned in `dependencies.lock.json`.
+- The earlier Skyrim-derived Docks and Shipwreck vectors remain in
+  `assets/vanilla-interface/` as rollback sources, but are not bundled by the
+  current build.
+- The earlier Dragonborn Reskin - Wheeler apparition marker remains under
+  `assets/third-party/` as a credited learning/rollback source, but the current
+  build no longer converts or bundles it.
 
 ## Referenced, not bundled
 
-- The parchment art path currently resolves to RUSTIC MAPS'
+- Boat and carriage providers currently resolve to RUSTIC MAPS'
   `textures/dungeons/imperial/battlemap01.dds`.
+- The wizard provider resolves to Skyrim Paper Map by Caro Tuts for FWMF's
+  `textures/terrain/tamriel/skyrim.dds`. It is referenced only and is not
+  redistributed.
 - Provider voice paths resolve to FUZ files in the user's installed Bethesda
   archives or other separately installed dependencies.
 - Better Carriage Destinations remains a separate optional adapter dependency.
-- SKSE Menu Framework, SKSE, Address Library, and RUSTIC MAPS are installed by
-  the user and listed as requirements by the eventual mod manager manifest or
-  Nexus dependency metadata.
+- SKSE Menu Framework, SKSE, Address Library, RUSTIC MAPS, and Skyrim Paper Map
+  by Caro Tuts for FWMF are installed by the user and listed as requirements by
+  the eventual mod manager manifest or Nexus dependency metadata.
 
-Packages are audited to reject `.png`, `.jpg`, `.jpeg`, `.dds`, `.svg`, `.wav`,
-`.xwm`, and `.fuz` payloads. A local learning-source copy is ignored by Git and
-must never be copied into `modules/*/mod` or `dist`.
+Packages reject unallowlisted `.png`, `.jpg`, `.jpeg`, `.dds`, `.svg`, `.wav`,
+`.xwm`, and `.fuz` payloads. Each permitted runtime asset is named explicitly
+in the relevant build and audit scripts. A local learning-source copy is ignored
+by Git and must never be copied into `modules/*/mod` or `dist`.
 
 ## Licensing rules
 

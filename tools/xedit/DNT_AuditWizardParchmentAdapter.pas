@@ -296,6 +296,9 @@ begin
   ReportLines.Add(
     'PASS quest -> native provider, core service, and Mirabelle identity'
   );
+  ReportLines.Add(
+    'QUEST_FIXED_FORM_ID=' + IntToHex(FixedFormID(PickerQuest), 8)
+  );
 end;
 
 procedure AuditDialogue;

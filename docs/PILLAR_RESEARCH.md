@@ -19,7 +19,7 @@ This prevents a polished selector from bypassing route, price, or safety rules.
 | Pillar | Existing work to learn from | Diegetic Travel focus |
 | --- | --- | --- |
 | Carriages | CFTO already owns drivers and ride execution. [Better Carriage Destinations](https://github.com/shazdeh/Better-Carriage-Destinations/tree/136dc7b3ad9754877c485fd5cea29550af108888) demonstrates a filtered map selector. | Keep CFTO execution; own reachable-route evaluation, graph fare/time, and final revalidation. Offer parchment and optional BCD selectors over the same service. |
-| Boats | CFTO and LoreRim's boat/ferry stack already provide actors and some lanes. | Inventory the real ferryman lane graph, then add a boat provider adapter. Preserve the slower coastal network rather than treating boats as generic teleport. |
+| Boats | CFTO supplies four distinct waterway factions, ferrymen, fares, markers, voiced dialogue, and travel fragments. BCD demonstrates a map surface but exposes a broader marker whitelist than CFTO's sparse stop graph. | Preserve CFTO's real per-waterway topology and execution. Lake Honrich proves the contract; Lake Ilinalta is the second isolated public triangle. Expand lane by lane without flattening private or destination-only stops. |
 | Wizard guides | Court Wizard Teleport Services proves dialogue-to-teleport, but duplicates one payment/refund fragment and one hard-coded movement fragment per destination. | The College-centred seven-spoke star is the first complete pillar. Reuse one service, a physical parchment picker, provider-specific voice/subtitle presentation, and stable destination IDs. |
 | Personal magic | [Translocate](https://www.nexusmods.com/skyrimspecialedition/mods/11467), [Alteration Mark and Recall](https://www.nexusmods.com/skyrimspecialedition/mods/138974), [Divine Intervention](https://www.nexusmods.com/skyrimspecialedition/mods/10235), and [Mysticism - The Lost Art](https://www.nexusmods.com/skyrimspecialedition/mods/14285) already cover much of Mark/Recall and intervention magic. | Do not clone a spell suite during infrastructure work. Define optional adapters and a common retreat/arrival policy, then decide later whether to ship spells or integrate a chosen implementation. |
 | Ancient network | [SWIFT](https://www.nexusmods.com/skyrimspecialedition/mods/17905) and [Unmoored](https://www.nexusmods.com/skyrimspecialedition/mods/134945) demonstrate discovered/unlocked nodes, visible activation state, optional fees, follower handling, and low-background-script designs. | Build this last as an unlockable loop or sparse graph. The hard work is world placement, discovery state, follower policy, and quest-safe arrivals—not the picker. |
@@ -46,10 +46,13 @@ This prevents a polished selector from bypassing route, price, or safety rules.
 ## Provider expansion order
 
 1. Finish and regress the seven-spoke wizard network.
-2. Adapt carriage selection without replacing CFTO execution.
-3. Inventory and implement boat/ferry lanes.
-4. Define compatibility adapters for intervention and Mark/Recall magic.
-5. Prototype an unlockable ancient-site loop after arrival and follower
+2. Prove the provider contract on the small Lake Honrich boat lane.
+3. Prove the structurally similar Lake Ilinalta public triangle, then tackle
+   Solstheim and the more complex north coast.
+4. Adapt the same picker/service lessons to the carriage graph without
+   replacing CFTO execution.
+5. Define compatibility adapters for intervention and Mark/Recall magic.
+6. Prototype an unlockable ancient-site loop after arrival and follower
    policies are explicit.
 
 Each new provider must pass the same contract tests: cancel is inert, denied

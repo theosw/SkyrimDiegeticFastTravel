@@ -70,6 +70,33 @@ namespace
         return DNT::ParchmentMenu::IsAvailable();
     }
 
+    bool RequestDialogueClose(RE::StaticFunctionTag*)
+    {
+        auto* ui = RE::UI::GetSingleton();
+        if (!ui) {
+            logger::warn("PARCHMENT_DIALOGUE_CLOSE_REJECT reason=ui_unavailable");
+            return false;
+        }
+
+        if (!ui->IsMenuOpen(RE::DialogueMenu::MENU_NAME)) {
+            logger::info("PARCHMENT_DIALOGUE_CLOSE_SKIPPED reason=already_closed");
+            return true;
+        }
+
+        auto* messageQueue = RE::UIMessageQueue::GetSingleton();
+        if (!messageQueue) {
+            logger::warn("PARCHMENT_DIALOGUE_CLOSE_REJECT reason=message_queue_unavailable");
+            return false;
+        }
+
+        messageQueue->AddMessage(
+            RE::DialogueMenu::MENU_NAME,
+            RE::UI_MESSAGE_TYPE::kHide,
+            nullptr);
+        logger::info("PARCHMENT_DIALOGUE_CLOSE_REQUESTED");
+        return true;
+    }
+
     bool BeginRequest(
         RE::StaticFunctionTag*,
         const RE::BSFixedString a_requestId,
@@ -112,6 +139,60 @@ namespace
             a_normalizedY);
     }
 
+    bool SetDestinationMarkerTexture(
+        RE::StaticFunctionTag*,
+        const RE::BSFixedString a_requestId,
+        const RE::BSFixedString a_destinationId,
+        const RE::BSFixedString a_texturePath)
+    {
+        return DNT::ParchmentMenu::SetDestinationMarkerTexture(
+            a_requestId.c_str(),
+            a_destinationId.c_str(),
+            a_texturePath.c_str());
+    }
+
+    bool SetSourceLabel(
+        RE::StaticFunctionTag*,
+        const RE::BSFixedString a_requestId,
+        const RE::BSFixedString a_sourceLabel)
+    {
+        return DNT::ParchmentMenu::SetSourceLabel(
+            a_requestId.c_str(),
+            a_sourceLabel.c_str());
+    }
+
+    bool SetOverlayTexture(
+        RE::StaticFunctionTag*,
+        const RE::BSFixedString a_requestId,
+        const RE::BSFixedString a_texturePath)
+    {
+        return DNT::ParchmentMenu::SetOverlayTexture(
+            a_requestId.c_str(),
+            a_texturePath.c_str());
+    }
+
+    bool SetMarkerTextures(
+        RE::StaticFunctionTag*,
+        const RE::BSFixedString a_requestId,
+        const RE::BSFixedString a_idleTexturePath,
+        const RE::BSFixedString a_selectedTexturePath)
+    {
+        return DNT::ParchmentMenu::SetMarkerTextures(
+            a_requestId.c_str(),
+            a_idleTexturePath.c_str(),
+            a_selectedTexturePath.c_str());
+    }
+
+    bool SetOriginMarkerTexture(
+        RE::StaticFunctionTag*,
+        const RE::BSFixedString a_requestId,
+        const RE::BSFixedString a_texturePath)
+    {
+        return DNT::ParchmentMenu::SetOriginMarkerTexture(
+            a_requestId.c_str(),
+            a_texturePath.c_str());
+    }
+
     bool SetRouteOrigin(
         RE::StaticFunctionTag*,
         const RE::BSFixedString a_requestId,
@@ -119,6 +200,46 @@ namespace
         const float a_normalizedY)
     {
         return DNT::ParchmentMenu::SetRouteOrigin(
+            a_requestId.c_str(),
+            a_normalizedX,
+            a_normalizedY);
+    }
+
+    bool SetPaymentLabelPosition(
+        RE::StaticFunctionTag*,
+        const RE::BSFixedString a_requestId,
+        const float a_normalizedX,
+        const float a_normalizedY)
+    {
+        return DNT::ParchmentMenu::SetPaymentLabelPosition(
+            a_requestId.c_str(),
+            a_normalizedX,
+            a_normalizedY);
+    }
+
+    bool AddRouteSegment(
+        RE::StaticFunctionTag*,
+        const RE::BSFixedString a_requestId,
+        const float a_startNormalizedX,
+        const float a_startNormalizedY,
+        const float a_endNormalizedX,
+        const float a_endNormalizedY)
+    {
+        return DNT::ParchmentMenu::AddRouteSegment(
+            a_requestId.c_str(),
+            a_startNormalizedX,
+            a_startNormalizedY,
+            a_endNormalizedX,
+            a_endNormalizedY);
+    }
+
+    bool AddRouteLandmark(
+        RE::StaticFunctionTag*,
+        const RE::BSFixedString a_requestId,
+        const float a_normalizedX,
+        const float a_normalizedY)
+    {
+        return DNT::ParchmentMenu::AddRouteLandmark(
             a_requestId.c_str(),
             a_normalizedX,
             a_normalizedY);
@@ -296,9 +417,18 @@ namespace
 bool DNT::Papyrus::Register(RE::BSScript::IVirtualMachine* a_vm)
 {
     a_vm->RegisterFunction("IsAvailable", PapyrusClass, IsAvailable);
+    a_vm->RegisterFunction("RequestDialogueClose", PapyrusClass, RequestDialogueClose);
     a_vm->RegisterFunction("BeginRequest", PapyrusClass, BeginRequest);
+    a_vm->RegisterFunction("SetSourceLabel", PapyrusClass, SetSourceLabel);
+    a_vm->RegisterFunction("SetOverlayTexture", PapyrusClass, SetOverlayTexture);
+    a_vm->RegisterFunction("SetMarkerTextures", PapyrusClass, SetMarkerTextures);
+    a_vm->RegisterFunction("SetOriginMarkerTexture", PapyrusClass, SetOriginMarkerTexture);
+    a_vm->RegisterFunction("SetPaymentLabelPosition", PapyrusClass, SetPaymentLabelPosition);
     a_vm->RegisterFunction("SetRouteOrigin", PapyrusClass, SetRouteOrigin);
+    a_vm->RegisterFunction("AddRouteSegment", PapyrusClass, AddRouteSegment);
+    a_vm->RegisterFunction("AddRouteLandmark", PapyrusClass, AddRouteLandmark);
     a_vm->RegisterFunction("AddDestination", PapyrusClass, AddDestination);
+    a_vm->RegisterFunction("SetDestinationMarkerTexture", PapyrusClass, SetDestinationMarkerTexture);
     a_vm->RegisterFunction("Show", PapyrusClass, Show);
     a_vm->RegisterFunction("Cancel", PapyrusClass, Cancel);
     a_vm->RegisterFunction("PlayPresentation", PapyrusClass, PlayPresentation);

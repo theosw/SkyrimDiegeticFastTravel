@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "provider": "boat",
+  "lane": "lake_ilinalta",
+  "fare_global": "0BBF93:CFTO.esp",
+  "fare_default": 30,
+  "time_passage": "game_fast_travel",
+  "ui_elements": [
+    {
+      "id": "fare_label",
+      "name": "Payment label",
+      "sample": "Brittleshin Pass to Half-Moon Mill    30 gold",
+      "map_position": [0.655229, 0.913675]
+    }
+  ],
+  "stops": [
+    {
+      "id": "brittleshin_pass",
+      "name": "Brittleshin Pass",
+      "service_npc": "02E1E6:CFTO.esp",
+      "arrival_marker": "014C8F:CFTO.esp",
+      "horse_marker": "195C32:CFTO.esp",
+      "map_position": [0.448478, 0.683198]
+    },
+    {
+      "id": "half_moon_mill",
+      "name": "Half-Moon Mill",
+      "service_npc": "0332ED:CFTO.esp",
+      "arrival_marker": "014C95:CFTO.esp",
+      "map_position": [0.396241, 0.692916]
+    },
+    {
+      "id": "guardian_stones",
+      "name": "Guardian Stones",
+      "service_npc": "0332F5:CFTO.esp",
+      "arrival_marker": "0332F7:CFTO.esp",
+      "follower_marker": "195C33:CFTO.esp",
+      "horse_marker": "195C34:CFTO.esp",
+      "map_position": [0.501218, 0.685304]
+    }
+  ],
+  "deferred_stops": [
+    {
+      "id": "lakeview_manor",
+      "reason": "CFTO gates this private stop behind Hearthfire ownership, jetty, and ferryman state."
+    },
+    {
+      "id": "ilinatas_deep",
+      "reason": "This is a destination-only extension using CFTO's 50-gold regional fare, not a public Route 3 ferryman."
+    }
+  ]
+}

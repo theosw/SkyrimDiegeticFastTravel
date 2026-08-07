@@ -1,12 +1,12 @@
 DNT Parchment Picker - development spike
 
-This payload contains no map artwork. The College provider references the loose
-RUSTIC MAPS texture already included in LoreRim:
+This payload contains no background map artwork. The College provider references the loose
+Skyrim Paper Map by Caro Tuts for FWMF texture already included in LoreRim:
 
-  Data/textures/dungeons/imperial/battlemap01.dds
+  Data/textures/terrain/tamriel/skyrim.dds
 
-It displays rows 0-3016 of that 4096-square texture (UV max 0.736328) at aspect
-1.358090, excluding the opaque strip below the parchment edge. If the file is
+It displays the illustration crop (0.088379,0.187012)-(0.932129,0.783691) of
+that 8192-square texture at aspect 1.414075. If the file is
 absent, the picker shows a diagnostic fallback while keeping destination
 selection available. The core parchment flow has passed its first gameplay
 test. If the new dialogue prompt is missing on an existing save, save and
@@ -15,19 +15,18 @@ menu remains an available fallback during development.
 
 The current revision hides vanilla, TrueHUD, and common LoreRim widget movies
 while the parchment is open, restores each movie's previous visibility and
-root alpha on close, and uses an ASCII hyphen in the fare footer. City crests
-use large invisible hitboxes with prominent gold idle rings and red active
-rings. The College provider draws five gold routes from the Winterhold crest;
-hovering or focusing a destination turns only its route and ring red without
-selecting it. An asset-free monochrome pointer, drawn with Menu Framework
-primitives to resemble LoreRim's active Norden cursor, replaces the earlier
-yellow pointer while the picker is open. Its dark center is translucent so the
-map remains visible beneath it. Opening the map starts with no active route;
+root alpha on close, and uses an ASCII hyphen in the fare footer. Destination
+icons use collision-aware invisible hitboxes. Boat and College providers draw
+no dynamic route lines for the beta. Boats communicate focus with their boat
+icon and subtle halo; the College keeps each location's vanilla-derived icon
+and enlarges the focused icon slightly, without a red selector halo or icon
+swap. An asset-free monochrome pointer drawn with Menu Framework primitives
+resembles LoreRim's active Norden cursor. Its dark center is translucent so the
+map remains visible beneath it. Opening the map starts with no active focus;
 mouse hover activates one immediately, while keyboard/controller focus becomes
 visible only after keyboard/controller input. No cursor artwork is copied or
-shipped. The current provider draws seven routes: the five previously
-gameplay-proven capitals plus Dawnstar and Morthal. The two new crest positions
-are offline candidates pending a focused visual test.
+shipped. The College provider exposes seven destinations: the five previously
+gameplay-proven capitals plus Dawnstar and Morthal.
 
 Mirabelle has a dedicated matching "Very good. Then we're done here."
 subtitle. The rejected actor-targeted voice experiment crashed Skyrim 1.6.1170
@@ -41,5 +40,13 @@ test. A rejected presentation falls back to the map. Other faculty retain
 normal parchment behavior.
 
 Requires the user's separately installed Skyrim/SKSE/Address Library, SKSE Menu
-Framework, RUSTIC MAPS, and DiegeticTravelWizardGuides.esp. This package includes
-no map artwork, voice asset, or dependency binary.
+Framework, RUSTIC MAPS for boat/carriage providers, Skyrim Paper Map by Caro
+Tuts for FWMF for the College provider, and DiegeticTravelWizardGuides.esp. This
+package excludes the deferred ferry-route artwork for the beta. It includes
+AI-assisted/user-edited Docks and Ship markers, nine vanilla-derived hold-capital markers, and one
+vanilla-derived neutral town marker. It also includes fourteen exact Norden UI
+discovered-map symbols for carriage destinations under direct permission from
+the Norden UI author to the project owner. The
+previously evaluated custom wizard markers and Dragonborn Reskin - Wheeler icon
+are not bundled. The package includes no background map artwork, voice asset,
+or dependency binary.

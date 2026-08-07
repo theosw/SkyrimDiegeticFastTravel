@@ -29,7 +29,8 @@ not the fix.
 
 The new isolated Candidate retains official CommonLib and bypasses only the
 stale convenience method. `dependencies.lock.json` pins the exact Skyrim,
-SKSE, Address Library, Menu Framework, RUSTIC MAPS, wizard-core, CommonLib, and
+SKSE, Address Library, Menu Framework, RUSTIC MAPS, Skyrim Paper Map by Caro
+Tuts for FWMF, wizard-core, CommonLib, and
 vcpkg inputs. Its read-only audit decodes the locked Address Library database
 and proves legacy ID `21890` is absent, ID `21891` maps to the rejected crash
 offset `0x33D880`, and modern ID `441582` maps to the required `0x33D6A0`.
@@ -283,6 +284,39 @@ SHA-256 is
 `C77E6B93129577CD23C6AC733310A5EA6A028F4BE00B472F9AA62018C4C239F8`.
 If the image is missing, the native picker logs once per request and renders a
 diagnostic selection fallback instead of disabling travel.
+
+The next workspace-only wizard candidate deliberately separates visual themes:
+boats/carriages retain the rough RUSTIC map, while wizards reference Caro
+Tuts/FWMF's formal `Data\textures\terrain\tamriel\skyrim.dds`. The formal map
+uses crop `(0.088379,0.187012)-(0.932129,0.783691)` at aspect `1.414075`.
+Marker coordinates are derived from FWMF's exported Tamriel quad and exact
+vanilla marker reference positions, not hand-tuned. It also normalizes all
+eight vanilla hold icons to full alpha, removes the custom hat/origin assets
+from the package, and uses the vanilla Winterhold castle for the origin only.
+Each destination keeps its own hold icon under the red hover halo.
+The full candidate is built, audited, and deployed to the owned parchment test
+mod. Its archive SHA-256 is
+`23A405ADB880028E7922F9309F9AB499233F49CA76E6368024B02F46C2F21E0C`;
+the deployed DLL is
+`20723F48EA920B887390FBD2E83A10816025BCC9663FCA480CD370AA24487C45`
+and the deployed wizard-provider PEX is
+`75B2FC84E7188A0036930D64D5EE4F6C8466348ED2BC145D53F55584CD98F411`.
+The no-launch `UltraDiegeticTravel` preflight passes with the formal-map
+dependency enabled.
+
+The first formal-map gameplay pass on 2026-08-04 exposed one existing-save
+edge case: the new PEX supplied the formal UV crop and new icons, but the quest
+auto-property still supplied the saved `battlemap01.dds` path. Native logging
+proved the mismatch at `PARCHMENT_OPEN`. The provider now hardcodes the texture
+path alongside its effective crop/aspect values, so all parts of the artwork
+profile bypass stale save properties. That pass otherwise opened cleanly,
+loaded all seven destination icons, restored all 12 HUD layers, selected
+Whiterun, and reached the expected `250 required / 140 available` denial with
+no DNT errors. The follow-up 32:9 pass visually approved the formal Caro map,
+all eight hold icons, exact marker alignment, and destination-preserving hover.
+Native/Papyrus logs recorded the formal texture, all seven destination assets,
+12-layer HUD restoration, an exact 250-gold charge, and completed Whiterun
+travel with no DNT warning/error. The formal wizard-map candidate is Proven.
 
 The parchment core is now gameplay-proven. At 32:9, the RUSTIC texture rendered
 centered and unstretched with aligned city buttons. Native logs recorded four
@@ -988,3 +1022,169 @@ After the six-script compile and structural validation,
 `Compress-Archive` includes fresh directory timestamps, so rebuilding the same
 contents can change the ZIP hash; the ESP, SEQ, PEX, and runtime hashes are the
 stable artifact checks.
+
+## 2026-08-05 carriage beta checkpoint
+
+- The LoreRim boarding path is intentionally removed. Live evidence showed the
+  winning carriage reference cannot accept CFTO's missing custom seat link;
+  the safe repair failed before payment.
+- Clicking a parchment marker now revalidates the quote, resolves CFTO's own
+  ground-level arrival marker, charges atomically, and immediately uses the
+  boat-proven fade/encumbrance/`Game.FastTravel` sequence.
+- The carriage sheet now uses fourteen exact Norden UI discovered-map symbols:
+  nine unique capitals plus Town, Settlement, Farm, Wood Mill, and Mine. The
+  project owner supplied direct permission from the Norden UI author. Sources,
+  hashes, and attribution are retained under
+  `assets/norden-interface/carriage-markers/` and `THIRD_PARTY_NOTICES.txt`.
+- Eight Papyrus scripts compile with zero errors/warnings. The strict asset
+  audit, isolated xEdit/SEQ audit, native CTest, ten Python tests, and no-launch
+  `UltraDiegeticTravel` preflight all pass.
+- The verified candidates are deployed only to the three existing isolated
+  test mods. No MO2 profile file was changed. The next action is one live test:
+  click a capital and minor-stop marker and confirm immediate travel, one
+  payment, correct CFTO ground arrival, elapsed time, and paired direct-travel
+  log lines.
+
+## 2026-08-05 marker aspect and mainland ferry-landmark checkpoint
+
+- The first Norden carriage build forced both SVG dimensions to 512 pixels,
+  distorting non-square symbols before transparent padding. The builder now
+  constrains width only, then alpha-crops, proportionally fits, and centers the
+  result on a 512-square canvas. Runtime hitboxes remain collision-sized and
+  independent of the artwork.
+- Lake Ilinalta's original three-Honrich-anchor estimates are replaced by
+  CFTO's exact shoreline arrival markers projected with the newer nine-point
+  carriage parchment calibration: Brittleshin `(0.454414, 0.665229)`,
+  Half-Moon Mill `(0.399755, 0.670970)`, and Guardian Stones
+  `(0.501218, 0.685304)`.
+- North-coast, Lake Honrich, and Lake Ilinalta now expose every other mainland
+  waterway's docks as non-interactive grey landmarks. Active origins and
+  destinations retain the boat/anchor interaction language.
+- All nine changed boat scripts compile with zero errors/warnings. The shared
+  parchment asset audit, native CTest, and all three isolated xEdit/SEQ audits
+  pass. The owned LoreRim test mods are deployed; no MO2 profile file changed.
+- Candidate package SHA-256 values: parchment picker
+  `8A06341AAF8792DBA42C8A1B4E42F47E18DC27700F063F5DF7AC41A4BBE8D338`;
+  Ilinalta `08A0283C8E21DAC87FFA951EE345BDD939F1063411187D8375D2B60BA1156F4B`;
+  Honrich `06D8D54B116FBDD43C95298DBB216728CE4E3C9C297668878E8630310897A1D5`;
+  North coast `43263F77FDDD2C23E7078A52D3BF4121CAFF714468200F66B84E02777A941C5D`.
+- Remaining claim boundary: live-check one capital plus one generic carriage
+  marker for aspect/cropping, then open one provider from each mainland boat
+  network and verify the corrected Ilinalta placements and reciprocal grey
+  anchors.
+
+## 2026-08-05 beta route-artwork deferral checkpoint
+
+- Mainland ferry maps now share the cleaner Lake Ilinalta beta presentation:
+  no static chalk overlay and no activated authored route graph. They retain
+  interactive anchors, current/destination boats, direct selection lines, and
+  the reciprocal grey inactive-network anchors.
+- The user-authored overlay PNG, conversion tool, and Honrich/North-coast
+  geometry remain in the repository as post-release authoring sources. The DDS
+  is absent from the runtime tree and package, and deployment removes any stale
+  installed copy from the owned parchment test mod.
+- The provider audits reject calls that reactivate `SetOverlayTexture` or the
+  dormant route-network functions. Optional native overlay/segment APIs remain
+  tested so future artwork can return without an architectural rewrite.
+- Honrich and North-coast Papyrus compile with zero errors/warnings. The shared
+  parchment audit, native CTest, and both isolated xEdit/SEQ audits pass.
+- Candidate package SHA-256 values: parchment picker
+  `792EBED6A5FB9A0A7080336836B727AD46F68030E362942994888A5CCAF0BCB9`;
+  Honrich `5819E92CA88BB7944133EA0D5F5B1B706A0AB09B3A7713C2C744AFB866A27087`;
+  North coast `830432532BE67A3BBE167D4A4A42ED4DCAD45E68DBF284959CEB1F2662C877E3`.
+- Remaining claim boundary: live-open one Honrich and one North-coast provider
+  and confirm the maps match Ilinalta's uncluttered direct-line presentation.
+
+## 2026-08-05 icon-only maps and full carriage-endpoint checkpoint
+
+- The shared native renderer now suppresses all dynamic route geometry for
+  `boat` and `college` requests. Boat maps retain origin/destination boats and
+  inactive grey dock landmarks. College selection keeps each destination's
+  own location icon, enlarges the focused icon by 18%, and draws no red halo,
+  selector icon, yellow spokes, or red route.
+- Lake Ilinalta's Brittleshin coordinate is superseded by the visually
+  corrected `(0.454414, 0.632000)`. The northward offset accounts for the
+  anchor texture being centered while its map pin is the bottom tip. Ilinalta,
+  Honrich, and North-coast providers all use the corrected point.
+- Carriage beta quoting no longer removes valid CFTO endpoints when an active
+  or unknown chokepoint is present. Hazards add their normal surcharge and the
+  cheapest candidate remains selectable. Genuine endpoint gates (including
+  unavailable Hearthfire destinations) remain enforced separately.
+- `DNT_RouteService.EndQuoteBatch()` now retains its allocated typed arrays and
+  resets only the logical count, eliminating the observed `None` to typed-array
+  Papyrus cast errors.
+- Verification passed: native build; parchment asset/source audit; native CTest
+  1/1; Python compiler/evaluator tests 10/10; carriage, Ilinalta, Honrich, and
+  North-coast xEdit/SEQ audits; carriage and North-coast validation-only MO2
+  preflights. The wizard-only preflight is intentionally incompatible with the
+  combined carriage profile because it demands the shared core ESP be disabled.
+- Built/deployed artifacts match byte-for-byte. Candidate SHA-256 values: core
+  `67B6582C81F728ED40F252EEDE222840AB9BBB73BC9C6DC9FA922327FCE4BCBE`;
+  parchment `5DE187CF6832389FDABBE1FA2CA334E1B85F8C5EA658C8DF16FC9F91CB82BAB7`;
+  carriage `0606159F79EEFDF6A6376493CB11B99CEAA01338AF71CD2DB238659561976EF1`;
+  Ilinalta `5A4AE213C2A08F4D5B2B5605FED5228E542896E4785BAC6B220C9F8ECB6EA071`;
+  Honrich `97244C9A97F7E0978E816BF574224AA8C33ED151D757D582B4A5953A19C8D821`;
+  North coast `707D2631B8DFEBCCF882D0C90726A40F49CCF9A89C1FB2E01C6899145D5125B2`.
+- No MO2 profile file or LoreRim baseline mod was changed. Remaining claim
+  boundary: live-check the three presentations and confirm the expanded
+  carriage sheet count from at least Winterhold and Falkreath.
+
+## 2026-08-05 live map-presentation diagnosis and recalibration
+
+- The live Lake Ilinalta request logged provider `Boat`, zero route segments,
+  and no overlay. The visible yellow line was therefore not stale save data;
+  it was the native renderer's case-sensitive comparison against lowercase
+  `boat`. Provider presentation policy now compares `boat`, `college`, and
+  `carriage` case-insensitively, and the audit rejects direct case-sensitive
+  provider comparisons.
+- Carriage capital art is 25% larger and non-capital stop art is 16% smaller;
+  hitboxes are unchanged. Dawnstar moves north from `(0.570000,0.177000)` to
+  `(0.570000,0.160000)` to cover the crest baked into the parchment.
+- Brittleshin's anchor center moves farther north to
+  `(0.454414,0.632000)` so the anchor's bottom tip, rather than its image
+  center, lands on the calibrated shoreline point. Ilinalta and the inactive
+  landmark lists in both other mainland boat providers share the value.
+- Remaining claim boundary: live-check route-line suppression with the
+  capitalized provider ID, Dawnstar coverage, marker size hierarchy, and the
+  Brittleshin anchor tip.
+- Offline verification passed: shared source/asset audit, native build and
+  CTest 1/1, all affected Papyrus compiles with zero errors/warnings, Python
+  compiler/evaluator tests 10/10, and carriage/Ilinalta/Honrich/North-coast
+  xEdit/SEQ audits. Carriage and North-coast combined-profile validation-only
+  preflights pass with the LoreRim BCD stack retained.
+- Candidate package SHA-256 values: parchment picker
+  `24C072A4631C78A86CABD80F4879B4AE4A5EB6131F2CBA4B4AD18A34478CB6DB`;
+  carriage `D5C53F8CE9A455C9E9E2DD851BA382F71AFFC3FA51F8FF9FCE09197F2697454F`;
+  Ilinalta `A8775C8CB32016EBA17538175D5D35EFEE1695A69AE37E95AAFEDE5C0AD1F5E8`;
+  Honrich `1D9508E977D59EB831293405306769D7F4D8A02DE4C239FEB49253761C630999`;
+  North coast `686F066DA1379338358AA43CB46ED124F42B94D57233F154F86CFD90C51A2E01`.
+- Deployment touched only the existing isolated test mods. The deployed DLL
+  and all four changed picker PEX files match their workspace builds
+  byte-for-byte; no MO2 profile file or LoreRim baseline mod changed.
+
+## 2026-08-06 live line-suppression and marker-calibration checkpoint
+
+- Live evidence proves the provider-case repair: Ilinalta opened as provider
+  `Boat` with `routeSegments=0`, `overlay=<none>`, and no visible yellow line.
+  HUD hide/restore and Escape cancellation also completed cleanly.
+- The `(0.454414,0.632000)` Brittleshin candidate is Rejected: it moved the
+  anchor north of the desired shoreline. The next candidate restores the
+  original affine projection `(0.454414,0.665229)`, moving it south.
+- Capital/minor size hierarchy is visually accepted. From the 32:9 frame,
+  Falkreath, Riften, and Windhelm remain offset up/left of their baked crests.
+  Their next positions are respectively `(0.443000,0.792000)`,
+  `(0.936000,0.828000)`, and `(0.823000,0.382000)`.
+- Travel execution is Proven for Dawnstar to Morthal (200 gold) and Morthal
+  to Winterhold (1250 gold); both emitted `CARRIAGE_TRAVEL_COMPLETE`.
+- Remaining live gate: confirm the restored Ilinalta shoreline point and the
+  three capital alignment corrections.
+- Offline verification passed: four Papyrus targets compiled with zero
+  errors/warnings; carriage/Ilinalta/Honrich/North-coast xEdit/SEQ audits;
+  carriage and North-coast combined-profile preflights. All four deployed
+  picker PEX files match the workspace builds byte-for-byte. No MO2 profile
+  file or LoreRim baseline mod changed.
+- Coordinate-pass package SHA-256 values: carriage
+  `4894CBB7E97E719F7F1F87F009869DF2BD9316BA8EE068620D1039F2A1C3D914`;
+  Ilinalta `08DBC4FA0CFCD829328DCA5DC23DAFE13715A103633DB990FA6CFCF057CA5735`;
+  Honrich `F0FA68EBF9DD228B5814CAA4EFE14537BFA258D1F1E8344C2894722287E7FC72`;
+  North coast `1CE578E02A7D1363BCEDBCB5DEA7700B854FF3263D6B6463BA267151A3597FED`.

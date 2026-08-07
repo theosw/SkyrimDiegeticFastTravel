@@ -7,6 +7,22 @@ $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $moduleRoot = Join-Path $projectRoot "modules\parchment-picker"
 $modRoot = Join-Path $moduleRoot "mod"
+$nordenMarkerNames = @(
+    "norden-town.dds",
+    "norden-settlement.dds",
+    "norden-farm.dds",
+    "norden-wood-mill.dds",
+    "norden-mine.dds",
+    "norden-riften-capital.dds",
+    "norden-windhelm-capital.dds",
+    "norden-whiterun-capital.dds",
+    "norden-solitude-capital.dds",
+    "norden-markarth-capital.dds",
+    "norden-winterhold-capital.dds",
+    "norden-morthal-capital.dds",
+    "norden-falkreath-capital.dds",
+    "norden-dawnstar-capital.dds"
+)
 
 $requiredSources = @(
     (Join-Path $moduleRoot "include\DNT\MenuFrameworkAPI.h"),
@@ -20,10 +36,41 @@ $requiredSources = @(
     (Join-Path $moduleRoot "src\ParchmentCore.cpp"),
     (Join-Path $moduleRoot "src\ParchmentMenu.cpp"),
     (Join-Path $moduleRoot "src\Plugin.cpp")
+    (Join-Path $projectRoot "assets\route-overlays\boat-route-chalk-overlay.png")
+    (Join-Path $projectRoot "assets\user-authored\stylized-docks-marker.png")
+    (Join-Path $projectRoot "assets\user-authored\stylized-ship-marker.png")
+    (Join-Path $projectRoot "assets\user-authored\winterhold-marker.png")
+    (Join-Path $projectRoot "assets\user-authored\wizard-hat-marker.png")
+    (Join-Path $projectRoot "assets\vanilla-interface\hold-capitals\whiterun-dragonsreach.png")
+    (Join-Path $projectRoot "assets\vanilla-interface\hold-capitals\riften-mistveil-keep.png")
+    (Join-Path $projectRoot "assets\vanilla-interface\hold-capitals\solitude-blue-palace.png")
+    (Join-Path $projectRoot "assets\vanilla-interface\hold-capitals\windhelm-palace-of-the-kings.png")
+    (Join-Path $projectRoot "assets\vanilla-interface\hold-capitals\markarth-understone-keep.png")
+    (Join-Path $projectRoot "assets\vanilla-interface\hold-capitals\dawnstar-white-hall.png")
+    (Join-Path $projectRoot "assets\vanilla-interface\hold-capitals\morthal-highmoon-hall.png")
+    (Join-Path $projectRoot "assets\vanilla-interface\hold-capitals\winterhold-college.png")
+    (Join-Path $projectRoot "assets\vanilla-interface\hold-capitals\falkreath-jarl-longhouse.svg")
+    (Join-Path $projectRoot "assets\vanilla-interface\town-marker.svg")
+    (Join-Path $projectRoot "assets\vanilla-interface\docks-marker.svg")
+    (Join-Path $projectRoot "assets\vanilla-interface\shipwreck-marker.svg")
     (Join-Path $projectRoot "dependencies.lock.json")
+    (Join-Path $projectRoot "tools\Build-BoatRouteChalkTexture.ps1")
+    (Join-Path $projectRoot "tools\Build-StylizedDocksMarker.ps1")
+    (Join-Path $projectRoot "tools\Build-StylizedShipMarker.ps1")
+    (Join-Path $projectRoot "tools\Build-StylizedWizardMarkers.ps1")
+    (Join-Path $projectRoot "tools\Build-VanillaHoldCapitalMarkers.ps1")
+    (Join-Path $projectRoot "tools\Build-CarriageParchmentMarkers.ps1")
+    (Join-Path $projectRoot "tools\Build-NordenCarriageMarkers.ps1")
+    (Join-Path $projectRoot "tools\Build-VanillaParchmentMarkers.ps1")
     (Join-Path $projectRoot "tools\Audit-NativeDependencies.ps1")
     (Join-Path $projectRoot "THIRD_PARTY_NOTICES.txt")
 )
+$requiredSources += Get-ChildItem -LiteralPath (Join-Path $projectRoot `
+    "assets\norden-interface\carriage-markers") -Filter "*.svg" -File |
+    Select-Object -ExpandProperty FullName
+if (($requiredSources | Where-Object { $_ -like "*\assets\norden-interface\carriage-markers\*.svg" }).Count -ne 14) {
+    throw "Expected exactly fourteen authorized Norden marker SVG sources."
+}
 foreach ($source in $requiredSources) {
     if (-not (Test-Path -LiteralPath $source -PathType Leaf)) {
         throw "Missing parchment-picker source: $source"
@@ -34,13 +81,31 @@ $forbiddenAssetExtensions = @(".png", ".jpg", ".jpeg", ".dds", ".svg", ".wav", "
 $shippedAssets = Get-ChildItem -LiteralPath $modRoot -Recurse -File | Where-Object {
     $forbiddenAssetExtensions -contains $_.Extension.ToLowerInvariant()
 }
-if ($shippedAssets) {
-    throw "Parchment module must not ship third-party artwork/audio: $($shippedAssets.FullName -join ', ')"
+$expectedAssets = @(
+    (Join-Path $modRoot "textures\DiegeticTravel\docks-marker.dds"),
+    (Join-Path $modRoot "textures\DiegeticTravel\shipwreck-marker.dds"),
+    (Join-Path $modRoot "textures\DiegeticTravel\whiterun-dragonsreach.dds")
+    (Join-Path $modRoot "textures\DiegeticTravel\riften-mistveil-keep.dds")
+    (Join-Path $modRoot "textures\DiegeticTravel\solitude-blue-palace.dds")
+    (Join-Path $modRoot "textures\DiegeticTravel\windhelm-palace-of-the-kings.dds")
+    (Join-Path $modRoot "textures\DiegeticTravel\markarth-understone-keep.dds")
+    (Join-Path $modRoot "textures\DiegeticTravel\dawnstar-white-hall.dds")
+    (Join-Path $modRoot "textures\DiegeticTravel\morthal-highmoon-hall.dds")
+    (Join-Path $modRoot "textures\DiegeticTravel\winterhold-college.dds")
+    (Join-Path $modRoot "textures\DiegeticTravel\falkreath-jarl-longhouse.dds")
+    (Join-Path $modRoot "textures\DiegeticTravel\town-marker.dds")
+)
+$expectedAssets += $nordenMarkerNames | ForEach-Object {
+    Join-Path $modRoot "textures\DiegeticTravel\$_"
+}
+$unexpectedAssets = @($shippedAssets | Where-Object { $expectedAssets -notcontains $_.FullName })
+if ($unexpectedAssets.Count -gt 0 -or $shippedAssets.Count -ne $expectedAssets.Count) {
+    throw "Parchment module contains an unexpected artwork/audio set: $($shippedAssets.FullName -join ', ')"
 }
 
 $nativeScript = Get-Content -Raw (Join-Path $modRoot "Scripts\Source\DNT_ParchmentNative.psc")
 $providerScript = Get-Content -Raw (Join-Path $modRoot "Scripts\Source\DNT_WizardParchmentPicker.psc")
-foreach ($requiredToken in @("BeginRequest", "SetRouteOrigin", "AddDestination", "Show", "Cancel", "PlayPresentation", "PlayVoiceProbe", "DNT_ParchmentResult")) {
+foreach ($requiredToken in @("RequestDialogueClose", "BeginRequest", "SetSourceLabel", "SetPaymentLabelPosition", "SetOverlayTexture", "SetMarkerTextures", "SetOriginMarkerTexture", "SetRouteOrigin", "AddRouteSegment", "AddRouteLandmark", "AddDestination", "SetDestinationMarkerTexture", "Show", "Cancel", "PlayPresentation", "PlayVoiceProbe", "DNT_ParchmentResult")) {
     if ($nativeScript -notmatch [regex]::Escape($requiredToken) -and
         $providerScript -notmatch [regex]::Escape($requiredToken)) {
         throw "Parchment Papyrus contract is missing token: $requiredToken"
@@ -51,7 +116,7 @@ foreach ($destination in @("whiterun", "riften", "solitude", "windhelm", "markar
         throw "Wizard parchment provider is missing destination: $destination"
     }
 }
-foreach ($artToken in @("battlemap01.dds", "TextureUvMinX", "TextureUvMaxY", "1.358090", "0.736328", "0.752", "0.167")) {
+foreach ($artToken in @("textures/terrain/tamriel/skyrim.dds", "winterhold-college.dds", "whiterun-dragonsreach.dds", "riften-mistveil-keep.dds", "solitude-blue-palace.dds", "windhelm-palace-of-the-kings.dds", "markarth-understone-keep.dds", "dawnstar-white-hall.dds", "morthal-highmoon-hall.dds", "SetMarkerTextures", "SetOriginMarkerTexture", "SetDestinationMarkerTexture", "TextureUvMinX", "TextureUvMaxY", "1.414075", "0.088379", "0.187012", "0.932129", "0.783691", "0.750802", "0.167836")) {
     if ($providerScript -notmatch [regex]::Escape($artToken)) {
         throw "Wizard parchment provider is missing artwork contract token: $artToken"
     }
@@ -76,6 +141,20 @@ foreach ($voiceToken in @(
 }
 
 $papyrusSource = Get-Content -Raw (Join-Path $moduleRoot "src\Papyrus.cpp")
+foreach ($handoffToken in @(
+    "RequestDialogueClose",
+    "RE::UI::GetSingleton",
+    "RE::UIMessageQueue::GetSingleton",
+    "RE::DialogueMenu::MENU_NAME",
+    "RE::UI_MESSAGE_TYPE::kHide",
+    "PARCHMENT_DIALOGUE_CLOSE_REQUESTED",
+    "PARCHMENT_DIALOGUE_CLOSE_SKIPPED",
+    "PARCHMENT_DIALOGUE_CLOSE_REJECT"
+)) {
+    if ($papyrusSource -notmatch [regex]::Escape($handoffToken)) {
+        throw "Native dialogue handoff is missing token: $handoffToken"
+    }
+}
 foreach ($voiceToken in @(
     "ExpectedRuntime{ 1, 6, 1170, 0 }",
     "ModernCompileAndRunId = 441582",
@@ -118,16 +197,65 @@ $frameworkSource = @(
 $presentationSource = $menuSource + "`n" + $frameworkSource
 foreach ($presentationToken in @(
     "focusedDescription = std::format(",
-    '"{} - {} gold"',
+    '"{} to {}    {} gold"',
     "igInvisibleButton",
     "igGetMousePos",
     "igSetMouseCursor",
+    "igPushStyleColor_U32",
+    "igPopStyleColor",
+    "igSetWindowFontScale",
+    "igCalcTextSize",
     "igGetForegroundDrawList_Nil",
     "ImDrawList_AddCircle",
+    "ImDrawList_AddImage",
+    "ImDrawList_AddCircleFilled",
+    "ImDrawList_AddTriangleFilled",
     "ImDrawList_AddPolyline",
     "ImDrawList_AddConcavePolyFilled",
     "DrawRouteConnection",
+    "DrawActiveRoutePath",
     "DrawRouteOrigin",
+    "DrawRouteLandmark",
+    "DrawFerryDestinationMarker",
+    "ComputeDestinationHitSizes",
+    "FindRoutePath",
+    "routeSegments",
+    "routeLandmarks",
+    "overlayTexturePath",
+    "loadedOverlayTexture",
+    "PARCHMENT_OVERLAY_MISSING",
+    "snapshot.request.overlayTexturePath.empty()",
+    "MakeColor(238, 229, 207, 245)",
+    "const auto baseExtent = std::clamp(a_radius, 17.0F, 34.0F)",
+    "a_scaleOnlyHighlight",
+    "EqualsAsciiInsensitive",
+    "isBoatProvider",
+    "isCollegeProvider",
+    "isCarriageProvider",
+    "showRouteLines = !isBoatProvider && !isCollegeProvider",
+    'destinationTexturePath.find("-capital.dds")',
+    "1.25F : 0.84F",
+    "markerArtScale",
+    "shipwreck-marker.dds",
+    "docks-marker.dds",
+    "defaultSelectedMarkerTexturePath",
+    "defaultIdleMarkerTexturePath",
+    "loadedSelectedMarkerTexturePath",
+    "loadedIdleMarkerTexturePath",
+    "loadedOriginMarkerTexturePath",
+    "selectedMarkerTexture = destinationTexture->second",
+    "PARCHMENT_ORIGIN_MARKER_SET",
+    "PARCHMENT_MARKERS_SET",
+    "MakeColor(170, 174, 178, 168)",
+    "{ 1.0F, 1.0F, 1.0F, 0.40F }",
+    "roundedPoints",
+    "curveSteps = 10",
+    "incomingLength * 0.42F",
+    "outgoingLength * 0.42F",
+    "MakeColor(235, 35, 42, 14)",
+    "MakeColor(218, 27, 39, 28)",
+    "MakeColor(198, 20, 38, 42)",
+    "activeScreenPath.reserve(activePath.size())",
     "navigationFocusEngaged.store(false",
     "navigationFocusEngaged.load",
     "MakeColor(18, 18, 18, 150)",
@@ -147,6 +275,34 @@ foreach ($presentationToken in @(
         throw "Parchment presentation lifecycle is missing token: $presentationToken"
     }
 }
+if ($menuSource -match [regex]::Escape("DrawDestinationHighlight")) {
+    throw "Target-style X marker must not remain in the parchment presentation."
+}
+if ($menuSource -match [regex]::Escape("originRing")) {
+    throw "The route origin must use the boat marker without a separate circle."
+}
+if ($menuSource -notmatch "loadedOriginMarkerTexture\s*\?\s*loadedOriginMarkerTexture\s*:\s*loadedSelectedMarkerTexture") {
+    throw "The route origin must use its provider texture with selected-marker fallback."
+}
+if ($menuSource -notmatch "snapshot\.request\.overlayTexturePath\.empty\(\)\s*&&\s*activeIndex") {
+    throw "Painted overlays must suppress dynamic active-route strokes."
+}
+if ($menuSource -match [regex]::Escape("MakeColor(255, 137, 82, 238)")) {
+    throw "The sharp bright-red route core must not remain in the parchment presentation."
+}
+if ($menuSource -notmatch 'a_highlighted\s*&&\s*a_scaleOnlyHighlight\s*\?\s*1\.18F') {
+    throw "Scale-only selection must still enlarge its icon."
+}
+if ($menuSource -match 'if \(a_highlighted && !a_scaleOnlyHighlight\)') {
+    throw "Destination selection must not draw the retired red provider halo."
+}
+if ($menuSource -match 'snapshot\.request\.providerId\s*(==|!=)\s*"(boat|college|carriage)"') {
+    throw "Provider presentation policy must use case-insensitive IDs from the runtime boundary."
+}
+if ($menuSource -match [regex]::Escape('Close map##DNT-cancel') -or
+    $menuSource -match [regex]::Escape('cancel_button')) {
+    throw "Parchment presentation must rely on Escape/gamepad-B instead of a visible close button."
+}
 if ($menuSource -match [regex]::Escape([char]0x2014)) {
     throw "Parchment menu source must not use an em dash in the Scaleform-facing footer."
 }
@@ -158,7 +314,12 @@ if ($RequireNativeBuild) {
     $nativePex = Join-Path $modRoot "Scripts\DNT_ParchmentNative.pex"
     $fragmentPex = Join-Path $modRoot "Scripts\DNT_WizardParchmentFragment.pex"
     $providerPex = Join-Path $modRoot "Scripts\DNT_WizardParchmentPicker.pex"
-    foreach ($artifact in @($dll, $esp, $seq, $nativePex, $fragmentPex, $providerPex)) {
+    $docksMarker = Join-Path $modRoot "textures\DiegeticTravel\docks-marker.dds"
+    $shipwreckMarker = Join-Path $modRoot "textures\DiegeticTravel\shipwreck-marker.dds"
+    $nordenMarkers = $nordenMarkerNames | ForEach-Object {
+        Join-Path $modRoot "textures\DiegeticTravel\$_"
+    }
+    foreach ($artifact in @($dll, $esp, $seq, $nativePex, $fragmentPex, $providerPex, $docksMarker, $shipwreckMarker) + $nordenMarkers) {
         if (-not (Test-Path -LiteralPath $artifact -PathType Leaf)) {
             throw "Required parchment-picker build artifact not found: $artifact"
         }
@@ -172,5 +333,5 @@ if ($RequireNativeBuild) {
 }
 
 Write-Host "Parchment-picker audit passed."
-Write-Host "Bundled artwork/audio assets: 0"
+Write-Host "Bundled artwork: 2 user-authored/edited marker assets, 10 Skyrim-derived map markers, and 14 authorized Norden map markers"
 Write-Host "Wizard destinations: 7"

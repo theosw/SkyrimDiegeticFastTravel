@@ -109,12 +109,10 @@ def quote_route(
 
     base_cost = int(rules["base_cost"])
     hazard_cost = int(rules["hazard_cost"])
-    refuse_multiplier = int(rules["refuse_multiplier"])
     provider_war_immune = bool(provider_data.get("war_immune", False))
     multiplier = 1 if provider_war_immune else _war_multiplier(rules, war_stage)
 
     best: tuple[int, float, tuple[str, ...], tuple[str, ...]] | None = None
-    blocked = 0
     candidates = route["candidates"]
     assert isinstance(candidates, list)
 
@@ -122,8 +120,6 @@ def quote_route(
         assert isinstance(candidate, Mapping)
         fare = int(round(float(candidate["base_units"]) * base_cost * multiplier))
         active: list[str] = []
-        is_blocked = False
-
         candidate_hazards = candidate.get("hazards", [])
         assert isinstance(candidate_hazards, list)
         for hazard_id in candidate_hazards:
@@ -137,20 +133,11 @@ def quote_route(
             if phase in (HazardPhase.DORMANT, HazardPhase.CLEARED):
                 continue
 
-            # UNKNOWN is intentionally priced/blocked as ACTIVE.
+            # Beta policy: UNKNOWN is priced as ACTIVE, but hazards never hide
+            # an otherwise executable provider destination.
             active.append(str(hazard_id))
             hazard_multiplier = int(hazard["mult"])
-            if (
-                hazard.get("role") == "chokepoint"
-                and hazard_multiplier >= refuse_multiplier
-            ):
-                is_blocked = True
-                break
             fare += hazard_cost * hazard_multiplier
-
-        if is_blocked:
-            blocked += 1
-            continue
 
         path = tuple(str(node) for node in candidate["path"])
         hours = float(candidate["hours"])
@@ -158,16 +145,7 @@ def quote_route(
         if best is None or item[:3] < best[:3]:
             best = item
 
-    if best is None:
-        return Quote(
-            False,
-            None,
-            None,
-            (),
-            (),
-            blocked,
-            "all candidate paths are blocked",
-        )
-
-    return Quote(True, best[0], best[1], best[2], best[3], blocked)
-
+    # A compiled route always has at least one candidate. Endpoint availability
+    # is handled separately by the provider/marker gate.
+    assert best is not None
+    return Quote(True, best[0], best[1], best[2], best[3], 0)

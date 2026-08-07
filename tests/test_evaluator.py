@@ -15,7 +15,7 @@ class EvaluatorTests(unittest.TestCase):
     def setUp(self) -> None:
         self.runtime, _ = compile_runtime(fixture_graph())
 
-    def test_active_refuse_tier_chokepoint_selects_detour(self) -> None:
+    def test_active_chokepoint_is_surcharged_without_blocking(self) -> None:
         quote = quote_route(
             self.runtime,
             "aTob",
@@ -24,7 +24,7 @@ class EvaluatorTests(unittest.TestCase):
         self.assertTrue(quote.available)
         self.assertEqual(("a", "detour", "b"), quote.path)
         self.assertEqual(200, quote.fare)
-        self.assertEqual(1, quote.blocked_candidates)
+        self.assertEqual(0, quote.blocked_candidates)
 
     def test_cleared_chokepoint_selects_short_route(self) -> None:
         quote = quote_route(

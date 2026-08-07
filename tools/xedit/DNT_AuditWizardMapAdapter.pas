@@ -335,6 +335,9 @@ begin
     RequireSkyrimRecord($0001C38A, 'REFR', 'MarkarthMapMarkerREF')
   );
   ReportLines.Add('PASS map quest -> core service and five exact marker properties');
+  ReportLines.Add(
+    'QUEST_FIXED_FORM_ID=' + IntToHex(FixedFormID(MapQuest), 8)
+  );
 end;
 
 procedure AuditDialogue;

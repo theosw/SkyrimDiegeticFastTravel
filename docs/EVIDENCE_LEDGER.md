@@ -203,6 +203,18 @@ to visibility/alpha 100, Skyrim exited normally, and no DNT error/warning
 appeared. This promotes the startup gate, cursor alpha, and Escape path to
 Proven.
 
+**Formal wizard-map result:** The first Caro/FWMF pass exposed a stale saved
+quest auto-property: the new crop and hold icons loaded, but native logging
+showed the old `battlemap01.dds` path at `PARCHMENT_OPEN`. The provider now
+passes the formal texture path through the same local effective profile as its
+crop and aspect. The follow-up 32:9 pass visually approved the formal Caro map,
+all eight opaque vanilla hold icons, exact College/capital alignment, and
+destination-preserving hover state. Native logging confirmed
+`Data/textures/terrain/tamriel/skyrim.dds`, all seven destination textures, and
+12 HUD layers hidden/restored. Papyrus recorded a 250-gold Whiterun start and
+completion. No DNT warning/error appeared. This promotes the formal wizard-map
+profile and mouse-selected funded journey to Proven.
+
 **Mirabelle presentation voice result:** Mirabelle's unique voice type has
 no matching generic SharedInfo asset, while the exact desired INFO belongs to
 `MG01`, a quest that stops after First Lessons. The first direct-FUZ experiment
@@ -856,6 +868,279 @@ Final workspace packages:
 - wizard guides: `0F5BF619466BF2A8E72345CBB9C9DFC43D8E561E95F768674CA3E72165E83C55`;
 - optional BCD wizard adapter: `CDFF6A1F4297B77073B50526FFED4A2B71B8AE6781E973EBCBBB6CCC99A41994`.
 
+## 2026-08-02 Lake Honrich live vertical-slice checkpoint
+
+**Claim:** The provider-neutral parchment contract can drive CFTO's public
+Lake Honrich lane without replacing its ferrymen, live local fare, arrival
+markers, or time-passing travel execution.
+
+**Gameplay evidence:** The monitored pass resolved Thalldar at Heartwood Mill,
+Haennr at Ivarstead, and Heirmir at Riften. Each provider displayed exactly the
+other two lane stops. The player completed Heartwood -> Ivarstead, Ivarstead ->
+Riften, and Riften -> Heartwood; each emitted one matching
+`BOAT_TRAVEL_START` / `BOAT_TRAVEL_COMPLETE` pair at CFTO's current 30-gold
+fare. A Heartwood cancellation was inert. Requests with 0 and 10 gold emitted
+`BOAT_TRAVEL_DENIED reason=gold required=30` with no start or movement. The
+native picker restored all twelve hidden HUD layers after selection/cancel,
+and neither DNT nor CrashLogger recorded a failure. PickUpAsJunk RC1 remained
+loaded and recorded successful world/container junk actions in the same run.
+
+**Rejected handoff:** The first deployed picker waited for `Dialogue Menu` to
+close but could not request closure. Heartwood and Ivarstead therefore required
+manual Escape before the parchment appeared; Riften dismissed dialogue
+normally. Once unblocked, native `PARCHMENT_BEGIN` and `PARCHMENT_OPEN` were
+separated by only tens of milliseconds, which rules out the renderer as the
+source of the delay.
+
+**Proven handoff:** `RequestDialogueClose` now queues Skyrim's normal
+`UI_MESSAGE_TYPE::kHide` message only for `Dialogue Menu`. The boat OnEnd
+provider requests that transition, polls for confirmed closure, and logs the
+requested/already-closed/completed/timeout path plus wait ticks before opening
+the parchment. It does not synthesize Escape input. The locked CommonLib build,
+native unit test, six affected zero-warning Papyrus compiles, source audit,
+independent boat xEdit/SEQ audit, exact ferryman/FUZ audit, and zero-asset
+package boundary pass.
+
+**Follow-up gameplay evidence:** Riften, Ivarstead, and Heartwood each emitted
+`BOAT_DIALOGUE_HANDOFF_CLOSE_REQUEST`, native
+`PARCHMENT_DIALOGUE_CLOSE_REQUESTED`, and
+`BOAT_DIALOGUE_HANDOFF_COMPLETE ... closeRequested=TRUE waitTicks=0`. The
+picker then opened about 0.2-0.3 seconds later without manual Escape. The player
+completed Riften -> Ivarstead, Ivarstead -> Heartwood, and Heartwood -> Riften;
+all three trips charged the live 30-gold fare and emitted matching start/
+complete pairs. There was no DNT failure, timeout, rejection, or crash. Together
+with the first pass, all six directed trips among the three public stops are
+gameplay-proven. Heartwood follower/horse placement remains unverified.
+
+Candidate packages:
+
+- parchment runtime: `31BC0AD4A7C84E43D4E11BF0A7A30F5B0794C23C358F0991AB12A8D62EC085E4`;
+- Lake Honrich boat: `2929CEA27215DA5483299DB73DDC694143F442573CA8F8068CAE2A499BE3006B`.
+
+## 2026-08-02 Lake Ilinalta offline candidate
+
+**Claim:** CFTO Route 3 contains a symmetric public triangle that can reuse the
+gameplay-proven Lake Honrich picker/service contract without treating its
+private and destination-only extensions as peers.
+
+**Inventory evidence:** Headless xEdit resolves Rinlen/Brittleshin Pass
+(`0502E1E6`), Hisygg/Half-Moon Mill (`050332ED`), and Bryst/Guardian Stones
+(`050332F5`) to `KmodFerryRoute3Faction` (`0502E1DF`). All three use
+`MaleEvenToned`, all three public destinations use `KmodFerryCostLocal` at 30
+gold, and the exact Dawnguard `DialogueFerryWhereDoYouWantToGo` FUZ exists.
+CFTO's fragments bind arrival markers `05014C8F`, `05014C95`, and `050332F7`;
+Brittleshin additionally binds horse marker `05195C32`, while Guardian Stones
+binds follower/horse markers `05195C33`/`05195C34`.
+
+Lakeview Manor is ownership/jetty/ferryman-gated. Ilinata's Deep has no Route 3
+provider and uses the 50-gold regional fare. Both are deliberately deferred.
+
+**Build evidence:** All three Papyrus scripts compile. The independent xEdit
+audit passes the exact Route 3 faction conditions, shared voice, OnEnd
+fragment, quest/service binding, official+CFTO master set, and start-game SEQ.
+Regenerating the ESP is byte-identical at SHA-256
+`2FCD2A526E53E962EFD3520A635D210CBC4F496C6D23A24282AF709E342BA14C`.
+The package contains zero artwork/audio assets:
+
+- `DiegeticTravelBoatIlinalta-offline-candidate.zip`:
+  `E62E385D8FDA7649467F4DF86534EED256B18A6A85EDA609542707CCD72C52FE`.
+
+The map positions are derived from the three gameplay-proven Honrich
+world-to-parchment anchors and remain a live visual check. The candidate has
+not been deployed or gameplay-tested.
+
+## 2026-08-03 Solstheim public-ferry functional pass
+
+**Claim:** The public CFTO Route 4 triangle can use the same automatic dialogue
+handoff, parchment selection, live fare, and travel-service contract as the
+mainland boat slices.
+
+**Live evidence:** A monitored LoreRim pass opened the Solstheim picker five
+times. Raven Rock -> Skaal Village and Skaal Village -> Tel Mithryn both emitted
+matching `BOAT_TRAVEL_START`/`BOAT_TRAVEL_COMPLETE` pairs at the live 50-gold
+fare. Two picker cancellations completed cleanly. A Skaal Village -> Tel
+Mithryn attempt with 22 gold emitted the expected denial with `required=50`
+and did not travel. Dialogue handoff closed automatically at zero wait ticks;
+the native picker hid and restored all twelve observed HUD layers. No relevant
+Papyrus/native error, warning, rejection, timeout, or crash was present.
+
+**Visual finding:** The clean Dragonborn/RUSTIC physical map occupies the right
+half of a square DDS and therefore has an inherent 1:2 portrait ratio. The
+renderer displayed it without accidental distortion, but both geography and
+folds look horizontally compressed. A follow-up deployment attempted an FWMF
+chart, but the existing save retained the old texture path/UVs from the quest
+script's auto properties while accepting newly compiled marker literals. The
+native log proves the mixed state: old `uv=(0.500,0.000)-(1.000,1.000)` and old
+physical-map path with the new route-origin point. The candidate therefore
+returned to the stable physical-map path, restored its original three marker
+coordinates, and moved all static visual settings into function-local
+executable code so existing saves receive future visual revisions. A live
+1.5:1 pass then proved too wide. The subsequent square 1:1 presentation was
+visually approved in game; its Raven Rock hit target also completed a funded
+trip to Skaal Village. Raven Rock's overlay point is now staged slightly west
+and south, from `(0.329, 0.645)` to `(0.300, 0.665)`, for one focused visual
+recheck.
+
+Current no-asset package:
+
+- `DiegeticTravelBoatSolstheim-offline-candidate.zip`:
+  `6812DD4A6A28F9674566BD79DFB75597FAE7D7AA521D14FA43D3B7B68C3F6959`.
+
+## 2026-08-03 northern-coast public-ferry offline candidate
+
+**Claim:** CFTO's seven ordinary public Route 1 ferrymen can share one
+provider-neutral parchment and travel service without exposing the same option
+on the quest-special Enthralled Ferryman.
+
+**Inventory evidence:** Headless xEdit resolves Harlaug/Dawnstar, Jolf/Solitude,
+Gort/Windhelm, Radding/Morthal, Perius/Solitude Lighthouse,
+Jollsen/Winterhold, and Rolf/Dragon Bridge to `KmodFerryRoute1Faction`. All
+seven use `MaleEvenToned`, the live `KmodFerryCost` is 50 gold, and the exact
+Dawnguard `DialogueFerryWhereDoYouWantToGo` FUZ exists. The same inventory
+proves that the Enthralled Ferryman also belongs to Route 1, so faction-only
+dialogue gating would be too broad.
+
+**Scope evidence:** The generated INFO requires CFTO's travel-dialogue faction,
+Route 1 faction, and an output FLST containing exactly the seven ordinary
+providers. Frostflow Lighthouse remains destination-only; Icewater Jetty and
+the Enthralled Ferryman retain their distinct Castle Volkihar flow and extra
+fare; Windstad Manor retains its ownership/construction gate. None are present
+in the picker or service.
+
+**Build evidence:** All three Papyrus scripts compile with zero errors and
+warnings. The independent xEdit audit passes six masters in order, the exact
+seven-entry whitelist, start-game-enabled priority-60 quest, one Goodbye/OnEnd
+shared-voice dialogue response, service/picker wiring, and matching four-byte
+SEQ. Every source exposes the other six public ports. The package references
+the installed Skyrim battle map and contains zero artwork/audio assets.
+
+**Remaining boundary:** The five capital positions reuse visually proven
+parchment anchors. Solitude Lighthouse and Dragon Bridge were projected from
+those anchors and still require one in-game alignment pass. No north-coast
+trip is gameplay-proven yet.
+
+Candidate package:
+
+- `DiegeticTravelBoatNorthCoast-offline-candidate.zip`:
+  `3D5B10EB7F1C8CC14E303D304C5A1208A18CED454C0C4B991322AAF488D24938`.
+
+## 2026-08-03 provider-defined physical route graphs
+
+**Claim:** The provider-neutral parchment picker can render shared physical
+water/road networks while preserving the proven wizard-spoke behavior for
+providers that do not opt in.
+
+**Implementation evidence:** The native request contract now accepts up to 192
+normalized undirected segments. It rejects out-of-range, duplicate, and
+zero-length edges. Ready validation requires every offered destination to be
+connected to the source. The renderer draws the graph once in the existing
+gold/ink treatment and uses a weighted shortest-path search to redraw only the
+hovered or focused journey in red. The existing straight-spoke branch remains
+the fallback when no explicit graph is supplied.
+
+**Provider evidence:** Lake Honrich supplies a ten-segment lake ring connecting
+Riften, Heartwood Mill, and Ivarstead. The northern coast supplies a 23-segment
+coastal graph with a Sea of Ghosts trunk plus the Karth, Morthal, Dawnstar, and
+White River approaches. All endpoints include the exact source/destination
+anchors, so every request passes native connectivity validation.
+
+**Build evidence:** Offline core and full CommonLib builds pass. The new graph
+tests prove bent-path resolution, reversed-duplicate rejection, zero-length
+rejection, and disconnected-destination rejection. All three picker scripts,
+all three Lake Honrich scripts, and all three northern-coast scripts compile
+with zero errors and warnings. Both boat xEdit and voice-asset audits pass.
+The verified artifacts were deployed only to their three isolated test mods;
+MO2 profile files were not changed.
+
+**Remaining boundary:** Route placement, gold idle visibility, red hover-path
+choice, selection, and cancellation require a live visual pass. No claim is
+yet made that every bend perfectly follows the artwork's shoreline.
+
+Candidate hashes:
+
+- parchment picker: `A454A384E121E6936997BE192ACB1849CAE937BC9761747AE67EF03AB11176E9`;
+- Lake Honrich: `D42E3583FDA70901093B1A2A344DAA62F086C4360D085BB35E21E6B699C20C20`;
+- northern coast: `41738B6276DABAD6C03C22C506B827D42D572BF1F8A8670986230ED9076A4202`.
+
+## 2026-08-03 user-authored boat route overlay candidate
+
+**Claim boundary:** This is an offline-proven, deployed test candidate; its
+appearance is not yet gameplay-proven.
+
+**Implementation evidence:** Requests can optionally set one full-canvas
+transparent overlay texture. The renderer composites it after the dependency
+map and before interactive markers. For overlay-backed requests, inactive
+native route segments are suppressed and only the shortest active path is
+drawn in red. Requests without an overlay retain the existing gold-idle/red-
+active presentation. North-coast and Lake Honrich opt in; wizard, carriage,
+Ilinalta, and Solstheim providers do not.
+
+**Asset evidence:** The user-authored 4096x3016 RGBA PNG was hash-copied into
+`assets/route-overlays` and encoded as one-mip `BC7_UNORM` DDS with alpha. The
+shared package contains exactly that one owned DDS and no RUSTIC MAPS texture,
+audio, or other artwork. DDS SHA-256:
+`E0CDF0D9E4B9BE8E36E6BD51D40EF74065B3905197304CF7E83DE8294A00C37E`.
+
+**Verification evidence:** Native C++ and all affected Papyrus scripts compile
+with zero errors/warnings. Core route tests, the shared picker audit, and both
+isolated boat xEdit/SEQ audits pass. Package and deployed DLL, PEX, and DDS
+hashes match. The `UltraDiegeticTravel` North-coast no-launch preflight passes.
+
+Candidate hashes:
+
+- parchment picker: `9FE9276A4569B3CB438DDFFF591F36F2EF6B265545982D4C8BD8B2E5C8D7DACD`;
+- Lake Honrich: `A10D3786F8A6E9DBA9AA9813ECC4FD73FF5369F30AC7A2E7CF038C0C322A71C6`;
+- northern coast: `88A7EBA3C7216D29CC806E2FFEDE923BA6397CB59F96C55590D91E0EB582FA36`.
+
+**Live test gate:** Confirm the charcoal overlay loads once, its registration
+matches the parchment crop, no idle native network is visible, hover/focus
+draws exactly one red shortest path, selection still travels, Escape cancels,
+and no `PARCHMENT_OVERLAY_MISSING` or DNT error appears.
+
+## 2026-08-05 direct carriage selection and Norden map symbols
+
+**Rejected runtime path:** LoreRim's winning carriage overrides expose the
+vanilla `LinkCarriageSeat` association but not CFTO's expected custom seat link.
+The attempted safe repair was rejected by the runtime reference and logged
+`CARRIAGE_LINK_BLOCKED ... reason=repair_failed`; no purchase committed and no
+gold was removed. Boarding execution is therefore removed from the beta.
+
+**Candidate architecture:** Clicking a parchment marker now revalidates the
+quote, resolves one of CFTO's 27 ground-level arrival `XMarkerHeading`
+references, verifies funds, charges atomically, and immediately invokes the
+same fade/encumbrance/`Game.FastTravel` pattern already proven by the boat
+providers. A missing marker or insufficient funds returns before payment.
+`KmodCarriageDestination` is cleared so no stale CFTO boarding state remains.
+
+**Marker evidence:** The installed Norden UI 1.2.5 16:9 and 21:9
+`mapmarkerart.swf` files are byte-identical with SHA-256
+`AF39A7C181E8BF6187E389CC6D5F333780F11057C562673BC40A78490998B1AA`.
+Fourteen exact discovered-state symbols were exported and hash-pinned: nine
+hold capitals plus Town, Settlement, Farm, Wood Mill, and Mine. The project
+owner reports direct use/redistribution permission from the Norden UI author.
+
+**Offline evidence:** Six core and two carriage Papyrus scripts compile with
+zero errors/warnings. The strict parchment asset audit, isolated xEdit/SEQ
+audit, native core CTest, and all ten Python unit tests pass. The no-launch MO2
+preflight confirms the `UltraDiegeticTravel` profile, adapter winner, deployed
+scripts, and all fourteen marker DDS files. Gameplay remains unproven until a
+marker is clicked in a live run.
+
+Candidate hashes:
+
+- core package: `E1061AADF47ECFEE38AFAA49413AAB6FB70CE7E6D8EF6DE432A9408C61CD6F77`;
+- carriage adapter: `0606159F79EEFDF6A6376493CB11B99CEAA01338AF71CD2DB238659561976EF1`;
+- parchment picker: `FD582118A5FDB4285F1EE37431AB13C880B8322F11FF75D7D2FB301B275DAECB`;
+- origin-service PEX: `6D7432F5B1E2FF378269007A36598D000510514544E56BC5A059903FE8665CE8`;
+- carriage-picker PEX: `B56548C8FB9AD3E38E1E2D1431D1420E6CCD634CC3D352AE457497A87B1E3C49`.
+
+**Focused live gate:** Select one capital and one minor stop, confirm payment
+occurs once, travel begins without boarding, arrival is on the ground at the
+expected CFTO stop, elapsed game time advances, and the log contains paired
+`PURCHASE_COMMITTED ... execution=direct` and `CARRIAGE_TRAVEL_COMPLETE` lines.
+Also verify the nine capital symbols and at least one mill/farm/mine marker
+match the regular Norden world-map family.
+
 ## Promotion gate for future claims
 
 Promote a dialogue candidate to **Proven** only after all applicable checks:
@@ -879,3 +1164,165 @@ Promote a dialogue candidate to **Proven** only after all applicable checks:
 - Travel-time passage, rest/recovery behavior, and intervention/recall magic.
 
 These remain design goals, not implementation assumptions.
+# 2026-08-05: full CFTO carriage beta sheet, without route geometry
+
+- The installed CFTO plugin exposes 27 destinations with a verified native
+  carriage handoff: nine hold capitals, fifteen minor Skyrim stops, and three
+  HearthFires homesteads. Helgen and Granite Hill are deferred because the
+  installed plugin does not provide the same executable handoff for them.
+- `DNT_InventoryCarriageParchment.pas` records authoritative world coordinates
+  from each destination's Skyrim/HearthFires map marker. The reproducible
+  `Generate-CarriageParchmentConfig.py` affine projection produces
+  `modules/carriage-parchment/config/network.json`; its calibrated capital
+  residual is RMSE `(0.004614, 0.010628)` in parchment UV space.
+- The beta intentionally omits `SetRouteOrigin` and `AddRouteSegment`. It shows
+  selectable destinations without straight spokes or invented road geometry.
+- `DNT_RouteService` batches hazard-phase and war-multiplier reads;
+  `DNT_TravelCoordinator` coalesces duplicate preparation requests; the picker
+  consumes published quotes and `Purchase` still revalidates the chosen route.
+- The shared native request bound increased from 24 to 32. A regression test
+  accepts all 32 bounded entries and rejects entry 33. Both AE and pure-core
+  CTest presets pass, both Papyrus compilation sets pass with zero warnings,
+  and the isolated xEdit audit reports `cached 27-stop CFTO sheet, no synthetic
+  routes, revalidated purchase`.
+- Candidate package SHA-256 values after the change:
+  parchment picker `04202F448CE501CC00F9DC0C048E9F5441E4C9123B7ED6B7C4004022DDEA1238`;
+  carriage adapter `CDD941011FEFABE445662122875B86B8C9E1F9149EF62D3F2361D4D5C343298C`.
+
+# 2026-08-05: aspect-correct Norden symbols and reciprocal mainland docks
+
+- **Failure cause:** `Build-NordenCarriageMarkers.ps1` passed both
+  `--export-width=512` and `--export-height=512` to Inkscape. That reshaped each
+  non-square Norden SVG page before the normalizer ever saw it. The Menu
+  Framework renderer does draw textures in a square visual rectangle, but its
+  invisible destination hitbox is independently computed; the click circle did
+  not cause the distortion.
+- **Repair:** render each SVG with width constrained only, alpha-crop the
+  result, proportionally fit within 416 by 416, and center it on a transparent
+  512-square canvas. Spot inspection of Whiterun, Town, and Settlement outputs
+  shows intact aspect and no edge clipping.
+- **Ilinalta recalibration:** CFTO's audited arrival-marker coordinates were
+  projected with the carriage parchment model's nine-point affine coefficients.
+  This yields Brittleshin `(0.454414, 0.665229)`, Half-Moon Mill
+  `(0.399755, 0.670970)`, and Guardian Stones `(0.501218, 0.685304)`. The old
+  `(0.394,0.667)`, `(0.315,0.675)`, and `(0.444,0.688)` estimates are retired.
+- **Network presentation:** each mainland provider now adds all docks from the
+  other two mainland networks through `AddRouteLandmark`; these markers are
+  non-interactive and use the existing grey inactive-anchor rendering.
+- **Offline evidence:** nine Papyrus scripts compile at zero errors/warnings;
+  shared parchment audit passes with fourteen Norden markers; native parchment
+  CTest passes 1/1; Ilinalta, Honrich, and North-coast isolated xEdit/SEQ audits
+  pass; carriage and North-coast MO2 validation-only preflights pass.
+- **Deployment:** only the four owned test mods were updated. No LoreRim
+  baseline mod or MO2 profile file was modified. Live visual approval remains
+  required before promoting the marker aspect and dock placement claims.
+
+# 2026-08-05: mainland ferry route artwork deferred for beta
+
+- **Decision:** the Lake Honrich and North-coast providers no longer call the
+  optional overlay or authored-segment APIs. All mainland ferry maps now use
+  the Lake Ilinalta-style beta presentation: destination anchors, current and
+  hovered boats, a direct selection line, and grey landmarks for inactive
+  waterways.
+- **Asset boundary:** `boat-route-chalk-overlay.dds` is not built, packaged, or
+  deployed. Its user-authored PNG, conversion script, and the dormant provider
+  geometry remain reproducible post-release sources rather than runtime data.
+- **Regression guard:** provider audits fail if `SetOverlayTexture` or either
+  route-network activation call returns. The native API and unit coverage stay
+  intact for later artwork work.
+- **Offline evidence:** both changed provider script sets compile with zero
+  errors/warnings; the shared parchment audit reports only two user-authored
+  marker assets; native CTest passes 1/1; and both isolated xEdit/SEQ audits
+  pass.
+- **Candidate hashes:** parchment picker
+  `792EBED6A5FB9A0A7080336836B727AD46F68030E362942994888A5CCAF0BCB9`;
+  Honrich `5819E92CA88BB7944133EA0D5F5B1B706A0AB09B3A7713C2C744AFB866A27087`;
+  North coast `830432532BE67A3BBE167D4A4A42ED4DCAD45E68DBF284959CEB1F2662C877E3`.
+- **Live gate:** open one provider on each changed network, verify no chalk or
+  authored water path appears, and confirm hover, cancel, and travel still work.
+
+# 2026-08-05: icon-only provider maps and beta endpoint preservation
+
+- **Observed failure:** Winterhold supplied 16 carriage destinations and
+  Falkreath 14 even though the native picker supports 32 and the adapter
+  defines all 27 CFTO stops. `CARRIAGE_PARCHMENT_ROUTE_SKIPPED` correlated the
+  omitted stops with route-service `unavailable` results. Papyrus also reported
+  `Cannot cast from None to String[]/Int[]` in `EndQuoteBatch`.
+- **Root cause:** the deferred trust/hazard design still treated active
+  refuse-tier chokepoints as hard candidate blockers, sometimes eliminating
+  every candidate before the adapter built its sheet. Batch cleanup assigned
+  `None` to typed arrays.
+- **Repair:** active/unknown hazards now surcharge rather than block in both the
+  Papyrus runtime and Python reference evaluator. Marker/endpoint availability
+  remains the sole map-visibility gate. Batch arrays remain allocated and are
+  logically reset. Regression audits reject the old blocker and typed-array
+  assignments.
+- **Presentation:** provider IDs `boat` and `college` bypass dynamic route
+  rendering. College uses an 18% focused-icon scale and no red halo. Boat origin,
+  destination, and grey landmark icons remain. Brittleshin is moved north from
+  historical `(0.454414,0.665229)` to `(0.454414,0.632000)` so the anchor tip
+  lands on the calibrated location.
+- **Offline evidence:** native build and asset audit pass; native CTest 1/1;
+  Python tests 10/10; carriage plus all three affected mainland boat xEdit/SEQ
+  audits pass; carriage and North-coast MO2 validation-only preflights pass.
+  Source/deployed DLL and four changed PEX files have identical SHA-256 hashes.
+- **Live gate:** verify no path strokes on a boat map or College map, focused
+  College icons grow without changing artwork, the Brittleshin anchor placement
+  is acceptable, and carriage menus expose every currently executable stop.
+
+# 2026-08-05: live provider-case diagnosis and icon hierarchy candidate
+
+- **Observed evidence:** the Ilinalta runtime logged provider `Boat`,
+  `routeSegments=0`, and `overlay=<none>` while a yellow direct line was still
+  visible. This disproves both stale segment data and save-state persistence as
+  causes.
+- **Root cause:** presentation suppression compared provider IDs to lowercase
+  string literals. The runtime boundary preserved a capitalized provider ID,
+  so the request fell through to the legacy direct-line renderer.
+- **Repair:** provider policy is now ASCII case-insensitive. Boat and College
+  line suppression and College/carriage special presentation consequently do
+  not depend on Papyrus string casing. Regression audits reject direct
+  case-sensitive provider comparisons.
+- **Visual candidate:** carriage capital icons render at `1.25x`, other stops
+  at `0.84x`, with hitboxes unchanged. Dawnstar is moved to
+  `(0.570000,0.160000)` to cover the baked crest. Brittleshin is moved to
+  `(0.454414,0.632000)` to align the anchor tip with the calibrated point.
+- **Live gate:** confirm no Ilinalta line, verify capital/minor hierarchy,
+  Dawnstar crest coverage, and Brittleshin anchor placement.
+- **Offline evidence:** shared source/asset audit; native build and CTest 1/1;
+  all affected Papyrus compiles with zero errors/warnings; Python tests 10/10;
+  carriage and all three mainland boat xEdit/SEQ audits; carriage and
+  North-coast combined-profile preflights. Deployed DLL and affected picker
+  PEX files match their workspace artifacts byte-for-byte.
+- **Candidate packages:** parchment
+  `24C072A4631C78A86CABD80F4879B4AE4A5EB6131F2CBA4B4AD18A34478CB6DB`;
+  carriage `D5C53F8CE9A455C9E9E2DD851BA382F71AFFC3FA51F8FF9FCE09197F2697454F`;
+  Ilinalta `A8775C8CB32016EBA17538175D5D35EFEE1695A69AE37E95AAFEDE5C0AD1F5E8`;
+  Honrich `1D9508E977D59EB831293405306769D7F4D8A02DE4C239FEB49253761C630999`;
+  North coast `686F066DA1379338358AA43CB46ED124F42B94D57233F154F86CFD90C51A2E01`.
+
+# 2026-08-06: live provider-case proof and second marker calibration
+
+- **Proven:** an Ilinalta request arrived as provider `Boat` with zero route
+  segments and no overlay, and the map displayed no yellow route line. The
+  case-insensitive native presentation policy is therefore live-proven.
+- **Rejected:** Brittleshin `(0.454414,0.632000)` placed the anchor too far
+  north. The next candidate restores the affine-projected southern shoreline
+  point `(0.454414,0.665229)`.
+- **Accepted:** the carriage capital/minor size hierarchy. Falkreath, Riften,
+  and Windhelm are still slightly up/left of the baked crests; their next
+  positions are `(0.443000,0.792000)`, `(0.936000,0.828000)`, and
+  `(0.823000,0.382000)`.
+- **Travel evidence:** `CARRIAGE_TRAVEL_COMPLETE` recorded Dawnstar to Morthal
+  for 200 gold and Morthal to Winterhold for 1250 gold.
+- **Live gate:** visually accept the restored Ilinalta coordinate and the
+  three down/right capital corrections.
+- **Offline evidence:** all four affected Papyrus targets compile with zero
+  errors/warnings; all four xEdit/SEQ audits and both combined-profile
+  preflights pass. Deployed picker PEX files match their workspace builds
+  byte-for-byte.
+- **Coordinate-pass packages:** carriage
+  `4894CBB7E97E719F7F1F87F009869DF2BD9316BA8EE068620D1039F2A1C3D914`;
+  Ilinalta `08DBC4FA0CFCD829328DCA5DC23DAFE13715A103633DB990FA6CFCF057CA5735`;
+  Honrich `F0FA68EBF9DD228B5814CAA4EFE14537BFA258D1F1E8344C2894722287E7FC72`;
+  North coast `1CE578E02A7D1363BCEDBCB5DEA7700B854FF3263D6B6463BA267151A3597FED`.

@@ -75,15 +75,28 @@ namespace DNT::MenuFramework
             Texture a_texture,
             Vec2 a_size,
             Vec2 a_uv0 = Vec2{},
-            Vec2 a_uv1 = Vec2{ 1.0F, 1.0F }) const;
+            Vec2 a_uv1 = Vec2{ 1.0F, 1.0F },
+            Vec4 a_tint = Vec4{ 1.0F, 1.0F, 1.0F, 1.0F }) const;
         [[nodiscard]] bool Button(std::string_view a_label, Vec2 a_size) const;
         [[nodiscard]] bool InvisibleButton(std::string_view a_label, Vec2 a_size) const;
         void SetItemDefaultFocus() const;
         [[nodiscard]] bool IsItemHovered() const;
         [[nodiscard]] bool IsItemFocused() const;
+        void PushStyleColor(std::int32_t a_styleIndex, Color a_color) const;
+        void PopStyleColor(std::int32_t a_count = 1) const;
+        void SetWindowFontScale(float a_scale) const;
+        [[nodiscard]] Vec2 CalcTextSize(std::string_view a_text) const;
         void TextUnformatted(std::string_view a_text) const;
         [[nodiscard]] DrawList GetForegroundDrawList() const;
         void AddLine(DrawList a_drawList, Vec2 a_start, Vec2 a_end, Color a_color, float a_thickness) const;
+        void AddImage(
+            DrawList a_drawList,
+            Texture a_texture,
+            Vec2 a_min,
+            Vec2 a_max,
+            Vec2 a_uv0 = Vec2{},
+            Vec2 a_uv1 = Vec2{ 1.0F, 1.0F },
+            Color a_tint = 0xFFFFFFFFU) const;
         void AddPolyline(
             DrawList a_drawList,
             const Vec2* a_points,
@@ -149,9 +162,14 @@ namespace DNT::MenuFramework
         using ActionFn = void (*)();
         using ItemStateFn = bool (*)(std::int32_t);
         using FocusedFn = bool (*)();
+        using PushStyleColorFn = void (*)(std::int32_t, Color);
+        using PopStyleColorFn = void (*)(std::int32_t);
+        using SetWindowFontScaleFn = void (*)(float);
+        using CalcTextSizeFn = void (*)(Vec2*, const char*, const char*, bool, float);
         using TextUnformattedFn = void (*)(const char*, const char*);
         using GetForegroundDrawListFn = DrawList (*)();
         using AddLineFn = void (*)(DrawList, Vec2, Vec2, Color, float);
+        using AddImageFn = void (*)(DrawList, Texture, Vec2, Vec2, Vec2, Vec2, Color);
         using AddPolylineFn = void (*)(DrawList, const Vec2*, std::int32_t, Color, std::int32_t, float);
         using AddConcavePolyFilledFn = void (*)(DrawList, const Vec2*, std::int32_t, Color);
         using AddTriangleFn = void (*)(DrawList, Vec2, Vec2, Vec2, Color, float);
@@ -179,9 +197,14 @@ namespace DNT::MenuFramework
         ActionFn setItemDefaultFocus_{ nullptr };
         ItemStateFn isItemHovered_{ nullptr };
         FocusedFn isItemFocused_{ nullptr };
+        PushStyleColorFn pushStyleColor_{ nullptr };
+        PopStyleColorFn popStyleColor_{ nullptr };
+        SetWindowFontScaleFn setWindowFontScale_{ nullptr };
+        CalcTextSizeFn calcTextSize_{ nullptr };
         TextUnformattedFn textUnformatted_{ nullptr };
         GetForegroundDrawListFn getForegroundDrawList_{ nullptr };
         AddLineFn addLine_{ nullptr };
+        AddImageFn addImage_{ nullptr };
         AddPolylineFn addPolyline_{ nullptr };
         AddConcavePolyFilledFn addConcavePolyFilled_{ nullptr };
         AddTriangleFn addTriangle_{ nullptr };

@@ -10,7 +10,9 @@ verifies it without launching Skyrim.
 - SKSE `2.2.6`
 - Address Library `11.0.0.0`, exact `versionlib-1-6-1170-0.bin`
 - SKSE Menu Framework `3.9.0.0` (runtime interface reports `3.7`)
-- RUSTIC MAPS `2.0.0.0` for `battlemap01.dds`
+- RUSTIC MAPS `2.0.0.0` for the boat/carriage `battlemap01.dds`
+- Skyrim Paper Map by Caro Tuts for FWMF `1.72.0.0` for the wizard
+  `textures/terrain/tamriel/skyrim.dds`
 - `DiegeticTravelWizardGuides.esp` as the travel authority
 
 Every installed payload above is pinned by SHA-256. The lock describes the
@@ -29,6 +31,17 @@ The CommonLib checkout is outside this repository. CMake uses the
 the same name as its initial value, and retains the existing local checkout as
 a development-machine default. The pre-build audit verifies its repository URL
 and commit, so a path that happens to contain a different checkout cannot pass.
+
+## Retained credited learning source
+
+- The wizard parchment marker derives from borokoshow's
+  `KWD_DBWR_ApparitionTravel.svg` in Dragonborn Reskin - Wheeler `1.9.1`.
+- The exact source SVG is pinned by SHA-256 in `dependencies.lock.json`.
+- Its published permissions allow reuse and modification with credit, prohibit
+  sale, and allow Donation Points. `THIRD_PARTY_NOTICES.txt` travels with the
+  package.
+- The current release does not contain the converted derivative; the source is
+  retained for provenance and rollback research only.
 
 ## Runtime relocation override
 
@@ -58,5 +71,6 @@ Updating the lock requires a fresh research and live-compatibility pass.
 
 Pinned runtime hashes describe separately installed requirements; they are not
 redistribution permission. The repository and release package contain no
-RUSTIC MAPS texture, Bethesda FUZ/XWM, BCD asset, or Menu Framework binary.
-See `docs/ASSET_POLICY.md` for the packaging rules and fallbacks.
+RUSTIC MAPS texture, Caro Tuts map texture, Bethesda FUZ/XWM, BCD asset, or
+Menu Framework binary. See `docs/ASSET_POLICY.md` for the packaging rules and
+fallbacks.

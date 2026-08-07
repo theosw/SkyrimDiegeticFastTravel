@@ -1,8 +1,50 @@
-Third-party notices for DNTParchmentPicker.dll
-================================================
+Third-party notices for Diegetic Fast Travel
+=============================================
 
-This file covers code linked into the native DLL. Runtime mods and assets that
-are referenced but not redistributed are documented in docs/ASSET_POLICY.md.
+This file covers code linked into the native DLL and credited third-party sources
+retained for provenance. Runtime dependencies and referenced assets that are not
+redistributed are documented in docs/ASSET_POLICY.md.
+
+Dragonborn Reskin - Wheeler: Apparition Travel icon
+---------------------------------------------------
+
+Original asset: KWD_DBWR_ApparitionTravel.svg
+Original creator: borokoshow
+Source: https://www.nexusmods.com/skyrimspecialedition/mods/100043
+Retained learning source: assets/third-party/dragonborn-wheeler-reskin/apparition-travel.svg
+Current bundled derivative: none
+
+The Nexus permissions published by the creator allow asset use and modification
+without additional permission when the original creator is credited. Use in
+mods or files that are sold for money is prohibited. Donation Points are
+allowed. An earlier development build converted the artwork to BC7 for the
+parchment renderer; the current build replaces it with user-directed artwork and
+does not ship that derivative.
+
+This project credits borokoshow as the original creator of the icon.
+
+Skyrim Special Edition vanilla map markers
+-------------------------------------------
+
+Nine fallback castle markers and one neutral town marker are neutral-frame
+derivatives of symbols in Bethesda Game Studios' vanilla `interface/map.swf`.
+Exact archive/member hashes, symbol IDs, and reproduction notes are retained in
+`assets/vanilla-interface/hold-capitals/SOURCE.md`. Skyrim Special Edition is a
+required game dependency; these files are intended only for use with Skyrim.
+
+Norden UI map markers
+---------------------
+
+Carriage destinations use fourteen discovered-map symbols exported from
+Norden UI 1.2.5's `Interface/skyui/mapmarkerart.swf`: nine hold-capital
+symbols plus the Town, Settlement, Farm, Wood Mill, and Mine symbols.
+
+Source: https://www.nexusmods.com/skyrimspecialedition/mods/166086
+Installed source SHA-256: AF39A7C181E8BF6187E389CC6D5F333780F11057C562673BC40A78490998B1AA
+
+The project owner reports direct permission from the Norden UI author to use
+and redistribute these assets. The exact exported SVGs and their pinned hashes
+are retained under `assets/norden-interface/carriage-markers/`.
 
 CommonLibSSE-NG
 Copyright (c) 2018 Ryan-rsm-McKenzie

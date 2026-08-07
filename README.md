@@ -13,10 +13,10 @@ layer with authored roads, live hazards, route choice, graph-derived fares, and
 quoted travel time:
 
 - carriage paths use carriage edges only;
-- CFTO ferries remain untouched until their per-ferryman lanes are decoded;
+- carriage compilation does not borrow ferry edges;
 - each trip has up to three precomputed candidate paths;
 - Papyrus evaluates those few candidates when the player asks for a quote;
-- active refuse-tier chokepoints remove a path from consideration;
+- active/unknown hazards add a surcharge without hiding executable beta routes;
 - the cheapest remaining path supplies the fare and time estimate.
 
 Local LoreRim research, downloaded learning sources, and load-order datamines
@@ -62,6 +62,63 @@ travel. Dawnstar and both new service flows passed a monitored run. Morthal's
 first map-marker arrival landed on rebuilt roof geometry; its verified
 ground-level carriage-marker replacement still needs a focused retest. The BCD adapter remains an unchanged five-city fallback; the
 core dialogue fallback now contains seven destinations.
+
+The first boat-provider slice now lives in
+[`modules/boat-honrich`](modules/boat-honrich). It preserves CFTO's ferrymen,
+live local-fare global, destination markers, time-passing `Game.FastTravel`,
+and Heartwood follower/horse handoff while replacing only the selection
+surface. Its deliberately small public lane is Riften, Heartwood Mill, and
+Ivarstead; Honeyside remains deferred until its private ownership/state gates
+are copied faithfully. The plugin and three Papyrus scripts build, its exact
+CFTO/Dawnguard dialogue links pass an independent headless xEdit audit, and no
+artwork, audio, BCD record, or BCD master is shipped. All three ferrymen resolve
+to `MaleEvenToned`, and the exact Dawnguard shared-response FUZ is verified in
+the vanilla archive. Its first monitored LoreRim pass proved all three
+providers, a complete three-stop cycle, cancellation, and funded/unfunded fare
+handling. Heartwood and Ivarstead exposed a dialogue-close handoff defect;
+the corrected candidate requests Skyrim's normal Dialogue Menu hide message
+and waits for confirmed closure before showing the map. The follow-up live pass
+proved that handoff at all three ferrymen with no manual Escape and completed
+the reverse three-stop cycle, so all six directed public-lane trips are now
+exercised. Follower/horse arrival at Heartwood remains.
+
+The second isolated boat slice now lives in
+[`modules/boat-ilinalta`](modules/boat-ilinalta). Its public Route 3 triangle is
+Brittleshin Pass, Half-Moon Mill, and Guardian Stones. It preserves CFTO's
+live 30-gold local fare and exact arrival markers, including Brittleshin's
+horse marker and Guardian Stones' follower/horse markers. Lakeview Manor and
+Ilinata's Deep remain deferred because they are not equivalent public peers.
+All three ferrymen and the shared voiced response are independently verified;
+the plugin, scripts, SEQ, package, and byte-identical regeneration pass offline
+audits. Its monitored LoreRim run proved all three providers, a complete
+three-stop cycle, five parchment opens, Escape cancellation, a 12-gold denial,
+exact 30-gold payment, and normal shutdown with no DNT/native errors. Companion
+placement is deliberately no longer a release blocker for this list.
+
+The third isolated boat slice is
+[`modules/boat-solstheim`](modules/boat-solstheim). It covers the public CFTO
+Route 4 triangle at Raven Rock, Tel Mithryn, and Skaal Village, preserves the
+live 50-gold regional fare and exact arrival markers, and references the clean
+Dragonborn/RUSTIC physical map with a deliberate square presentation correction.
+Northshore Landing and Bujold's Retreat remain deferred because CFTO exposes
+them as destination-only extensions with no public Route 4 ferryman. All three
+drivers resolve to `MaleEvenToned`; the exact shared-response FUZ, ESP, scripts,
+SEQ, source topology, and no-asset package pass independent offline audits. A
+first monitored gameplay pass proved automatic dialogue handoff, cancel,
+low-gold denial, and two completed 50-gold trips. A follow-up proved that saved
+auto-property values could retain stale map settings; the current candidate
+moves presentation constants into executable code and awaits a 1:1 visual
+check.
+
+Carriage parchment work has started in
+[`modules/carriage-parchment`](modules/carriage-parchment). The existing
+29-stop/812-route carriage alpha remains the sole route, fare, refusal, payment,
+and CFTO handoff authority. The first adapter slice draws the nine hold capitals
+with live fare/time labels, preserves every executable CFTO destination, and returns the
+stable selection to `DNT_TravelCoordinator.Purchase` for revalidation. Its two
+scripts compile without warnings; the separate ESP/SEQ and both paid/free
+shared-voice INFO paths pass an independent xEdit audit. The ordinary
+destination dialogue remains the fallback. This adapter is offline-only so far.
 
 The five-pillar scope and reuse decisions are recorded in
 [`docs/PILLAR_RESEARCH.md`](docs/PILLAR_RESEARCH.md). The generic spoken
@@ -187,6 +244,47 @@ The optional BCD wizard map adapter is built and audited separately:
 
 This writes `dist\DiegeticTravelWizardMapAdapter-alpha.zip`. It requires BCD
 and the core wizard-guide plugin and does not alter either of them.
+
+The isolated Lake Honrich boat candidate is built and audited separately:
+
+```powershell
+.\tools\Build-BoatHonrich.ps1
+```
+
+This writes `dist\DiegeticTravelBoatHonrich-offline-candidate.zip`. It requires
+CFTO plus the existing parchment-picker runtime, does not include the external
+map texture, and does not deploy or launch Skyrim.
+
+The isolated Lake Ilinalta candidate uses the parallel build:
+
+```powershell
+.\tools\Build-BoatIlinalta.ps1
+```
+
+This writes `dist\DiegeticTravelBoatIlinalta-offline-candidate.zip` under the
+same dependency and no-deployment rules.
+
+The public Solstheim triangle uses:
+
+```powershell
+.\tools\Build-BoatSolstheim.ps1
+```
+
+This writes `dist\DiegeticTravelBoatSolstheim-offline-candidate.zip`, references
+Dragonborn's existing physical Solstheim map, and bundles no artwork or audio.
+
+The first carriage parchment vertical slice is currently regenerated and
+audited with:
+
+```powershell
+.\tools\Compile-CarriageParchmentPapyrus.ps1
+.\tools\Generate-CarriageParchment.ps1
+.\tools\Audit-CarriageParchment.ps1
+.\tools\Build-CarriageParchment.ps1
+```
+
+It requires the separately built carriage alpha and generic parchment runtime;
+the adapter package does not duplicate either dependency.
 
 For the SEQ artifact, the xEdit script mirrors xEdit's built-in eligibility
 rule and emits the fixed FormIDs of newly start-game-enabled quests. PowerShell

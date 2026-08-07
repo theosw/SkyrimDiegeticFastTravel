@@ -5,8 +5,10 @@
 CFTO remains responsible for carriage drivers, seating, scenes, and travel. This
 mod overrides CFTO's existing paid-carriage root and 27 existing destination
 topics; it does not redistribute CFTO assets. The legacy free-carriage root is
-disabled so free rides still pass through the same hazard checks. Ferry dialogue
-is untouched.
+disabled so free rides still pass through the same hazard checks. The carriage
+alpha does not alter ferry dialogue. A separate Lake Honrich boat module adds
+one new top-level line to CFTO Route 2 ferrymen without overriding CFTO's
+existing destination dialogue.
 
 When the player asks a driver for a ride:
 
@@ -17,7 +19,7 @@ When the player asks a driver for a ride:
    destination.
 3. It reads live `Location.IsCleared()`, mound-activation state, and Civil War
    completion state.
-4. It drops candidates blocked by an active refuse-tier chokepoint.
+4. For the beta, it prices active/unknown hazards but retains every executable candidate.
 5. It publishes the cheapest remaining fare and travel-time estimate to shared
    per-destination globals used by CFTO's existing topics.
 6. Selecting a destination re-evaluates the quote, charges the player, writes
@@ -49,8 +51,43 @@ The authored graph contains carriage and provisional ferry edges. A carriage
 driver must not silently route the player onto a ferry, so compilation creates a
 separate graph per provider. The beta emits only the carriage network.
 
-Ferry integration is gated on decoding the CTDA conditions that define each
-ferryman's actual lanes. Until then, CFTO ferry dialogue is unchanged.
+CFTO's four ferry route factions, ferrymen, destination INFOs, price globals,
+and travel fragments have now been decoded independently. Two isolated public
+triangles use the same provider contract:
+
+```text
+Riften <-> Heartwood Mill <-> Ivarstead
+Brittleshin Pass <-> Half-Moon Mill <-> Guardian Stones
+Raven Rock <-> Tel Mithryn <-> Skaal Village
+```
+
+The boat plugin adds a start-game-enabled provider/service quest and a cloned,
+re-owned top-level dialogue branch. Its INFO requires both CFTO's general
+travel-dialogue faction and the lane's Route 2 or Route 3 faction, uses
+Dawnguard's shared voiced “Where are you headed?” response, and opens the generic parchment
+on `OnEnd`. Selection returns a stable stop ID; the service then revalidates the
+speaker, destination, current `KmodFerryCostLocal`, and player gold before one
+charge. Execution mirrors the installed CFTO fragments: fade, temporary
+over-encumbrance allowance, `Game.FastTravel`, and each stop's dedicated
+companion markers. CFTO's ordinary dialogue remains the fallback.
+
+Honeyside and Lakeview Manor are not treated as public peers because their CFTO
+dialogue is conditional on private ownership and ferryman/jetty state.
+Ilinata's Deep is destination-only and uses the 50-gold regional fare. These
+extensions remain deferred rather than weakening the public-lane contract.
+The same rule keeps Northshore Landing and Bujold's Retreat out of the public
+Solstheim triangle: both are CFTO destination-only records without Route 4
+service providers.
+
+The carriage parchment adapter is intentionally thinner than the boat service.
+It resolves the existing `DNT_OriginService` for the speaker, publishes live
+hazard-aware quotes through that service, and draws only available capital
+routes. Selection is sent back to `DNT_TravelCoordinator.Purchase`; the core
+then repeats the quote, checks free-driver and gold state, writes
+`KmodCarriageDestination`, and wakes CFTO's driver. The adapter therefore owns
+presentation and selection state only. Its first vertical slice is nine hold
+capitals; the existing 27-topic dialogue remains the fallback until density and
+real-ride behavior are proven.
 
 ## Hazard state model
 
@@ -61,8 +98,9 @@ ferryman's actual lanes. Until then, CFTO ferry dialogue is unchanged.
 | Giant camp | n/a | always; static toll | n/a |
 | Dragon mound | activation ref disabled | activation ref enabled and not cleared | `Location.IsCleared()` or verified mound dragon dead |
 
-An active chokepoint with multiplier at or above the refuse threshold blocks a
-candidate. Active proximity hazards and lower-tier chokepoints add a surcharge.
+Active and unknown hazards add a surcharge. Chokepoint refusal remains reserved
+in the compiled schema for a post-beta design pass; it does not remove an
+otherwise executable CFTO destination from the beta map.
 
 Unknown state is never silently treated as safe. The reference evaluator treats
 it conservatively as active, while the release compiler rejects incomplete
