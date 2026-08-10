@@ -120,7 +120,16 @@ function Assert-TestReady {
             (Join-Path $parchmentRoot "Scripts\DNT_WizardParchmentFragment.pex"),
             (Join-Path $parchmentRoot "Scripts\DNT_WizardParchmentPicker.pex"),
             (Join-Path $parchmentRoot "SKSE\Plugins\DNTParchmentPicker.dll"),
-            (Join-Path $parchmentRoot "textures\DiegeticTravel\winterhold-college.dds"),
+            (Join-Path $parchmentRoot "textures\DiegeticTravel\norden-town.dds"),
+            (Join-Path $parchmentRoot "textures\DiegeticTravel\norden-winterhold-capital.dds"),
+            (Join-Path $parchmentRoot "textures\DiegeticTravel\norden-whiterun-capital.dds"),
+            (Join-Path $parchmentRoot "textures\DiegeticTravel\norden-riften-capital.dds"),
+            (Join-Path $parchmentRoot "textures\DiegeticTravel\norden-solitude-capital.dds"),
+            (Join-Path $parchmentRoot "textures\DiegeticTravel\norden-windhelm-capital.dds"),
+            (Join-Path $parchmentRoot "textures\DiegeticTravel\norden-markarth-capital.dds"),
+            (Join-Path $parchmentRoot "textures\DiegeticTravel\norden-dawnstar-capital.dds"),
+            (Join-Path $parchmentRoot "textures\DiegeticTravel\norden-morthal-capital.dds"),
+            (Join-Path $parchmentRoot "textures\DiegeticTravel\norden-roundtrip-selection-ring.dds"),
             (Join-Path (Join-Path (Join-Path $instanceRoot "mods") $ParchmentArtworkModName) `
                 "textures\terrain\tamriel\skyrim.dds")
         )

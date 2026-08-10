@@ -1,7 +1,7 @@
 # DNT Map Coordinate Calibrator
 
-Local developer tool for placing parchment-menu markers in the exact normalized
-coordinate space used by `DNTParchmentPicker`.
+Local developer tool for placing parchment-menu markers and optically aligning
+selection rings in the exact spaces used by `DNTParchmentPicker`.
 
 ## Start it
 
@@ -13,6 +13,10 @@ npm run dev
 ```
 
 Open `http://localhost:3000`.
+
+- **Map layout** (`/`) calibrates destination and payment-label coordinates.
+- **Icon alignment** (`/icon-alignment`) calibrates the selection ring once per
+  shared icon asset without moving the destination coordinate or clickbox.
 
 `npm run sync` copies the current carriage, mainland ferry, Lake Honrich, Lake Ilinalta,
 Solstheim ferry, and wizard-map networks; converts the exact in-game DDS marker
@@ -33,12 +37,51 @@ not be redistributed.
 3. Enable **Authoring-only locations** to place one-way, quest-locked, broken,
    or otherwise incomplete stops. They are styled separately and exported under
    `authoring_positions`; the tool never folds them into the playable `stops` list.
-4. Drag markers or the payment label into place. Select one and use the arrow
+4. Select a destination and tune the independent **Selection ring extent**
+   slider. Formal maps and the Remyris chart preview the thin neutral selector;
+   parchment ferry maps preview the parchment-colored selector. The chosen
+   value is retained in the browser and exported as
+   `visual_settings.selection_ring_scale`.
+5. Drag markers or the payment label into place. Select one and use the arrow
    keys for one-pixel nudges; hold Shift for ten-pixel nudges.
-5. Read or type normalized X/Y values in the inspector. X grows left-to-right;
+6. Read or type normalized X/Y values in the inspector. X grows left-to-right;
    Y grows top-to-bottom.
-6. Use **Copy changed patch** for a small reviewable JSON patch, or download a
+7. Use **Copy changed patch** for a small reviewable JSON patch, or download a
    complete updated network JSON.
 
 Draft positions are stored only in this browser. The tool never edits the mod
 or deploys to LoreRim by itself.
+
+## Align a selection ring to an icon
+
+1. Open **Icon alignment** and select the **Norden**, **Vanilla**, or **Ferry**
+   icon family. Ferry contains the selectable physical-map anchor asset;
+   Captain Remyris's formal-map maritime symbols remain under Norden.
+2. Drag the ring, nudge it with the arrow keys, or seed it from either the
+   alpha-bounds center or alpha-weighted visual centroid. The cyan rectangle is
+   the visible alpha extent; the cyan and orange dots show those two centers.
+3. Tune the **Marker size multiplier** to resize that shared icon type in the
+   native menu. It is exported as `marker_scale`; map coordinates and clickboxes
+   remain fixed. The generic **Preview zoom** on the Map layout page is only a
+   browser aid and is deliberately not exported.
+4. Tune the per-icon ring width multiplier. This changes only the ring. Ring
+   offsets continue to use the resized icon's half-extent, matching runtime.
+5. Copy a changed-only patch or download the complete `icon-optics.json`.
+
+Offsets are normalized in icon-half-extent units: `1.0` moves the ring by half
+the rendered icon width or height. The native picker exposes
+`SetDestinationMarkerScale`, `SetSelectionRingScale`, and
+`SetDestinationSelectionRingStyle` so exported values can be applied directly
+by each provider.
+
+The Norden theme also includes the exact `Shipwreck` and `Docks` sprites used
+by Captain Remyris. The map-layout preview treats Raven Rock as the fixed ship
+origin and keeps every destination as an anchor while the thin selector is
+overlaid independently. Selecting a destination therefore never replaces its
+marker with the ship icon.
+
+The Ferry theme aligns the parchment-colored selector to the selectable anchor.
+The boat remains a fixed, non-selectable route-origin marker, so it deliberately
+has no selection-ring profile. Ferry optical settings are exported separately
+under `icon_optics.ferry`, so tuning physical ferry maps cannot disturb the
+Norden or vanilla profiles.

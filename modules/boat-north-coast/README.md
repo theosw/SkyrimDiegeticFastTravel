@@ -11,13 +11,13 @@ the seven ordinary public providers in CFTO's Route 1 faction:
 - Jollsen at Winterhold; and
 - Rolf at Dragon Bridge.
 
-The dialogue is restricted by CFTO's travel-dialogue and Route 1 factions plus
-an exact seven-actor form list. This is important because CFTO also places the
-quest-special Enthralled Ferryman in Route 1; he must not receive the ordinary
-north-coast picker.
+The dialogue is restricted by CFTO's travel-dialogue faction plus an exact
+nine-actor whitelist: seven public providers, private Windstad, and the
+quest-special Enthralled Ferryman at Icewater Jetty.
 
-Every public provider shows the other six public ports on the Skyrim
-parchment. The service revalidates the speaker, destination, current
+Every available provider shows the other available ports plus the one-way
+Frostflow Lighthouse destination on the Skyrim parchment. The service
+revalidates the speaker, destination, current
 `KmodFerryCost`, and player gold before charging exactly once and executing the
 same fade plus `Game.FastTravel` pattern already proven on Lake Honrich, Lake
 Ilinalta, and Solstheim.
@@ -28,13 +28,13 @@ icons provide selection context. The
 authored Sea of Ghosts water graph and charcoal artwork remain as dormant,
 reproducible sources for a post-release visual pass, but are not activated.
 
-Frostflow Lighthouse remains destination-only. Icewater Jetty and the
-Enthralled Ferryman are part of the Castle Volkihar quest-special flow.
-Windstad Manor is ownership and construction gated. They are intentionally
-deferred rather than flattened into this public network.
+Frostflow Lighthouse is deliberately destination-only: every available
+provider can reach it, but it has no service actor and can never become a return
+source. Windstad joins only while CFTO's placed service ref is enabled.
+Icewater/Volkihar joins when `KmodFerryVolkihar >= 1`, retains CFTO's 100-gold
+outbound fare, and remains free when leaving from its Enthralled Ferryman.
 
 The module references the installed `battlemap01.dds`; the shared picker ships
 no dependency artwork, route overlay, or audio. The minimal beta presentation
-is offline-proven and awaits a live regression pass.
-Candidate package SHA-256:
-`830432532BE67A3BBE167D4A4A42ED4DCAD45E68DBF284959CEB1F2662C877E3`.
+is offline-proven and awaits a live regression pass. The prior package hash is
+retired until the destination-only candidate is repackaged.

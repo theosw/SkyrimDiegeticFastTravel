@@ -38,6 +38,15 @@
       "version": "1.0",
       "path": "mods/houseCARL - DiegeticTravelWizardGuides/DiegeticTravelWizardGuides.esp",
       "sha256": "174CD2B86AC08693C4B708CDB1141190B5093F2BC6C594BCBE03916840D47B56"
+    },
+    "optionalApparitionTravel": {
+      "name": "Wizarding Traversal Magic",
+      "version": "1.43.0.0",
+      "nexusModId": 124125,
+      "path": "mods/Wizarding Traversal Magic/WizardingTraversal.esl",
+      "sha256": "723E8C2B81040D6F0B7B344806DEC3F0A2B97FFAD0DD4D9EEFB60DDF5F4CFE28",
+      "holderMagicEffectLocalFormId": "000808",
+      "dependencyType": "optional soft lookup; never a plugin master"
     }
   },
   "buildDependencies": {
@@ -67,6 +76,18 @@
       "installedPath": "mods/Norden UI 21x9/Interface/skyui/mapmarkerart.swf",
       "sha256": "AF39A7C181E8BF6187E389CC6D5F333780F11057C562673BC40A78490998B1AA",
       "repositoryPath": "assets/norden-interface/carriage-markers",
+      "permission": "Use and redistribution permission supplied directly by the Norden UI author to the project owner"
+    },
+    "nordenRoundTripSelectionRing": {
+      "name": "Norden UI",
+      "version": "1.2.5.0",
+      "nexusModId": 166086,
+      "url": "https://www.nexusmods.com/skyrimspecialedition/mods/166086",
+      "originalFile": "Interface/loadingmenu.swf (shape 48)",
+      "installedPath": "mods/Norden UI 16x9/Interface/loadingmenu.swf",
+      "sha256": "A2C39E2F99F1506ABAABE65DF4FA8EF2192A57E6B5156557B0441C658F4BA4AD",
+      "repositoryPath": "assets/norden-interface/selection-ring/norden-roundtrip-selection-ring.svg",
+      "repositorySha256": "A207F90E2A73263FC9AA71EF8E05AE89A37ED609CF1CA634CAB494DC0E59B921",
       "permission": "Use and redistribution permission supplied directly by the Norden UI author to the project owner"
     }
   },

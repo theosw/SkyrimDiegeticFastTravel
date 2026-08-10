@@ -123,8 +123,8 @@ if ($network.fare_global -ne "00AA12:CFTO.esp" -or
 }
 $paymentLabel = @($network.ui_elements | Where-Object { $_.id -eq 'fare_label' })
 if ($paymentLabel.Count -ne 1 -or
-    [Math]::Abs([double]$paymentLabel[0].map_position[0] - 0.569053) -gt 0.000001 -or
-    [Math]::Abs([double]$paymentLabel[0].map_position[1] - 0.905747) -gt 0.000001) {
+    [Math]::Abs([double]$paymentLabel[0].map_position[0] - 0.647846) -gt 0.000001 -or
+    [Math]::Abs([double]$paymentLabel[0].map_position[1] - 0.899624) -gt 0.000001) {
     throw "North-coast payment-label coordinate contract does not match."
 }
 if ($network.map.texture -ne
@@ -162,45 +162,83 @@ foreach ($stopId in $expectedIds) {
         throw "North-coast service is missing stop $stopId."
     }
 }
-foreach ($deferredId in @(
-    "frostflow_lighthouse",
-    "icewater_jetty",
-    "windstad_manor"
+$frostflow = @($network.destination_only_stops | Where-Object {
+    $_.id -eq "frostflow_lighthouse"
+})
+if ($frostflow.Count -ne 1 -or
+    $frostflow[0].provider_enabled -ne $false -or
+    $frostflow[0].arrival_marker -ne "038411:CFTO.esp" -or
+    $frostflow[0].fare_global -ne "00AA12:CFTO.esp" -or
+    $frostflow[0].PSObject.Properties.Name -contains "service_npc" -or
+    [Math]::Abs([double]$frostflow[0].map_position[0] - 0.629774) -gt 0.000001 -or
+    [Math]::Abs([double]$frostflow[0].map_position[1] - 0.159475) -gt 0.000001) {
+    throw "North-coast Frostflow destination-only contract does not match."
+}
+$allProviderIds = $expectedIds + @("windstad_manor", "icewater_jetty")
+if (@($frostflow[0].available_from).Count -ne 9 -or
+    @($frostflow[0].available_from | Where-Object { $_ -notin $allProviderIds }).Count -ne 0 -or
+    $pickerSource -notmatch [regex]::Escape('"frostflow_lighthouse"') -or
+    $pickerSource -notmatch [regex]::Escape("0.629774, 0.159475") -or
+    $pickerSource -notmatch [regex]::Escape("SelectionIds = new String[10]") -or
+    $serviceSource -notmatch [regex]::Escape("FrostflowMarkerForm = 0x038411")) {
+    throw "North-coast runtime does not expose Frostflow from every available provider."
+}
+$windstad = @($network.private_stops | Where-Object { $_.id -eq "windstad_manor" })
+if ($windstad.Count -ne 1 -or
+    $windstad[0].service_npc -ne "014C89:CFTO.esp" -or
+    $windstad[0].service_ref -ne "014C8A:CFTO.esp" -or
+    $windstad[0].arrival_marker -ne "014C86:CFTO.esp" -or
+    $windstad[0].follower_marker -ne "195C3D:CFTO.esp" -or
+    $windstad[0].horse_marker -ne "195C3C:CFTO.esp" -or
+    $windstad[0].fare_global -ne "00AA12:CFTO.esp" -or
+    $windstad[0].fare_default -ne 50 -or
+    $windstad[0].availability -ne "service_ref_enabled") {
+    throw "North-coast Windstad Manor private-service contract does not match CFTO."
+}
+$icewater = @($network.private_stops | Where-Object { $_.id -eq "icewater_jetty" })
+if ($icewater.Count -ne 1 -or
+    $icewater[0].service_npc -ne "1F0E6A:CFTO.esp" -or
+    $icewater[0].service_ref -ne "1F0E6B:CFTO.esp" -or
+    $icewater[0].arrival_marker -ne "03840F:CFTO.esp" -or
+    $icewater[0].follower_marker -ne "195C42:CFTO.esp" -or
+    $icewater[0].horse_marker -ne "195C41:CFTO.esp" -or
+    $icewater[0].outbound_fare_global -ne "038425:CFTO.esp" -or
+    $icewater[0].outbound_fare_default -ne 100 -or
+    $icewater[0].return_fare_default -ne 0 -or
+    $icewater[0].availability_global -ne "038426:CFTO.esp" -or
+    $icewater[0].availability_minimum -ne 1) {
+    throw "North-coast Icewater/Volkihar private-service contract does not match CFTO."
+}
+foreach ($privateToken in @(
+    'WindstadFerrymanForm = 0x014C89',
+    'WindstadFerrymanRefForm = 0x014C8A',
+    'WindstadMarkerForm = 0x014C86',
+    'WindstadFollowerMarkerForm = 0x195C3D',
+    'WindstadHorseMarkerForm = 0x195C3C',
+    'VolkiharFerrymanForm = 0x1F0E6A',
+    'FerryVolkiharStateForm = 0x038426',
+    'FerryCostExtraForm = 0x038425',
+    'IcewaterFollowerMarkerForm = 0x195C42',
+    'IcewaterHorseMarkerForm = 0x195C41',
+    '"windstad_manor"',
+    '"icewater_jetty"'
 )) {
-    if (@($network.deferred_stops | Where-Object {
-        $_.id -eq $deferredId
-    }).Count -ne 1) {
-        throw "North-coast network must defer $deferredId."
+    if (($pickerSource + $serviceSource) -notmatch [regex]::Escape($privateToken)) {
+        throw "North-coast private ferry runtime is missing contract: $privateToken"
     }
-    if ($pickerSource -match [regex]::Escape('"' + $deferredId + '"')) {
-        throw "North-coast picker unexpectedly exposes $deferredId."
-    }
-    if ($serviceSource -match [regex]::Escape('"' + $deferredId + '"')) {
-        throw "North-coast service unexpectedly exposes $deferredId."
-    }
-}
-if (@($network.excluded_route_members | Where-Object {
-    $_.id -eq "volkihar_ferryman" -and
-    $_.service_npc -eq "1F0E6A:CFTO.esp"
-}).Count -ne 1) {
-    throw "North-coast network must explicitly exclude the Volkihar ferryman."
-}
-if (($pickerSource + $serviceSource) -match
-    [regex]::Escape("0x1F0E6A")) {
-    throw "North-coast runtime unexpectedly exposes the Volkihar ferryman."
 }
 foreach ($sourceToken in @(
     'MapAspectRatio = 1.358090',
     'MapTexturePath = "Data/textures/dungeons/imperial/battlemap01.dds"',
     'BeginRequest(ActiveRequest, "boat", SourceRef, MapTexturePath, MapAspectRatio, 0.0, 0.0, 1.0, 0.736328)',
-    'SetPaymentLabelPosition(ActiveRequest, 0.569053, 0.905747)',
-    '0.562012, 0.130000',
-    '0.334961, 0.168435',
-    '0.820312, 0.403183',
-    '0.404297, 0.263263',
-    '0.383789, 0.085544',
-    '0.730469, 0.133952',
-    '0.248535, 0.218833',
+    'SetPaymentLabelPosition(ActiveRequest, 0.647846, 0.899624)',
+    '0.562613, 0.139944',
+    '0.343646, 0.176873',
+    '0.825231, 0.399423',
+    '0.404470, 0.256564',
+    '0.380140, 0.082606',
+    '0.730059, 0.137028',
+    '0.243465, 0.226437',
     'DawnstarFerrymanForm = 0x00AA07',
     'SolitudeFerrymanForm = 0x00AA08',
     'WindhelmFerrymanForm = 0x00AA09',
@@ -326,6 +364,7 @@ if ($actualQuestId -ne $expectedQuestId) {
 }
 
 $report
-Write-Host "PASS source -> seven public providers, six destinations per source"
-Write-Host "PASS scope -> Volkihar/private/destination-only routes excluded"
+Write-Host "PASS source -> seven public providers plus gated Windstad and Icewater private services"
+Write-Host "PASS scope -> Frostflow destination-only from all nine providers"
+Write-Host "PASS fares -> regional CFTO fare, 100-gold Volkihar outbound, free Volkihar return"
 Write-Host ("PASS SEQ -> start-game quest {0:X8}" -f $actualQuestId)

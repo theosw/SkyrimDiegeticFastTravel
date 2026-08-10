@@ -33,6 +33,12 @@ namespace DNT::ParchmentMenu
     [[nodiscard]] bool SetOriginMarkerTexture(
         std::string_view a_requestId,
         std::string_view a_texturePath);
+    [[nodiscard]] bool SetSelectionRingTexture(
+        std::string_view a_requestId,
+        std::string_view a_texturePath);
+    [[nodiscard]] bool SetSelectionRingScale(
+        std::string_view a_requestId,
+        float a_scale);
     [[nodiscard]] bool SetSourceLabel(
         std::string_view a_requestId,
         std::string_view a_sourceLabel);
@@ -61,7 +67,33 @@ namespace DNT::ParchmentMenu
         std::int32_t a_fare,
         float a_normalizedX,
         float a_normalizedY);
+    [[nodiscard]] bool AddStyledDestination(
+        std::string_view a_requestId,
+        std::string_view a_destinationId,
+        std::string_view a_label,
+        std::int32_t a_fare,
+        float a_normalizedX,
+        float a_normalizedY,
+        std::string_view a_markerTexturePath,
+        float a_markerScale,
+        float a_ringOffsetX,
+        float a_ringOffsetY,
+        float a_ringScale);
     [[nodiscard]] bool SetDestinationMarkerTexture(
+        std::string_view a_requestId,
+        std::string_view a_destinationId,
+        std::string_view a_texturePath);
+    [[nodiscard]] bool SetDestinationMarkerScale(
+        std::string_view a_requestId,
+        std::string_view a_destinationId,
+        float a_scale);
+    [[nodiscard]] bool SetDestinationSelectionRingStyle(
+        std::string_view a_requestId,
+        std::string_view a_destinationId,
+        float a_offsetX,
+        float a_offsetY,
+        float a_scale);
+    [[nodiscard]] bool SetDestinationSelectionRingTexture(
         std::string_view a_requestId,
         std::string_view a_destinationId,
         std::string_view a_texturePath);

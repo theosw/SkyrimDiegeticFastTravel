@@ -18,9 +18,9 @@ INFO records themselves:
 The installed BCD dialogue fragment calls its quest's `OpenMap` directly. Its
 CFTO ferry patch chooses a driver-faction-specific whitelist before doing the
 same. Consequently, BCD's CFTO dialogue entry opens the map before the player
-reaches CFTO's normal destination topics. Diegetic Travel currently overrides
-those topics to publish and enforce road availability, graph-derived fare, and
-quoted hours. With the BCD CFTO patch enabled, that work is bypassed.
+reaches CFTO's normal destination topics. Diegetic Travel currently owns a
+separate parchment handoff with flat destination gates and CFTO-tier fares.
+With the BCD CFTO patch enabled, that handoff is bypassed.
 
 For alpha testing:
 
@@ -30,15 +30,15 @@ For alpha testing:
 
 A proper integration should reuse BCD only as the selection surface:
 
-1. Diegetic Travel evaluates routes for the current driver and builds a marker
-   whitelist from reachable destinations.
+1. Diegetic Travel builds a marker whitelist from the current driver's flat
+   destination set and live gates.
 2. BCD opens the map with that whitelist.
 3. The selected marker is translated back to a Diegetic Travel destination ID.
-4. Diegetic Travel re-evaluates the route, uses its graph fare and hours rather
-   than BCD's straight-line price, then performs the existing CFTO handoff.
+4. Diegetic Travel revalidates availability, uses CFTO's current fare tier,
+   then performs its normal direct travel handoff.
 
-That design preserves BCD's polished map UI without surrendering the road and
-hazard model. It requires a deliberate compatibility patch or a small BCD API
+That design preserves BCD's polished map UI without duplicating service logic.
+It requires a deliberate compatibility patch or a small BCD API
 extension; merely changing load order is not sufficient.
 
 ### Wizard-guide adapter
@@ -55,3 +55,19 @@ list therefore remain usable when the adapter is removed. The adapter has now
 passed its monitored 32:9 checks: map open/cancel, core fare denial, funded
 travel, and the dialogue-list fallback. The parchment picker is the preferred
 in-world surface; BCD remains a proven optional adapter and comparison point.
+
+## Wizarding Traversal: Apparition Travel
+
+`WizardingTraversal.esl` is an optional, soft-detected compatibility target.
+When its Apparition holder effect (local FormID `000808`) is active—or its own
+`fFastTravelSpeedMult=100000` override is present—Diegetic Travel completes
+direct carriage, wizard, and ferry trips with `MoveTo` instead of
+`Game.FastTravel`. The normal provider fare, state
+validation, fade, arrival marker, and companion handoff still apply, but no
+travel time passes.
+
+This deliberately does not mutate Wizarding Traversal's game setting. The
+original plugin is not a master and is not required: compatibility is soft
+detected, and an absent holder/override falls through to normal time-passing
+fast travel. The Baan Malur adapter remains
+an exception because it delegates movement to that source mod's quest stages.

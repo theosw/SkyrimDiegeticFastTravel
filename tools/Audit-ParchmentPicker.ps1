@@ -21,7 +21,15 @@ $nordenMarkerNames = @(
     "norden-winterhold-capital.dds",
     "norden-morthal-capital.dds",
     "norden-falkreath-capital.dds",
-    "norden-dawnstar-capital.dds"
+    "norden-dawnstar-capital.dds",
+    "norden-shipwreck.dds",
+    "norden-docks.dds",
+    "thin-circle-selection-ring.dds",
+    "thin-circle-oneway-selection-ring.dds",
+    "parchment-thin-selection-ring.dds",
+    "parchment-thin-oneway-selection-ring.dds",
+    "norden-roundtrip-selection-ring.dds",
+    "norden-oneway-selection-ring.dds"
 )
 
 $requiredSources = @(
@@ -29,6 +37,7 @@ $requiredSources = @(
     (Join-Path $moduleRoot "include\DNT\ParchmentCore.h"),
     (Join-Path $moduleRoot "include\DNT\ParchmentMenu.h"),
     (Join-Path $moduleRoot "mod\Scripts\Source\DNT_ParchmentNative.psc"),
+    (Join-Path $moduleRoot "mod\Scripts\Source\DNT_TravelCompatibility.psc"),
     (Join-Path $moduleRoot "mod\Scripts\Source\DNT_WizardParchmentFragment.psc"),
     (Join-Path $moduleRoot "mod\Scripts\Source\DNT_WizardParchmentPicker.psc"),
     (Join-Path $moduleRoot "src\MenuFrameworkAPI.cpp"),
@@ -61,6 +70,16 @@ $requiredSources = @(
     (Join-Path $projectRoot "tools\Build-VanillaHoldCapitalMarkers.ps1")
     (Join-Path $projectRoot "tools\Build-CarriageParchmentMarkers.ps1")
     (Join-Path $projectRoot "tools\Build-NordenCarriageMarkers.ps1")
+    (Join-Path $projectRoot "tools\Build-NordenSelectionRing.ps1")
+    (Join-Path $projectRoot "tools\Build-CalibratedSelectionRings.ps1")
+    (Join-Path $projectRoot "tools\Remove-EdgeBackground.py")
+    (Join-Path $projectRoot "tools\Fade-DarkMatte.py")
+    (Join-Path $projectRoot "tools\Extract-TransparentComponent.py")
+    (Join-Path $projectRoot "tools\Normalize-TransparentMarker.py")
+    (Join-Path $projectRoot "assets\diegetic-travel\selection-rings\thin-circle-select.png")
+    (Join-Path $projectRoot "assets\diegetic-travel\selection-rings\parchment-arrows-thin.png")
+    (Join-Path $projectRoot "assets\norden-interface\selection-ring\SOURCE.md")
+    (Join-Path $projectRoot "assets\norden-interface\selection-ring\norden-roundtrip-selection-ring.svg")
     (Join-Path $projectRoot "tools\Build-VanillaParchmentMarkers.ps1")
     (Join-Path $projectRoot "tools\Audit-NativeDependencies.ps1")
     (Join-Path $projectRoot "THIRD_PARTY_NOTICES.txt")
@@ -104,19 +123,40 @@ if ($unexpectedAssets.Count -gt 0 -or $shippedAssets.Count -ne $expectedAssets.C
 }
 
 $nativeScript = Get-Content -Raw (Join-Path $modRoot "Scripts\Source\DNT_ParchmentNative.psc")
+$travelCompatibilityScript = Get-Content -Raw (Join-Path $modRoot "Scripts\Source\DNT_TravelCompatibility.psc")
 $providerScript = Get-Content -Raw (Join-Path $modRoot "Scripts\Source\DNT_WizardParchmentPicker.psc")
-foreach ($requiredToken in @("RequestDialogueClose", "BeginRequest", "SetSourceLabel", "SetPaymentLabelPosition", "SetOverlayTexture", "SetMarkerTextures", "SetOriginMarkerTexture", "SetRouteOrigin", "AddRouteSegment", "AddRouteLandmark", "AddDestination", "SetDestinationMarkerTexture", "Show", "Cancel", "PlayPresentation", "PlayVoiceProbe", "DNT_ParchmentResult")) {
+foreach ($requiredToken in @("RequestDialogueClose", "BeginRequest", "SetSourceLabel", "SetPaymentLabelPosition", "SetOverlayTexture", "SetMarkerTextures", "SetOriginMarkerTexture", "SetSelectionRingTexture", "SetRouteOrigin", "AddRouteSegment", "AddRouteLandmark", "AddDestination", "AddStyledDestination", "SetDestinationMarkerTexture", "SetDestinationMarkerScale", "SetDestinationSelectionRingStyle", "SetDestinationSelectionRingTexture", "Show", "Cancel", "PlayPresentation", "PlayVoiceProbe", "DNT_ParchmentResult")) {
     if ($nativeScript -notmatch [regex]::Escape($requiredToken) -and
         $providerScript -notmatch [regex]::Escape($requiredToken)) {
         throw "Parchment Papyrus contract is missing token: $requiredToken"
     }
+}
+foreach ($compatibilityToken in @(
+    'Game.GetFormFromFile(0x000808, "WizardingTraversal.esl") as MagicEffect',
+    'PlayerRef.HasMagicEffect(ApparitionHolder)',
+    'Game.GetGameSettingFloat("fFastTravelSpeedMult")',
+    'TravelSpeed >= 99999.0',
+    'APPARITION_CHECK',
+    'PlayerRef.MoveTo(DestinationMarker)',
+    'Game.FastTravel(DestinationMarker)',
+    'TRAVEL_COMPAT mode=apparition',
+    'TRAVEL_COMPAT mode=fast_travel'
+)) {
+    if ($travelCompatibilityScript -notmatch [regex]::Escape($compatibilityToken)) {
+        throw "Optional Apparition compatibility is missing contract: $compatibilityToken"
+    }
+}
+if ($travelCompatibilityScript -match 'SetGameSettingFloat' -or
+    $travelCompatibilityScript -match 'WizardingTraversal\.esl' -and
+    $travelCompatibilityScript -match 'Property') {
+    throw "Apparition compatibility may read the speed override but must not mutate globals or require a hard plugin property."
 }
 foreach ($destination in @("whiterun", "riften", "solitude", "windhelm", "markarth", "dawnstar", "morthal")) {
     if ($providerScript -notmatch ('"' + [regex]::Escape($destination) + '"')) {
         throw "Wizard parchment provider is missing destination: $destination"
     }
 }
-foreach ($artToken in @("textures/terrain/tamriel/skyrim.dds", "winterhold-college.dds", "whiterun-dragonsreach.dds", "riften-mistveil-keep.dds", "solitude-blue-palace.dds", "windhelm-palace-of-the-kings.dds", "markarth-understone-keep.dds", "dawnstar-white-hall.dds", "morthal-highmoon-hall.dds", "SetMarkerTextures", "SetOriginMarkerTexture", "SetDestinationMarkerTexture", "TextureUvMinX", "TextureUvMaxY", "1.414075", "0.088379", "0.187012", "0.932129", "0.783691", "0.750802", "0.167836")) {
+foreach ($artToken in @("textures/terrain/tamriel/skyrim.dds", "norden-winterhold-capital.dds", "norden-whiterun-capital.dds", "norden-riften-capital.dds", "norden-solitude-capital.dds", "norden-windhelm-capital.dds", "norden-markarth-capital.dds", "norden-dawnstar-capital.dds", "norden-morthal-capital.dds", "thin-circle-selection-ring.dds", "SetMarkerTextures", "SetOriginMarkerTexture", "SetSelectionRingTexture", "SetDestinationMarkerTexture", "TextureUvMinX", "TextureUvMaxY", "1.414075", "0.088379", "0.187012", "0.932129", "0.783691", "0.750802", "0.167836")) {
     if ($providerScript -notmatch [regex]::Escape($artToken)) {
         throw "Wizard parchment provider is missing artwork contract token: $artToken"
     }
@@ -243,6 +283,15 @@ foreach ($presentationToken in @(
     "loadedSelectedMarkerTexturePath",
     "loadedIdleMarkerTexturePath",
     "loadedOriginMarkerTexturePath",
+    "loadedSelectionRingTexturePath",
+    "PARCHMENT_SELECTION_RING_READY",
+    "PARCHMENT_SELECTION_RING_SET",
+    "ringExtent = extent * a_selectionRingScale * a_destinationRingScale",
+    "iconExtent * a_selectionRingOffsetX",
+    "iconExtent * a_selectionRingOffsetY",
+    "PARCHMENT_SELECTION_RING_SCALE_SET",
+    "PARCHMENT_DESTINATION_RING_STYLE_SET",
+    "a_event->device == RE::INPUT_DEVICE::kMouse",
     "selectedMarkerTexture = destinationTexture->second",
     "PARCHMENT_ORIGIN_MARKER_SET",
     "PARCHMENT_MARKERS_SET",
@@ -312,6 +361,7 @@ if ($RequireNativeBuild) {
     $esp = Join-Path $modRoot "DiegeticTravelWizardParchment.esp"
     $seq = Join-Path $modRoot "SEQ\DiegeticTravelWizardParchment.seq"
     $nativePex = Join-Path $modRoot "Scripts\DNT_ParchmentNative.pex"
+    $travelCompatibilityPex = Join-Path $modRoot "Scripts\DNT_TravelCompatibility.pex"
     $fragmentPex = Join-Path $modRoot "Scripts\DNT_WizardParchmentFragment.pex"
     $providerPex = Join-Path $modRoot "Scripts\DNT_WizardParchmentPicker.pex"
     $docksMarker = Join-Path $modRoot "textures\DiegeticTravel\docks-marker.dds"
@@ -319,7 +369,7 @@ if ($RequireNativeBuild) {
     $nordenMarkers = $nordenMarkerNames | ForEach-Object {
         Join-Path $modRoot "textures\DiegeticTravel\$_"
     }
-    foreach ($artifact in @($dll, $esp, $seq, $nativePex, $fragmentPex, $providerPex, $docksMarker, $shipwreckMarker) + $nordenMarkers) {
+    foreach ($artifact in @($dll, $esp, $seq, $nativePex, $travelCompatibilityPex, $fragmentPex, $providerPex, $docksMarker, $shipwreckMarker) + $nordenMarkers) {
         if (-not (Test-Path -LiteralPath $artifact -PathType Leaf)) {
             throw "Required parchment-picker build artifact not found: $artifact"
         }
@@ -333,5 +383,5 @@ if ($RequireNativeBuild) {
 }
 
 Write-Host "Parchment-picker audit passed."
-Write-Host "Bundled artwork: 2 user-authored/edited marker assets, 10 Skyrim-derived map markers, and 14 authorized Norden map markers"
+Write-Host "Bundled artwork: 2 user-authored/edited marker assets, 10 Skyrim-derived map markers, 14 authorized Norden map markers, and 2 authorized Norden selection rings"
 Write-Host "Wizard destinations: 7"

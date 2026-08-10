@@ -1,0 +1,179 @@
+{
+  "schema_version": 1,
+  "generated_by": "DNT Icon Alignment Calibrator",
+  "selection_ring_texture": "Data/textures/DiegeticTravel/thin-circle-selection-ring.dds",
+  "selection_ring_textures": {
+    "norden": "Data/textures/DiegeticTravel/thin-circle-selection-ring.dds",
+    "vanilla": "Data/textures/DiegeticTravel/thin-circle-selection-ring.dds",
+    "ferry": "Data/textures/DiegeticTravel/parchment-thin-selection-ring.dds"
+  },
+  "global_selection_ring_scale": 2.0,
+  "offset_space": "icon_half_extent",
+  "coordinate_notes": {
+    "origin": "marker icon center",
+    "x": "positive moves the ring right by one icon half-extent",
+    "y": "positive moves the ring down by one icon half-extent",
+    "marker_scale": "multiplier applied after the provider base size",
+    "map_positions_and_hitboxes": "unchanged"
+  },
+  "icon_optics": {
+    "norden": {
+      "norden-whiterun-capital": {
+        "texture": "Data/textures/DiegeticTravel/norden-whiterun-capital.dds",
+        "ring_offset": [
+          0.0316,
+          -0.0474
+        ],
+        "ring_scale": 0.88,
+        "marker_scale": 1.0
+      },
+      "norden-riften-capital": {
+        "texture": "Data/textures/DiegeticTravel/norden-riften-capital.dds",
+        "ring_offset": [
+          0.0,
+          -0.058
+        ],
+        "ring_scale": 0.88,
+        "marker_scale": 0.99
+      },
+      "norden-solitude-capital": {
+        "texture": "Data/textures/DiegeticTravel/norden-solitude-capital.dds",
+        "ring_offset": [
+          0.0,
+          -0.0474
+        ],
+        "ring_scale": 0.85,
+        "marker_scale": 1.0
+      },
+      "norden-windhelm-capital": {
+        "texture": "Data/textures/DiegeticTravel/norden-windhelm-capital.dds",
+        "ring_offset": [
+          0.0316,
+          -0.1001
+        ],
+        "ring_scale": 0.89,
+        "marker_scale": 0.93
+      },
+      "norden-markarth-capital": {
+        "texture": "Data/textures/DiegeticTravel/norden-markarth-capital.dds",
+        "ring_offset": [
+          0.0,
+          -0.1107
+        ],
+        "ring_scale": 0.89,
+        "marker_scale": 0.95
+      },
+      "norden-dawnstar-capital": {
+        "texture": "Data/textures/DiegeticTravel/norden-dawnstar-capital.dds",
+        "ring_offset": [
+          0.0,
+          -0.0474
+        ],
+        "ring_scale": 0.86,
+        "marker_scale": 1.01
+      },
+      "norden-morthal-capital": {
+        "texture": "Data/textures/DiegeticTravel/norden-morthal-capital.dds",
+        "ring_offset": [
+          0.0,
+          -0.0896
+        ],
+        "ring_scale": 0.92,
+        "marker_scale": 0.95
+      },
+      "norden-falkreath-capital": {
+        "texture": "Data/textures/DiegeticTravel/norden-falkreath-capital.dds",
+        "ring_offset": [
+          0.0316,
+          -0.1107
+        ],
+        "ring_scale": 0.89,
+        "marker_scale": 0.96
+      },
+      "norden-winterhold-capital": {
+        "texture": "Data/textures/DiegeticTravel/norden-winterhold-capital.dds",
+        "ring_offset": [
+          0.0211,
+          -0.058
+        ],
+        "ring_scale": 0.89,
+        "marker_scale": 0.96
+      },
+      "norden-town": {
+        "texture": "Data/textures/DiegeticTravel/norden-town.dds",
+        "ring_offset": [
+          0.0211,
+          0.1529
+        ],
+        "ring_scale": 1.0,
+        "marker_scale": 0.8
+      },
+      "norden-settlement": {
+        "texture": "Data/textures/DiegeticTravel/norden-settlement.dds",
+        "ring_offset": [
+          0.0105,
+          0.1107
+        ],
+        "ring_scale": 1.0,
+        "marker_scale": 0.8
+      },
+      "norden-wood-mill": {
+        "texture": "Data/textures/DiegeticTravel/norden-wood-mill.dds",
+        "ring_offset": [
+          -0.0105,
+          0.0791
+        ],
+        "ring_scale": 1.09,
+        "marker_scale": 0.73
+      },
+      "norden-mine": {
+        "texture": "Data/textures/DiegeticTravel/norden-mine.dds",
+        "ring_offset": [
+          -0.0105,
+          0.0791
+        ],
+        "ring_scale": 1.02,
+        "marker_scale": 0.78
+      },
+      "norden-farm": {
+        "texture": "Data/textures/DiegeticTravel/norden-farm.dds",
+        "ring_offset": [
+          -0.0422,
+          -0.0158
+        ],
+        "ring_scale": 1.04,
+        "marker_scale": 0.78
+      },
+      "norden-shipwreck": {
+        "texture": "Data/textures/DiegeticTravel/norden-shipwreck.dds",
+        "ring_offset": [
+          0.0,
+          0.0
+        ],
+        "ring_scale": 0.92,
+        "marker_scale": 0.91
+      },
+      "norden-docks": {
+        "texture": "Data/textures/DiegeticTravel/norden-docks.dds",
+        "ring_offset": [
+          0.0,
+          0.0
+        ],
+        "ring_scale": 0.89,
+        "marker_scale": 0.97
+      }
+    },
+    "vanilla": {},
+    "ferry": {
+      "ferry-docks": {
+        "texture": "Data/textures/DiegeticTravel/docks-marker.dds",
+        "ring_offset": [
+          0.0,
+          0.0
+        ],
+        "ring_scale": 0.94,
+        "marker_scale": 1.0
+      }
+    }
+  }
+}

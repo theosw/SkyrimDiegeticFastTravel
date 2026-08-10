@@ -9,6 +9,7 @@
     "texture": "Data/textures/dungeons/imperial/battlemap01.dds",
     "uv_crop": [0.0, 0.0, 1.0, 0.736328],
     "art_aspect_ratio": 1.35809,
+    "selection_ring_scale": 2.0,
     "asset_policy": "base map is reference-only; route artwork is deferred until after beta"
   },
   "stops": [
@@ -17,7 +18,7 @@
       "name": "Riften",
       "service_npc": "00FB28:CFTO.esp",
       "arrival_marker": "014C3C:CFTO.esp",
-      "map_position": [0.921, 0.806]
+      "map_position": [0.905132, 0.835295]
     },
     {
       "id": "heartwood_mill",
@@ -36,10 +37,18 @@
       "map_position": [0.686, 0.713]
     }
   ],
-  "deferred_stops": [
+  "private_stops": [
     {
       "id": "honeyside",
-      "reason": "Requires ownership/porch/ferryman conditions from CFTO; add after the three-major-stop contract is gameplay-proven."
+      "name": "Honeyside",
+      "service_npc": "014C8C:CFTO.esp",
+      "service_ref": "014C8D:CFTO.esp",
+      "arrival_marker": "014C8E:CFTO.esp",
+      "fare_global": "0BBF93:CFTO.esp",
+      "fare_default": 30,
+      "availability": "service_ref_enabled",
+      "map_position_status": "calibrated",
+      "map_position": [0.89365, 0.80508]
     }
   ]
 }

@@ -7,15 +7,18 @@ CFTO's smallest public ferry lane:
 Riften <-> Heartwood Mill <-> Ivarstead
 ```
 
-Honeyside is deliberately deferred until the three major stops prove the core
-contract. CFTO conditions that private stop on house/porch/ferryman state.
+Honeyside is a private fourth provider. It is visible only while CFTO's placed
+Honeyside ferryman is enabled, preserving CFTO's ownership/porch/service state
+without cloning its prerequisite quests.
 
 ## Boundaries
 
 - CFTO remains the authority for ferrymen, price globals, destination markers,
   and the existing dialogue fallback.
-- The new dialogue option is limited to CFTO's three Lake Honrich ferrymen.
-- `DNT_BoatParchmentPicker` presents only the two other stops on that waterway.
+- The new dialogue option uses an exact whitelist of CFTO's three public
+  ferrymen plus the private Honeyside ferryman.
+- `DNT_BoatParchmentPicker` presents every other currently available stop on
+  that waterway; Honeyside is omitted whenever CFTO disables its service ref.
 - The beta uses the same minimal presentation as Lake Ilinalta: anchors for
   available docks without dynamic route strokes. The current and focused boat
   icons provide selection context. The

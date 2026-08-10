@@ -332,7 +332,9 @@ end;
 
 function Initialize: Integer;
 var
-  SkyrimFile, HearthFiresFile, TopicRecord, BranchRecord: IInterface;
+  SkyrimFile, HearthFiresFile, TopicRecord, BranchRecord, GlobalRecord,
+    RecordElement: IInterface;
+  RecordIndex: Integer;
 begin
   Result := 1;
   StatusPath := ScriptsPath +
@@ -380,6 +382,37 @@ begin
     AddInfo($0DA634, 'free_root');
     AddInfo($09D913, 'darkwater_success');
     AddInfo($0A2A2D, 'halfmoon_success');
+
+    { Preserve CFTO's own beta fare tiers as the release authority. }
+    GlobalRecord := RequireRecord(CftoFile, $09D8DD, 'GLOB');
+    ReportLines.Add(
+      'CARRIAGE_FARE_TIER=standard|EDID=' +
+      GetElementEditValues(GlobalRecord, 'EDID') + '|VALUE=' +
+      GetElementEditValues(GlobalRecord, 'FLTV')
+    );
+    GlobalRecord := RequireRecord(CftoFile, $09D8DE, 'GLOB');
+    ReportLines.Add(
+      'CARRIAGE_FARE_TIER=local|EDID=' +
+      GetElementEditValues(GlobalRecord, 'EDID') + '|VALUE=' +
+      GetElementEditValues(GlobalRecord, 'FLTV')
+    );
+    GlobalRecord := RequireRecord(CftoFile, $0BBF92, 'GLOB');
+    ReportLines.Add(
+      'CARRIAGE_FARE_TIER=extra|EDID=' +
+      GetElementEditValues(GlobalRecord, 'EDID') + '|VALUE=' +
+      GetElementEditValues(GlobalRecord, 'FLTV')
+    );
+    for RecordIndex := 0 to Pred(RecordCount(CftoFile)) do begin
+      RecordElement := RecordByIndex(CftoFile, RecordIndex);
+      if (Signature(RecordElement) = 'DIAL') and
+        (Pos('KmodFastTravelCarriage',
+          GetElementEditValues(RecordElement, 'EDID')) = 1) then
+        ReportLines.Add(
+          'CARRIAGE_TOPIC|EDID=' +
+          GetElementEditValues(RecordElement, 'EDID') + '|PROMPT=' +
+          GetElementEditValues(RecordElement, 'FULL')
+        );
+    end;
 
     { CFTO's 27 executable carriage destinations. Their persistent world-map
       references are the coordinate authority for the beta parchment. }

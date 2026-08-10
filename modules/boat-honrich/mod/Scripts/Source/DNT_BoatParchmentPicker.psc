@@ -13,6 +13,8 @@ ObjectReference CurrentSource
 String ActiveSourceId = ""
 String ActiveRequest = ""
 Int RequestSerial = 0
+Int SelectionCount = 0
+String[] SelectionIds
 
 Function OpenMap(ObjectReference SourceRef)
     If ActiveRequest != ""
@@ -66,7 +68,11 @@ Function OpenMap(ObjectReference SourceRef)
         AbortOpen("begin_failed")
         Return
     EndIf
-    Bool AddedAll = AddLaneDestinations()
+    Bool FerryStyleReady = DNT_ParchmentNative.SetMarkerTextures(ActiveRequest, "Data/textures/DiegeticTravel/docks-marker.dds", "Data/textures/DiegeticTravel/docks-marker.dds")
+    FerryStyleReady = DNT_ParchmentNative.SetOriginMarkerTexture(ActiveRequest, "Data/textures/DiegeticTravel/shipwreck-marker.dds") && FerryStyleReady
+    FerryStyleReady = DNT_ParchmentNative.SetSelectionRingTexture(ActiveRequest, "Data/textures/DiegeticTravel/parchment-thin-selection-ring.dds") && FerryStyleReady
+    FerryStyleReady = DNT_ParchmentNative.SetSelectionRingScale(ActiveRequest, 1.88) && FerryStyleReady
+    Bool AddedAll = AddLaneDestinations() && FerryStyleReady
     If !AddedAll
         DNT_ParchmentNative.Cancel(ActiveRequest)
         AbortOpen("destination_setup_failed")
@@ -81,30 +87,42 @@ Function OpenMap(ObjectReference SourceRef)
 EndFunction
 
 Bool Function AddLaneDestinations()
-    Int Fare = Service.GetFare("riften")
     Bool AddedAll = DNT_ParchmentNative.SetSourceLabel(ActiveRequest, GetSourceLabel(ActiveSourceId))
-    If Fare < 0 || !AddedAll
+    If !AddedAll
         Return False
     EndIf
     AddedAll = AddInactiveMainlandLandmarks() && AddedAll
+    ClearSelections()
+    AddedAll = SetRouteOrigin(ActiveSourceId) && AddedAll
+    AddedAll = AddStop("riften", "Riften", 0.905132, 0.835295) && AddedAll
+    AddedAll = AddStop("heartwood_mill", "Heartwood Mill", 0.812988, 0.805703) && AddedAll
+    AddedAll = AddStop("ivarstead", "Ivarstead", 0.688477, 0.724801) && AddedAll
+    AddedAll = AddStop("honeyside", "Honeyside", 0.893650, 0.805080) && AddedAll
+    Return AddedAll && SelectionCount > 0
+EndFunction
 
-    If ActiveSourceId == "riften"
-        AddedAll = DNT_ParchmentNative.SetRouteOrigin(ActiveRequest, 0.897461, 0.824934)
-        AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "heartwood_mill", "Heartwood Mill ", Fare, 0.812988, 0.805703) && AddedAll
-        AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "ivarstead", "Ivarstead ", Fare, 0.688477, 0.724801) && AddedAll
-        Return AddedAll
-    ElseIf ActiveSourceId == "heartwood_mill"
-        AddedAll = DNT_ParchmentNative.SetRouteOrigin(ActiveRequest, 0.812988, 0.805703)
-        AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "riften", "Riften ", Fare, 0.897461, 0.824934) && AddedAll
-        AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "ivarstead", "Ivarstead ", Fare, 0.688477, 0.724801) && AddedAll
-        Return AddedAll
-    ElseIf ActiveSourceId == "ivarstead"
-        AddedAll = DNT_ParchmentNative.SetRouteOrigin(ActiveRequest, 0.688477, 0.724801)
-        AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "riften", "Riften ", Fare, 0.897461, 0.824934) && AddedAll
-        AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "heartwood_mill", "Heartwood Mill ", Fare, 0.812988, 0.805703) && AddedAll
-        Return AddedAll
+Bool Function SetRouteOrigin(String SourceId)
+    If SourceId == "riften"
+        Return DNT_ParchmentNative.SetRouteOrigin(ActiveRequest, 0.905132, 0.835295)
+    ElseIf SourceId == "heartwood_mill"
+        Return DNT_ParchmentNative.SetRouteOrigin(ActiveRequest, 0.812988, 0.805703)
+    ElseIf SourceId == "ivarstead"
+        Return DNT_ParchmentNative.SetRouteOrigin(ActiveRequest, 0.688477, 0.724801)
+    ElseIf SourceId == "honeyside"
+        Return DNT_ParchmentNative.SetRouteOrigin(ActiveRequest, 0.893650, 0.805080)
     EndIf
     Return False
+EndFunction
+
+Bool Function AddStop(String DestinationId, String DestinationName, Float MapX, Float MapY)
+    If DestinationId == ActiveSourceId || !Service.CanOfferDestination(DestinationId)
+        Return True
+    EndIf
+    Int Fare = Service.GetFare(DestinationId)
+    If Fare < 0 || !RecordSelection(DestinationId)
+        Return False
+    EndIf
+    Return DNT_ParchmentNative.AddDestination(ActiveRequest, DestinationId, DestinationName + " ", Fare, MapX, MapY)
 EndFunction
 
 Bool Function AddInactiveMainlandLandmarks()
@@ -130,6 +148,8 @@ String Function GetSourceLabel(String SourceId)
         Return "Heartwood Mill"
     ElseIf SourceId == "ivarstead"
         Return "Ivarstead"
+    ElseIf SourceId == "honeyside"
+        Return "Honeyside"
     EndIf
     Return ""
 EndFunction
@@ -154,7 +174,7 @@ Bool Function AddLaneNetwork()
     AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.870605, 0.844164, 0.882324, 0.844164) && AddedAll
     AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.882324, 0.844164, 0.889648, 0.838859) && AddedAll
     AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.889648, 0.838859, 0.895996, 0.832891) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.895996, 0.832891, 0.897461, 0.824934) && AddedAll
+    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.895996, 0.832891, 0.905132, 0.835295) && AddedAll
     AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.895996, 0.832891, 0.886719, 0.842175) && AddedAll
     AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.886719, 0.842175, 0.865723, 0.842838) && AddedAll
     AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.865723, 0.842838, 0.834473, 0.836207) && AddedAll
@@ -177,6 +197,7 @@ Function AbortOpen(String Reason)
     ActiveRequest = ""
     ActiveSourceId = ""
     CurrentSource = None
+    ClearSelections()
     Debug.Notification("The ferry map could not be opened. Ask for the usual destinations instead.")
 EndFunction
 
@@ -189,17 +210,18 @@ Event OnParchmentResult(String EventName, String StringArg, Float NumberArg, For
     ObjectReference SourceRef = CurrentSource
     String SourceId = ActiveSourceId
     String FinishedRequest = ActiveRequest
+    String DestinationId = GetDestinationId(SelectionIndex)
     UnregisterForModEvent("DNT_ParchmentResult")
     ActiveRequest = ""
     ActiveSourceId = ""
     CurrentSource = None
+    ClearSelections()
 
     If SelectionIndex < 0
         Debug.Trace("[DNT] BOAT_PARCHMENT_CANCEL lane=lake_honrich source=" + SourceId + " request=" + FinishedRequest)
         Return
     EndIf
 
-    String DestinationId = GetDestinationId(SourceId, SelectionIndex)
     If DestinationId == ""
         Debug.Trace("[DNT] BOAT_PARCHMENT_REJECT lane=lake_honrich source=" + SourceId + " request=" + FinishedRequest + " reason=unknown_index index=" + SelectionIndex, 1)
         Return
@@ -209,25 +231,23 @@ Event OnParchmentResult(String EventName, String StringArg, Float NumberArg, For
     Service.RequestTravel(DestinationId, SourceRef)
 EndEvent
 
-String Function GetDestinationId(String SourceId, Int SelectionIndex)
-    If SourceId == "riften"
-        If SelectionIndex == 0
-            Return "heartwood_mill"
-        ElseIf SelectionIndex == 1
-            Return "ivarstead"
-        EndIf
-    ElseIf SourceId == "heartwood_mill"
-        If SelectionIndex == 0
-            Return "riften"
-        ElseIf SelectionIndex == 1
-            Return "ivarstead"
-        EndIf
-    ElseIf SourceId == "ivarstead"
-        If SelectionIndex == 0
-            Return "riften"
-        ElseIf SelectionIndex == 1
-            Return "heartwood_mill"
-        EndIf
+Function ClearSelections()
+    SelectionCount = 0
+    SelectionIds = new String[4]
+EndFunction
+
+Bool Function RecordSelection(String DestinationId)
+    If SelectionCount < 0 || SelectionCount >= 4
+        Return False
+    EndIf
+    SelectionIds[SelectionCount] = DestinationId
+    SelectionCount += 1
+    Return True
+EndFunction
+
+String Function GetDestinationId(Int SelectionIndex)
+    If SelectionIndex >= 0 && SelectionIndex < SelectionCount
+        Return SelectionIds[SelectionIndex]
     EndIf
     Return ""
 EndFunction

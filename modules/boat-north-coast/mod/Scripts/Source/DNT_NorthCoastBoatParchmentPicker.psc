@@ -7,12 +7,7 @@ String ActiveSourceId = ""
 String ActiveRequest = ""
 Int RequestSerial = 0
 Int SelectionCount = 0
-String Selection0 = ""
-String Selection1 = ""
-String Selection2 = ""
-String Selection3 = ""
-String Selection4 = ""
-String Selection5 = ""
+String[] SelectionIds
 
 Function OpenMap(ObjectReference SourceRef)
     If ActiveRequest != ""
@@ -68,9 +63,13 @@ Function OpenMap(ObjectReference SourceRef)
         AbortOpen("begin_failed")
         Return
     EndIf
+    Bool FerryStyleReady = DNT_ParchmentNative.SetMarkerTextures(ActiveRequest, "Data/textures/DiegeticTravel/docks-marker.dds", "Data/textures/DiegeticTravel/docks-marker.dds")
+    FerryStyleReady = DNT_ParchmentNative.SetOriginMarkerTexture(ActiveRequest, "Data/textures/DiegeticTravel/shipwreck-marker.dds") && FerryStyleReady
+    FerryStyleReady = DNT_ParchmentNative.SetSelectionRingTexture(ActiveRequest, "Data/textures/DiegeticTravel/parchment-thin-selection-ring.dds") && FerryStyleReady
+    FerryStyleReady = DNT_ParchmentNative.SetSelectionRingScale(ActiveRequest, 1.88) && FerryStyleReady
     ClearSelections()
-    Bool AddedAll = DNT_ParchmentNative.SetSourceLabel(ActiveRequest, GetSourceLabel(ActiveSourceId))
-    AddedAll = DNT_ParchmentNative.SetPaymentLabelPosition(ActiveRequest, 0.569053, 0.905747) && AddedAll
+    Bool AddedAll = DNT_ParchmentNative.SetSourceLabel(ActiveRequest, GetSourceLabel(ActiveSourceId)) && FerryStyleReady
+    AddedAll = DNT_ParchmentNative.SetPaymentLabelPosition(ActiveRequest, 0.647846, 0.899624) && AddedAll
     AddedAll = SetRouteOrigin(ActiveSourceId) && AddedAll
     AddedAll = AddStop("dawnstar", "Dawnstar", 0.562613, 0.139944) && AddedAll
     AddedAll = AddStop("solitude", "Solitude", 0.343646, 0.176873) && AddedAll
@@ -79,8 +78,11 @@ Function OpenMap(ObjectReference SourceRef)
     AddedAll = AddStop("solitude_lighthouse", "Solitude Lighthouse", 0.380140, 0.082606) && AddedAll
     AddedAll = AddStop("winterhold", "Winterhold", 0.730059, 0.137028) && AddedAll
     AddedAll = AddStop("dragon_bridge", "Dragon Bridge", 0.243465, 0.226437) && AddedAll
+    AddedAll = AddStop("frostflow_lighthouse", "Frostflow Lighthouse", 0.629774, 0.159475) && AddedAll
+    AddedAll = AddStop("windstad_manor", "Windstad Manor", 0.427903, 0.159475) && AddedAll
+    AddedAll = AddStop("icewater_jetty", "Icewater Jetty", 0.122369, 0.097021) && AddedAll
     AddedAll = AddInactiveMainlandLandmarks() && AddedAll
-    If !AddedAll || SelectionCount != 6
+    If !AddedAll || SelectionCount <= 0
         DNT_ParchmentNative.Cancel(ActiveRequest)
         AbortOpen("destination_setup_failed")
         Return
@@ -95,7 +97,7 @@ EndFunction
 
 Bool Function AddInactiveMainlandLandmarks()
     ; Lake Honrich route.
-    Bool AddedAll = DNT_ParchmentNative.AddRouteLandmark(ActiveRequest, 0.897461, 0.824934)
+    Bool AddedAll = DNT_ParchmentNative.AddRouteLandmark(ActiveRequest, 0.905132, 0.835295)
     AddedAll = DNT_ParchmentNative.AddRouteLandmark(ActiveRequest, 0.812988, 0.805703) && AddedAll
     AddedAll = DNT_ParchmentNative.AddRouteLandmark(ActiveRequest, 0.688477, 0.724801) && AddedAll
     ; Lake Ilinalta route.
@@ -192,6 +194,10 @@ String Function GetSourceLabel(String SourceId)
         Return "Winterhold"
     ElseIf SourceId == "dragon_bridge"
         Return "Dragon Bridge"
+    ElseIf SourceId == "windstad_manor"
+        Return "Windstad Manor"
+    ElseIf SourceId == "icewater_jetty"
+        Return "Icewater Jetty"
     EndIf
     Return ""
 EndFunction
@@ -211,6 +217,10 @@ Bool Function SetRouteOrigin(String SourceId)
         Return DNT_ParchmentNative.SetRouteOrigin(ActiveRequest, 0.730059, 0.137028)
     ElseIf SourceId == "dragon_bridge"
         Return DNT_ParchmentNative.SetRouteOrigin(ActiveRequest, 0.243465, 0.226437)
+    ElseIf SourceId == "windstad_manor"
+        Return DNT_ParchmentNative.SetRouteOrigin(ActiveRequest, 0.427903, 0.159475)
+    ElseIf SourceId == "icewater_jetty"
+        Return DNT_ParchmentNative.SetRouteOrigin(ActiveRequest, 0.122369, 0.097021)
     EndIf
     Return False
 EndFunction
@@ -219,56 +229,37 @@ Bool Function AddStop(String DestinationId, String DestinationName, Float MapX, 
     If DestinationId == ActiveSourceId
         Return True
     EndIf
-    Int Fare = Service.GetFare(DestinationId)
+    If !Service.CanOfferDestination(DestinationId, ActiveSourceId)
+        Return True
+    EndIf
+    Int Fare = Service.GetFareForSource(DestinationId, ActiveSourceId)
     If Fare < 0 || !RecordSelection(DestinationId)
         Return False
     EndIf
-    Return DNT_ParchmentNative.AddDestination(ActiveRequest, DestinationId, DestinationName + " ", Fare, MapX, MapY)
+    Bool Added = DNT_ParchmentNative.AddDestination(ActiveRequest, DestinationId, DestinationName + " ", Fare, MapX, MapY)
+    If Added && DestinationId == "frostflow_lighthouse"
+        Added = DNT_ParchmentNative.SetDestinationSelectionRingTexture(ActiveRequest, DestinationId, "Data/textures/DiegeticTravel/parchment-thin-oneway-selection-ring.dds")
+    EndIf
+    Return Added
 EndFunction
 
 Function ClearSelections()
     SelectionCount = 0
-    Selection0 = ""
-    Selection1 = ""
-    Selection2 = ""
-    Selection3 = ""
-    Selection4 = ""
-    Selection5 = ""
+    SelectionIds = new String[10]
 EndFunction
 
 Bool Function RecordSelection(String DestinationId)
-    If SelectionCount == 0
-        Selection0 = DestinationId
-    ElseIf SelectionCount == 1
-        Selection1 = DestinationId
-    ElseIf SelectionCount == 2
-        Selection2 = DestinationId
-    ElseIf SelectionCount == 3
-        Selection3 = DestinationId
-    ElseIf SelectionCount == 4
-        Selection4 = DestinationId
-    ElseIf SelectionCount == 5
-        Selection5 = DestinationId
-    Else
+    If SelectionCount < 0 || SelectionCount >= 10
         Return False
     EndIf
+    SelectionIds[SelectionCount] = DestinationId
     SelectionCount += 1
     Return True
 EndFunction
 
 String Function SelectionAt(Int SelectionIndex)
-    If SelectionIndex == 0
-        Return Selection0
-    ElseIf SelectionIndex == 1
-        Return Selection1
-    ElseIf SelectionIndex == 2
-        Return Selection2
-    ElseIf SelectionIndex == 3
-        Return Selection3
-    ElseIf SelectionIndex == 4
-        Return Selection4
-    ElseIf SelectionIndex == 5
-        Return Selection5
+    If SelectionIndex >= 0 && SelectionIndex < SelectionCount
+        Return SelectionIds[SelectionIndex]
     EndIf
     Return ""
 EndFunction

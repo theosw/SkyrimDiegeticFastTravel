@@ -1,6 +1,6 @@
 # Diegetic Travel handoff
 
-Updated: 2026-08-02
+Updated: 2026-08-08
 
 ## Mirabelle presentation and parchment handoff
 
@@ -285,8 +285,8 @@ SHA-256 is
 If the image is missing, the native picker logs once per request and renders a
 diagnostic selection fallback instead of disabling travel.
 
-The next workspace-only wizard candidate deliberately separates visual themes:
-boats/carriages retain the rough RUSTIC map, while wizards reference Caro
+The 2026-08-04 workspace-only wizard candidate deliberately separated visual themes:
+boats/carriages retained the rough RUSTIC map, while wizards referenced Caro
 Tuts/FWMF's formal `Data\textures\terrain\tamriel\skyrim.dds`. The formal map
 uses crop `(0.088379,0.187012)-(0.932129,0.783691)` at aspect `1.414075`.
 Marker coordinates are derived from FWMF's exported Tamriel quad and exact
@@ -317,6 +317,23 @@ all eight hold icons, exact marker alignment, and destination-preserving hover.
 Native/Papyrus logs recorded the formal texture, all seven destination assets,
 12-layer HUD restoration, an exact 250-gold charge, and completed Whiterun
 travel with no DNT warning/error. The formal wizard-map candidate is Proven.
+
+The current offline candidate extends that formal visual language to carriages:
+wizard and carriage sheets both reference Caro Tuts/FWMF's clean paper map and
+default to the exact Norden discovered-map symbols. An exact hash-pinned export
+of Norden's two-arrow loading symbol is now a separate selection ring behind the
+focused formal-map destination. Ferry providers retain their rough/tattered map
+profiles and do not request this ring. The native API, wizard provider, carriage
+provider, asset build/audit allowlists, Papyrus output, and offline packages are
+updated. The first 32:9 gameplay pass approved both formal maps and their Norden
+icons, but found the `1.52`-extent ring too easily occluded and showed retained
+navigation focus snapping it back to a default marker after mouse hover. The
+next offline candidate uses extent `2.00`, clears navigation focus on mouse
+input, and adds an exact ring preview/scale export to the coordinate calibrator.
+Native tests, picker/carriage audits, and calibrator build/tests pass. After
+Skyrim closed, the corrected shared picker runtime was deployed to the LoreRim
+test mod and its DLL hash was verified against the workspace build; the next
+gameplay launch should verify the larger ring and no-snap mouse behavior.
 
 The parchment core is now gameplay-proven. At 32:9, the RUSTIC texture rendered
 centered and unstretched with aligned city buttons. Native logs recorded four
@@ -1188,3 +1205,118 @@ stable artifact checks.
   Ilinalta `08DBC4FA0CFCD829328DCA5DC23DAFE13715A103633DB990FA6CFCF057CA5735`;
   Honrich `F0FA68EBF9DD228B5814CAA4EFE14537BFA258D1F1E8344C2894722287E7FC72`;
   North coast `1CE578E02A7D1363BCEDBCB5DEA7700B854FF3263D6B6463BA267151A3597FED`.
+
+## 2026-08-07 destination-only ferry candidate
+
+- The working tree now implements four original CFTO one-way destinations:
+  Frostflow Lighthouse from all seven public Route 1 providers, Ilinata's Deep
+  from all three public Route 3 providers, and Northshore Landing plus Bujold's
+  Retreat from all three public Route 4 providers.
+- Provider detection is unchanged. Each stop is an explicit
+  `destination_only_stops` record with an arrival marker and `available_from`
+  list but no service actor, so none can become a return dock.
+- Ilinata preserves the regional 50-gold fare and dedicated follower/horse
+  markers; its ordinary Route 3 peers remain 30 gold.
+- All three module compiles and isolated xEdit/SEQ audits pass. Nothing has
+  been deployed to LoreRim and Skyrim has not been launched for this candidate.
+- Next live gate: one successful trip to each new stop, one low-gold denial on
+  Ilinata, and confirmation that no parchment provider appears at any arrival.
+
+## 2026-08-07 per-icon selection-ring calibration checkpoint
+
+- The map-coordinate calibrator now has a separate `/icon-alignment` workspace
+  for the exact Norden and vanilla marker assets. It calibrates ring X/Y offset
+  and size per shared icon type while keeping destination coordinates, artwork,
+  and hitboxes fixed.
+- The browser view includes draggable and keyboard-nudgeable ring placement,
+  visible alpha bounds, alpha-bounds and alpha-weighted-centroid seeds, theme
+  switching, local draft recovery, changed-only copy, and full JSON export.
+  Values use icon-half-extent units in the versioned
+  `modules/parchment-picker/config/icon-optics.json` schema.
+- The native request boundary now validates request-wide
+  `SetSelectionRingScale` and per-destination
+  `SetDestinationSelectionRingStyle`; renderer offsets apply only to the ring.
+  Defaults preserve the gameplay-proven centered `2.00` ring until calibrated
+  values are approved and fanned out by the provider scripts.
+- Offline verification passes: native build, CTest 1/1, Papyrus compile,
+  parchment-picker audit, calibrator production build and four server-render
+  tests. Browser QA proved Norden/vanilla switching, arrow-key nudging/reset,
+  alpha analysis, centroid seeding, and zero-change draft restoration.
+- Nothing from this checkpoint has been deployed into LoreRim. The game may
+  still be open; wait for an explicit closed-game window before deploying the
+  new DLL/PEX boundary or any provider calls.
+
+### Approved Norden optics
+
+- The first calibrator export is recorded in
+  `modules/parchment-picker/config/icon-optics.json`: nine hold-capital
+  profiles plus town, settlement, wood-mill, mine, and farm profiles.
+- Wizard-guide and carriage providers apply the matching profile through
+  `SetDestinationSelectionRingStyle` after assigning each destination icon.
+- These offsets move and scale only the selection ring. Marker coordinates,
+  marker size, and hitboxes remain unchanged.
+- The workspace sources and compiled PEX files may be rebuilt immediately,
+  but the same live gate still applies to deployment into LoreRim.
+
+## 2026-08-07 per-icon marker-size calibration checkpoint
+
+- `/icon-alignment` now calibrates a real per-icon `marker_scale` in addition
+  to ring offset and ring scale. The Map layout page's older generic size
+  slider is explicitly labelled preview-only and remains unexported.
+- `SetDestinationMarkerScale` is validated across the native core, menu bridge,
+  Papyrus API, wizard provider, and carriage provider. It multiplies each
+  provider's base marker size without moving the normalized map anchor or
+  resizing the interaction hitbox; selection-ring offsets follow the resized
+  icon half-extent.
+- The approved 2026-08-08 calibrator export is merged for all 13 supplied
+  profiles and fanned into both formal-map providers. Supplied capitals use
+  `0.93`-`0.96`, town/settlement `0.80`, mill `0.73`, and mine/farm `0.78`.
+  Dawnstar was omitted, so its prior `1.0` value is intentionally preserved.
+- Offline verification passes: native build and CTest 1/1, wizard and carriage
+  Papyrus compiles with zero warnings/errors, picker audit, calibrator production
+  build, and all four rendered-page tests. Nothing in this checkpoint has been
+  deployed to LoreRim and Skyrim was not launched.
+
+## 2026-08-08 private-ferry, one-way, and Apparition candidate
+
+- The four private CFTO services are implemented without replacing CFTO's
+  ownership/state model: Honeyside, Lakeview Manor, and Windstad Manor require
+  their CFTO placed ferryman references to be enabled; Castle Volkihar requires
+  its CFTO state global. The first three use CFTO's regional/local fares.
+  Volkihar costs 100 gold outbound and is free when leaving the island, matching
+  the installed CFTO records.
+- Their dialogue quests use explicit public/private actor whitelists. xEdit
+  audits prove that the private actors are present in the generated DIAL/INFO
+  conditions and that the old route-faction exclusion cannot hide them.
+- Baan Malur remains deferred except for the one verified preview: Raven Rock
+  can offer Sunmul through source-quest stage 5. Sunmul is not a provider, so
+  the trip has no implied return service. The other five unfinished/unset
+  stages remain hidden.
+- The native parchment API now accepts a destination-specific selection-ring
+  texture. `norden-oneway-selection-ring.dds` contains only the lower arrow,
+  shares the authorized Norden round-trip ring's bounds/transform, and is used
+  by Sunmul. Native build and CTest pass 1/1.
+- `DNT_TravelCompatibility` soft-resolves Wizarding Traversal 1.43's active
+  Apparition holder effect (`WizardingTraversal.esl` local FormID `000808`).
+  While active, DNT uses `MoveTo` so no travel time passes; otherwise it uses
+  ordinary `Game.FastTravel`. DNT never writes `fFastTravelSpeedMult`, and the
+  optional integration creates no plugin master or required dependency.
+- Core, parchment, carriage, Honrich, Ilinalta, North Coast, Solstheim, and the
+  isolated Sunmul preview all compile/audit/package cleanly. All were deployed
+  only to their owned `DiegeticTravel - ... Test` mods under `D:\Lorerim\mods`;
+  no MO2 profile or LoreRim baseline mod was changed, and Skyrim was not
+  launched.
+- Candidate SHA-256 values: parchment
+  `F36480D79A64256AB4C249DBD07D2466A8D935B274BF262F7BB914FA6D8022F2`;
+  core alpha `A1BBDCA18D896B0DDECFD764E4A09F8E0DE13352E6A5FC87EEB99EB8E69F48DD`;
+  carriage `624816869A8FE90E3108F836A3A9CB7F6E8AE2A0514C5F13BF59A89CA6660934`;
+  Honrich `A539E72146752E49EB46606F00B8E7B717F01F4A988C38156BB216C6041E4990`;
+  Ilinalta `8211AA2679A5D0777B09CC1D9BBE96E1D6D14A07F659A78CC524FD2D45ACD148`;
+  North Coast `AC02C22E867EABF7F1E17E9F529309320E6CD296780C741B56B9FB1F49F938E6`;
+  Solstheim `AD0985121774C5D16B1F1D1B571DB5DF29BC5A06DA65FB9D2A9F1979AFB706FE`;
+  Sunmul preview `E80529AF9FE88306ED66F5A0478CCA395EEDD24421E0AC921DFA7E352C8CC22D`.
+- Next live gate: prove each available private provider opens the correct map,
+  performs one successful trip, and denies insufficient gold; confirm the
+  Volkihar 100/0 fare split; confirm Sunmul appears only at Raven Rock with the
+  lower-arrow ring; then compare one normal trip's clock advance with one trip
+  while the Apparition holder effect is active.

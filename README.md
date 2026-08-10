@@ -6,18 +6,13 @@ services whose routes, costs, and limitations make geography matter. The first
 gameplay-proven pillar is a College-centred wizard-guide network with a reusable
 physical parchment destination picker.
 
-The repository also contains a carriage-network prototype built on
+The repository also contains a carriage-network beta built on
 [Carriage and Ferry Travel Overhaul (CFTO)](https://www.nexusmods.com/skyrimspecialedition/mods/8379).
-It keeps CFTO's actors and travel behavior, but replaces the pick-any-marker
-layer with authored roads, live hazards, route choice, graph-derived fares, and
-quoted travel time:
-
-- carriage paths use carriage edges only;
-- carriage compilation does not borrow ferry edges;
-- each trip has up to three precomputed candidate paths;
-- Papyrus evaluates those few candidates when the player asks for a quote;
-- active/unknown hazards add a surcharge without hiding executable beta routes;
-- the cheapest remaining path supplies the fare and time estimate.
+It keeps CFTO's actors, destination numbers, return-service topology, and live
+fare globals while replacing the selection surface with the physical parchment
+map. The beta deliberately has no route graph, hazard pricing, or estimated
+hours. Carriage fares use CFTO's own local, standard, and extra tiers, including
+any compatible patch that changes those globals.
 
 Local LoreRim research, downloaded learning sources, and load-order datamines
 remain development evidence rather than redistributed runtime dependencies.
@@ -67,9 +62,9 @@ The first boat-provider slice now lives in
 [`modules/boat-honrich`](modules/boat-honrich). It preserves CFTO's ferrymen,
 live local-fare global, destination markers, time-passing `Game.FastTravel`,
 and Heartwood follower/horse handoff while replacing only the selection
-surface. Its deliberately small public lane is Riften, Heartwood Mill, and
-Ivarstead; Honeyside remains deferred until its private ownership/state gates
-are copied faithfully. The plugin and three Papyrus scripts build, its exact
+  surface. Its public lane is Riften, Heartwood Mill, and Ivarstead; the private
+  Honeyside ferryman joins it only while CFTO's placed service actor is enabled.
+  The plugin and three Papyrus scripts build, its exact
 CFTO/Dawnguard dialogue links pass an independent headless xEdit audit, and no
 artwork, audio, BCD record, or BCD master is shipped. All three ferrymen resolve
 to `MaleEvenToned`, and the exact Dawnguard shared-response FUZ is verified in
@@ -86,8 +81,11 @@ The second isolated boat slice now lives in
 [`modules/boat-ilinalta`](modules/boat-ilinalta). Its public Route 3 triangle is
 Brittleshin Pass, Half-Moon Mill, and Guardian Stones. It preserves CFTO's
 live 30-gold local fare and exact arrival markers, including Brittleshin's
-horse marker and Guardian Stones' follower/horse markers. Lakeview Manor and
-Ilinata's Deep remain deferred because they are not equivalent public peers.
+horse marker and Guardian Stones' follower/horse markers. Ilinata's Deep is
+  available as a destination-only 50-gold regional trip from every available
+  provider, including its dedicated follower/horse arrival markers. The private
+  Lakeview Manor ferryman joins only while CFTO's placed service actor is
+  enabled and retains its local fare and dedicated companion markers.
 All three ferrymen and the shared voiced response are independently verified;
 the plugin, scripts, SEQ, package, and byte-identical regeneration pass offline
 audits. Its monitored LoreRim run proved all three providers, a complete
@@ -100,8 +98,8 @@ The third isolated boat slice is
 Route 4 triangle at Raven Rock, Tel Mithryn, and Skaal Village, preserves the
 live 50-gold regional fare and exact arrival markers, and references the clean
 Dragonborn/RUSTIC physical map with a deliberate square presentation correction.
-Northshore Landing and Bujold's Retreat remain deferred because CFTO exposes
-them as destination-only extensions with no public Route 4 ferryman. All three
+Northshore Landing and Bujold's Retreat are available as destination-only
+extensions from all three public providers without becoming return docks. All three
 drivers resolve to `MaleEvenToned`; the exact shared-response FUZ, ESP, scripts,
 SEQ, source topology, and no-asset package pass independent offline audits. A
 first monitored gameplay pass proved automatic dialogue handoff, cancel,
@@ -110,15 +108,17 @@ auto-property values could retain stale map settings; the current candidate
 moves presentation constants into executable code and awaits a 1:1 visual
 check.
 
-Carriage parchment work has started in
+Carriage parchment work lives in
 [`modules/carriage-parchment`](modules/carriage-parchment). The existing
-29-stop/812-route carriage alpha remains the sole route, fare, refusal, payment,
-and CFTO handoff authority. The first adapter slice draws the nine hold capitals
-with live fare/time labels, preserves every executable CFTO destination, and returns the
-stable selection to `DNT_TravelCoordinator.Purchase` for revalidation. Its two
+flat CFTO service remains the sole availability, fare, payment, and travel
+authority. The adapter draws all 27 native CFTO destinations with fare-only
+labels and returns the stable selection to `DNT_TravelCoordinator.Purchase`
+for revalidation. Its two
 scripts compile without warnings; the separate ESP/SEQ and both paid/free
-shared-voice INFO paths pass an independent xEdit audit. The ordinary
-destination dialogue remains the fallback. This adapter is offline-only so far.
+shared-voice INFO paths pass an independent xEdit audit. The map now distinguishes
+eight verified destination-only stops from physical-driver, inn-request, and
+Hearthfire private-carriage return services. The ordinary destination dialogue
+remains the fallback.
 
 The five-pillar scope and reuse decisions are recorded in
 [`docs/PILLAR_RESEARCH.md`](docs/PILLAR_RESEARCH.md). The generic spoken
@@ -136,50 +136,24 @@ now live-proven and Morthal's replacement arrival is the current candidate.
 
 ## Implementation status
 
-The carriage alpha now contains:
-
-- a deterministic provider-aware route compiler;
-- geometric proximity-hazard attachment;
-- strict live-sensor validation;
-- an executable reference evaluator for runtime pricing and refusal;
-- verified live sensors for every routed hazard;
-- generated CFTO endpoint/dialogue metadata and an xEdit plugin generator;
-- six Papyrus runtime/dialogue scripts that compile with no warnings;
-- a reproducible alpha packaging command;
-- regression tests for routing and pricing.
-
-The strict compiler currently emits 29 stops, 812 ordered routes, an average of
-2.99 candidates per trip, and zero sensor or CFTO endpoint errors. The xEdit
-generator's smoke build emits a valid TES4 header, the six expected masters, 27
-availability/cost/hours global sets, nine origin quests, and 27 quoted
-destination topics without xEdit assignment errors. The patched default now
-completes that build headlessly with no Module Selection confirmation. The mod
-still needs the in-game checks listed in
-[`docs/ROADMAP.md`](docs/ROADMAP.md).
+The carriage beta now contains a flat, reproducible CFTO manifest; 27 direct
+destinations; nine origin services; CFTO local/standard/extra fare lookup;
+Hearthfire destination gates; direct arrival-marker travel; and the parchment
+picker. No graph runtime, candidate paths, hazard sensors, generated hour
+globals, or route-derived prices enter the release package. The older route
+compiler remains in the repository only as a post-release research lab.
 
 ## Developer quick start
 
 ```powershell
-$env:PYTHONPATH = "src"
-python -m unittest discover -s tests -v
+python .\tools\Generate-FlatDialogueManifest.py `
+  --endpoints .\config\cfto_endpoints.json `
+  --names .\config\cfto_destination_names.json `
+  --out .\build\dialogue_manifest.json
 
-python -m diegetic_travel compile `
-  --graph "C:\Users\Theo\Documents\LoreRim Info\travel-network\graph.json" `
-  --endpoints config\cfto_endpoints.json `
-  --sensors config\hazard_sensors.json `
-  --out build
-
-.\tools\Compile-Papyrus.ps1 `
-  -LoreRimRoot "D:\Lorerim"
-
-# Safe while another gameplay test is active: workspace builds/audits only.
-.\tools\Run-OfflineChecks.ps1 -FullBuild
+.\tools\Compile-Papyrus.ps1 -LoreRimRoot "D:\Lorerim"
+.\tools\Audit-CarriageParchment.ps1
 ```
-
-The compile command writes `runtime.json`, `dialogue_manifest.json`, and a
-validation report. A release build fails if a routed hazard lacks the forms
-needed to sense its state. Use `--allow-incomplete-sensors` only for authoring
-diagnostics.
 
 The complete build is:
 
@@ -187,7 +161,8 @@ The complete build is:
 .\tools\Build-Alpha.ps1
 ```
 
-It compiles the data and Papyrus, generates `DiegeticTravel.esp`, stages the mod,
+It generates the flat manifest, compiles Papyrus, generates
+`DiegeticTravel.esp`, stages the mod,
 and writes `dist\DiegeticTravel-alpha.zip`. The installable alpha requires
 SKSE64, JContainers SE, and CFTO, and the generated plugin must load after
 `CFTO.esp`.
@@ -207,7 +182,7 @@ fallback remains relevant only if that patched executable is unavailable.
 
 The current alpha is not compatible with the **Better Carriage Destinations -
 CFTO** patch: that patch opens its map picker before CFTO's destination topics,
-so it bypasses Diegetic Travel's dynamic route quote and availability dialogue.
+so it bypasses Diegetic Travel's own parchment handoff and availability gates.
 See [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md) for the analyzed integration
 path.
 

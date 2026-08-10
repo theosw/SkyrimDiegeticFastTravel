@@ -139,6 +139,34 @@ namespace
             a_normalizedY);
     }
 
+    bool AddStyledDestination(
+        RE::StaticFunctionTag*,
+        const RE::BSFixedString a_requestId,
+        const RE::BSFixedString a_destinationId,
+        const RE::BSFixedString a_label,
+        const std::int32_t a_fare,
+        const float a_normalizedX,
+        const float a_normalizedY,
+        const RE::BSFixedString a_markerTexturePath,
+        const float a_markerScale,
+        const float a_ringOffsetX,
+        const float a_ringOffsetY,
+        const float a_ringScale)
+    {
+        return DNT::ParchmentMenu::AddStyledDestination(
+            a_requestId.c_str(),
+            a_destinationId.c_str(),
+            a_label.c_str(),
+            a_fare,
+            a_normalizedX,
+            a_normalizedY,
+            a_markerTexturePath.c_str(),
+            a_markerScale,
+            a_ringOffsetX,
+            a_ringOffsetY,
+            a_ringScale);
+    }
+
     bool SetDestinationMarkerTexture(
         RE::StaticFunctionTag*,
         const RE::BSFixedString a_requestId,
@@ -149,6 +177,46 @@ namespace
             a_requestId.c_str(),
             a_destinationId.c_str(),
             a_texturePath.c_str());
+    }
+
+    bool SetDestinationSelectionRingTexture(
+        RE::StaticFunctionTag*,
+        const RE::BSFixedString a_requestId,
+        const RE::BSFixedString a_destinationId,
+        const RE::BSFixedString a_texturePath)
+    {
+        return DNT::ParchmentMenu::SetDestinationSelectionRingTexture(
+            a_requestId.c_str(),
+            a_destinationId.c_str(),
+            a_texturePath.c_str());
+    }
+
+    bool SetDestinationSelectionRingStyle(
+        RE::StaticFunctionTag*,
+        const RE::BSFixedString a_requestId,
+        const RE::BSFixedString a_destinationId,
+        const float a_offsetX,
+        const float a_offsetY,
+        const float a_scale)
+    {
+        return DNT::ParchmentMenu::SetDestinationSelectionRingStyle(
+            a_requestId.c_str(),
+            a_destinationId.c_str(),
+            a_offsetX,
+            a_offsetY,
+            a_scale);
+    }
+
+    bool SetDestinationMarkerScale(
+        RE::StaticFunctionTag*,
+        const RE::BSFixedString a_requestId,
+        const RE::BSFixedString a_destinationId,
+        const float a_scale)
+    {
+        return DNT::ParchmentMenu::SetDestinationMarkerScale(
+            a_requestId.c_str(),
+            a_destinationId.c_str(),
+            a_scale);
     }
 
     bool SetSourceLabel(
@@ -191,6 +259,26 @@ namespace
         return DNT::ParchmentMenu::SetOriginMarkerTexture(
             a_requestId.c_str(),
             a_texturePath.c_str());
+    }
+
+    bool SetSelectionRingTexture(
+        RE::StaticFunctionTag*,
+        const RE::BSFixedString a_requestId,
+        const RE::BSFixedString a_texturePath)
+    {
+        return DNT::ParchmentMenu::SetSelectionRingTexture(
+            a_requestId.c_str(),
+            a_texturePath.c_str());
+    }
+
+    bool SetSelectionRingScale(
+        RE::StaticFunctionTag*,
+        const RE::BSFixedString a_requestId,
+        const float a_scale)
+    {
+        return DNT::ParchmentMenu::SetSelectionRingScale(
+            a_requestId.c_str(),
+            a_scale);
     }
 
     bool SetRouteOrigin(
@@ -423,12 +511,18 @@ bool DNT::Papyrus::Register(RE::BSScript::IVirtualMachine* a_vm)
     a_vm->RegisterFunction("SetOverlayTexture", PapyrusClass, SetOverlayTexture);
     a_vm->RegisterFunction("SetMarkerTextures", PapyrusClass, SetMarkerTextures);
     a_vm->RegisterFunction("SetOriginMarkerTexture", PapyrusClass, SetOriginMarkerTexture);
+    a_vm->RegisterFunction("SetSelectionRingTexture", PapyrusClass, SetSelectionRingTexture);
+    a_vm->RegisterFunction("SetSelectionRingScale", PapyrusClass, SetSelectionRingScale);
     a_vm->RegisterFunction("SetPaymentLabelPosition", PapyrusClass, SetPaymentLabelPosition);
     a_vm->RegisterFunction("SetRouteOrigin", PapyrusClass, SetRouteOrigin);
     a_vm->RegisterFunction("AddRouteSegment", PapyrusClass, AddRouteSegment);
     a_vm->RegisterFunction("AddRouteLandmark", PapyrusClass, AddRouteLandmark);
     a_vm->RegisterFunction("AddDestination", PapyrusClass, AddDestination);
+    a_vm->RegisterFunction("AddStyledDestination", PapyrusClass, AddStyledDestination);
     a_vm->RegisterFunction("SetDestinationMarkerTexture", PapyrusClass, SetDestinationMarkerTexture);
+    a_vm->RegisterFunction("SetDestinationSelectionRingTexture", PapyrusClass, SetDestinationSelectionRingTexture);
+    a_vm->RegisterFunction("SetDestinationMarkerScale", PapyrusClass, SetDestinationMarkerScale);
+    a_vm->RegisterFunction("SetDestinationSelectionRingStyle", PapyrusClass, SetDestinationSelectionRingStyle);
     a_vm->RegisterFunction("Show", PapyrusClass, Show);
     a_vm->RegisterFunction("Cancel", PapyrusClass, Cancel);
     a_vm->RegisterFunction("PlayPresentation", PapyrusClass, PlayPresentation);

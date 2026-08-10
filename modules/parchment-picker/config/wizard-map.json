@@ -10,6 +10,7 @@
       0.783691
     ],
     "art_aspect_ratio": 1.414075,
+    "selection_ring_scale": 2.0,
     "asset_policy": "reference-only; do not package the DDS"
   },
   "icon_themes": {

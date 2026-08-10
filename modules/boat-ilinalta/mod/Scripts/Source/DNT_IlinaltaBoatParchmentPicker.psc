@@ -13,6 +13,8 @@ ObjectReference CurrentSource
 String ActiveSourceId = ""
 String ActiveRequest = ""
 Int RequestSerial = 0
+Int SelectionCount = 0
+String[] SelectionIds
 
 Function OpenMap(ObjectReference SourceRef)
     If ActiveRequest != ""
@@ -67,7 +69,11 @@ Function OpenMap(ObjectReference SourceRef)
         Return
     EndIf
 
-    Bool AddedAll = AddLaneDestinations()
+    Bool FerryStyleReady = DNT_ParchmentNative.SetMarkerTextures(ActiveRequest, "Data/textures/DiegeticTravel/docks-marker.dds", "Data/textures/DiegeticTravel/docks-marker.dds")
+    FerryStyleReady = DNT_ParchmentNative.SetOriginMarkerTexture(ActiveRequest, "Data/textures/DiegeticTravel/shipwreck-marker.dds") && FerryStyleReady
+    FerryStyleReady = DNT_ParchmentNative.SetSelectionRingTexture(ActiveRequest, "Data/textures/DiegeticTravel/parchment-thin-selection-ring.dds") && FerryStyleReady
+    FerryStyleReady = DNT_ParchmentNative.SetSelectionRingScale(ActiveRequest, 1.88) && FerryStyleReady
+    Bool AddedAll = AddLaneDestinations() && FerryStyleReady
     If !AddedAll
         DNT_ParchmentNative.Cancel(ActiveRequest)
         AbortOpen("destination_setup_failed")
@@ -82,31 +88,48 @@ Function OpenMap(ObjectReference SourceRef)
 EndFunction
 
 Bool Function AddLaneDestinations()
-    Int Fare = Service.GetFare("brittleshin_pass")
     Bool AddedAll = DNT_ParchmentNative.SetSourceLabel(ActiveRequest, GetSourceLabel(ActiveSourceId))
     AddedAll = DNT_ParchmentNative.SetPaymentLabelPosition(ActiveRequest, 0.655229, 0.913675) && AddedAll
-    If Fare < 0 || !AddedAll
+    If !AddedAll
         Return False
     EndIf
     AddedAll = AddInactiveMainlandLandmarks() && AddedAll
+    ClearSelections()
+    AddedAll = SetRouteOrigin(ActiveSourceId) && AddedAll
+    AddedAll = AddStop("brittleshin_pass", "Brittleshin Pass", 0.448478, 0.683198) && AddedAll
+    AddedAll = AddStop("half_moon_mill", "Half-Moon Mill", 0.396241, 0.692916) && AddedAll
+    AddedAll = AddStop("guardian_stones", "Guardian Stones", 0.501218, 0.685304) && AddedAll
+    AddedAll = AddStop("ilinatas_deep", "Ilinata's Deep", 0.412943, 0.664269) && AddedAll
+    AddedAll = AddStop("lakeview_manor", "Lakeview Manor", 0.423729, 0.709260) && AddedAll
+    Return AddedAll && SelectionCount > 0
+EndFunction
 
-    If ActiveSourceId == "brittleshin_pass"
-        AddedAll = DNT_ParchmentNative.SetRouteOrigin(ActiveRequest, 0.448478, 0.683198)
-        AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "half_moon_mill", "Half-Moon Mill ", Fare, 0.396241, 0.692916) && AddedAll
-        AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "guardian_stones", "Guardian Stones ", Fare, 0.501218, 0.685304) && AddedAll
-        Return AddedAll
-    ElseIf ActiveSourceId == "half_moon_mill"
-        AddedAll = DNT_ParchmentNative.SetRouteOrigin(ActiveRequest, 0.396241, 0.692916)
-        AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "brittleshin_pass", "Brittleshin Pass ", Fare, 0.448478, 0.683198) && AddedAll
-        AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "guardian_stones", "Guardian Stones ", Fare, 0.501218, 0.685304) && AddedAll
-        Return AddedAll
-    ElseIf ActiveSourceId == "guardian_stones"
-        AddedAll = DNT_ParchmentNative.SetRouteOrigin(ActiveRequest, 0.501218, 0.685304)
-        AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "brittleshin_pass", "Brittleshin Pass ", Fare, 0.448478, 0.683198) && AddedAll
-        AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "half_moon_mill", "Half-Moon Mill ", Fare, 0.396241, 0.692916) && AddedAll
-        Return AddedAll
+Bool Function SetRouteOrigin(String SourceId)
+    If SourceId == "brittleshin_pass"
+        Return DNT_ParchmentNative.SetRouteOrigin(ActiveRequest, 0.448478, 0.683198)
+    ElseIf SourceId == "half_moon_mill"
+        Return DNT_ParchmentNative.SetRouteOrigin(ActiveRequest, 0.396241, 0.692916)
+    ElseIf SourceId == "guardian_stones"
+        Return DNT_ParchmentNative.SetRouteOrigin(ActiveRequest, 0.501218, 0.685304)
+    ElseIf SourceId == "lakeview_manor"
+        Return DNT_ParchmentNative.SetRouteOrigin(ActiveRequest, 0.423729, 0.709260)
     EndIf
     Return False
+EndFunction
+
+Bool Function AddStop(String DestinationId, String DestinationName, Float MapX, Float MapY)
+    If DestinationId == ActiveSourceId || !Service.CanOfferDestination(DestinationId)
+        Return True
+    EndIf
+    Int Fare = Service.GetFare(DestinationId)
+    If Fare < 0 || !RecordSelection(DestinationId)
+        Return False
+    EndIf
+    Bool Added = DNT_ParchmentNative.AddDestination(ActiveRequest, DestinationId, DestinationName + " ", Fare, MapX, MapY)
+    If Added && DestinationId == "ilinatas_deep"
+        Added = DNT_ParchmentNative.SetDestinationSelectionRingTexture(ActiveRequest, DestinationId, "Data/textures/DiegeticTravel/parchment-thin-oneway-selection-ring.dds")
+    EndIf
+    Return Added
 EndFunction
 
 Bool Function AddInactiveMainlandLandmarks()
@@ -119,7 +142,7 @@ Bool Function AddInactiveMainlandLandmarks()
     AddedAll = DNT_ParchmentNative.AddRouteLandmark(ActiveRequest, 0.730469, 0.133952) && AddedAll
     AddedAll = DNT_ParchmentNative.AddRouteLandmark(ActiveRequest, 0.248535, 0.218833) && AddedAll
     ; Lake Honrich route.
-    AddedAll = DNT_ParchmentNative.AddRouteLandmark(ActiveRequest, 0.897461, 0.824934) && AddedAll
+    AddedAll = DNT_ParchmentNative.AddRouteLandmark(ActiveRequest, 0.905132, 0.835295) && AddedAll
     AddedAll = DNT_ParchmentNative.AddRouteLandmark(ActiveRequest, 0.812988, 0.805703) && AddedAll
     AddedAll = DNT_ParchmentNative.AddRouteLandmark(ActiveRequest, 0.688477, 0.724801) && AddedAll
     Return AddedAll
@@ -132,6 +155,8 @@ String Function GetSourceLabel(String SourceId)
         Return "Half-Moon Mill"
     ElseIf SourceId == "guardian_stones"
         Return "Guardian Stones"
+    ElseIf SourceId == "lakeview_manor"
+        Return "Lakeview Manor"
     EndIf
     Return ""
 EndFunction
@@ -142,6 +167,7 @@ Function AbortOpen(String Reason)
     ActiveRequest = ""
     ActiveSourceId = ""
     CurrentSource = None
+    ClearSelections()
     Debug.Notification("The ferry map could not be opened. Ask for the usual destinations instead.")
 EndFunction
 
@@ -154,17 +180,18 @@ Event OnParchmentResult(String EventName, String StringArg, Float NumberArg, For
     ObjectReference SourceRef = CurrentSource
     String SourceId = ActiveSourceId
     String FinishedRequest = ActiveRequest
+    String DestinationId = GetDestinationId(SelectionIndex)
     UnregisterForModEvent("DNT_ParchmentResult")
     ActiveRequest = ""
     ActiveSourceId = ""
     CurrentSource = None
+    ClearSelections()
 
     If SelectionIndex < 0
         Debug.Trace("[DNT] BOAT_PARCHMENT_CANCEL lane=lake_ilinalta source=" + SourceId + " request=" + FinishedRequest)
         Return
     EndIf
 
-    String DestinationId = GetDestinationId(SourceId, SelectionIndex)
     If DestinationId == ""
         Debug.Trace("[DNT] BOAT_PARCHMENT_REJECT lane=lake_ilinalta source=" + SourceId + " request=" + FinishedRequest + " reason=unknown_index index=" + SelectionIndex, 1)
         Return
@@ -174,25 +201,23 @@ Event OnParchmentResult(String EventName, String StringArg, Float NumberArg, For
     Service.RequestTravel(DestinationId, SourceRef)
 EndEvent
 
-String Function GetDestinationId(String SourceId, Int SelectionIndex)
-    If SourceId == "brittleshin_pass"
-        If SelectionIndex == 0
-            Return "half_moon_mill"
-        ElseIf SelectionIndex == 1
-            Return "guardian_stones"
-        EndIf
-    ElseIf SourceId == "half_moon_mill"
-        If SelectionIndex == 0
-            Return "brittleshin_pass"
-        ElseIf SelectionIndex == 1
-            Return "guardian_stones"
-        EndIf
-    ElseIf SourceId == "guardian_stones"
-        If SelectionIndex == 0
-            Return "brittleshin_pass"
-        ElseIf SelectionIndex == 1
-            Return "half_moon_mill"
-        EndIf
+Function ClearSelections()
+    SelectionCount = 0
+    SelectionIds = new String[5]
+EndFunction
+
+Bool Function RecordSelection(String DestinationId)
+    If SelectionCount < 0 || SelectionCount >= 5
+        Return False
+    EndIf
+    SelectionIds[SelectionCount] = DestinationId
+    SelectionCount += 1
+    Return True
+EndFunction
+
+String Function GetDestinationId(Int SelectionIndex)
+    If SelectionIndex >= 0 && SelectionIndex < SelectionCount
+        Return SelectionIds[SelectionIndex]
     EndIf
     Return ""
 EndFunction

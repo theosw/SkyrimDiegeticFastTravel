@@ -7,12 +7,12 @@ or invent a return provider.
 
 ## CFTO: state-gated ferry destinations
 
-| Destination / service | Proven source condition | Required behavior | Proof still needed |
-| --- | --- | --- | --- |
-| Windstad Manor ferry | CFTO's paid INFO requires the player to own the Windstad jetty item (`KmodHouse2Dock == 1`). The provider is part of the private Hearthfire ferry setup. | Show the stop and provider only when CFTO's private service exists; preserve the normal ferry fare. | Verify every provider/actor construction condition in addition to the jetty item. |
-| Lakeview Manor ferry | CFTO's paid INFO requires the player to own the Lakeview jetty item (`KmodHouse1Dock == 1`). | Show the stop and provider only when CFTO's private service exists; preserve the local ferry fare. | Verify every provider/actor construction condition in addition to the jetty item. |
-| Honeyside ferry | CFTO tests the `HousePurchase` quest variable and distinguishes the private Honeyside ferryman from the public Riften ferryman. | Mirror the original ownership, porch, and ferryman conditions; preserve the local ferry fare. | Record the complete condition stack and the exact provider references. |
-| Castle Volkihar / Icewater Jetty | CFTO uses the `KmodFerryVolkihar` global, `KmodFerryCostExtra`, a special persuasion/confirmation branch, and a free return option on the Enthralled Ferryman. | Preserve the special discovery/persuasion flow and extra fare. The Enthralled Ferryman must remain a distinct return provider. | Trace the exact original state transition that sets `KmodFerryVolkihar`; do not guess a Dawnguard quest stage. |
+| Destination / service | Proven source condition | Implemented behavior |
+| --- | --- | --- |
+| Windstad Manor ferry | CFTO owns the private placed ferryman's enable state. | Exact actor whitelist; provider/destination shown only while placed ref `014C8A` is enabled; regional fare and dedicated follower/horse markers retained. |
+| Lakeview Manor ferry | CFTO owns the private placed ferryman's enable state. | Exact actor whitelist; provider/destination shown only while placed ref `014C81` is enabled; local fare and dedicated follower/horse markers retained. |
+| Honeyside ferry | CFTO owns the private placed ferryman's enable state. | Exact actor whitelist; provider/destination shown only while placed ref `014C8D` is enabled; local fare retained. |
+| Castle Volkihar / Icewater Jetty | CFTO exposes `KmodFerryVolkihar`, `KmodFerryCostExtra`, and the distinct Enthralled Ferryman. | Provider/destination shown at state >= 1; outbound fare is the live extra-fare global (100 fallback), return source is free, and dedicated companion markers are retained. |
 
 ## CFTO: Hearthfire carriage destinations already present
 
@@ -25,14 +25,14 @@ earlier than CFTO would.
 ## Journey to Baan Malur: faction-unlocked ports
 
 Captain Remyris's safe initial network is Raven Rock, Baan Malur, and Cormaris.
-The other six destinations are exposed by hidden check actors joining the
-source mod's destination factions:
+Six additional destinations are described by hidden check actors or source
+quest stages; only the verified one-way Sunmul trip is enabled for beta:
 
 | Destination | Proven unlock faction / check actor |
 | --- | --- |
 | Pryai | `SOMRBoatHirePryai` via `SOMRBoatTravelPryaiCheck` |
 | Llethrin Fel | `SOMRBoatHireLlethrinFel` |
-| Sunmul | `SOMRBoatHireSunmul` via `SOMRBoatTravelSunmulCheck` |
+| Sunmul | Verified source quest stage 5 works from Raven Rock, but no return provider currently exists. The beta exposes this one trip only and marks it one-way. |
 | Seyda Neen | `SOMRBoatHireSeydaNeen` |
 | Vivec | `SOMRBoatHireVivec` via `SOMRBoatTravelVivecCheck` |
 | Old Silgrad | `SOMRBoatHireOldSilgrad` |
@@ -51,6 +51,33 @@ reach them and must not create a fake return service:
 - Ilinalta's Deep (Lake Ilinalta Route 3 extension)
 - Northshore Landing (Solstheim Route 4 extension)
 - Bujold's Retreat (Solstheim Route 4 extension)
+- Sunmul (Baan Malur stage 5, from Raven Rock only)
+
+The carriage network has a separate destination-only classification based on
+CFTO's placed carriage drivers plus LoreRim's installed **Wait Carriage in Inns**
+service. These eight CFTO destinations have neither a physical driver nor an
+eligible inn from which a return carriage can be requested:
+
+- Darkwater Crossing
+- Mixwater Mill
+- Half-Moon Mill
+- Karthwasten
+- Soljund's Sinkhole
+- Shor's Stone
+- Heartwood Mill
+- Stonehills
+
+Rorikstead is not one-way: Frostfruit Inn is an eligible request origin. The
+same inn-return rule covers Kynesgrove, Riverwood, Old Hroldan, Dragon Bridge,
+Ivarstead, and Nightgate Inn. Lakeview Manor, Heljarchen Hall, and Windstad
+Manor have conditional return service through their hireable Hearthfire
+carriages. Without `WaitCarriageInns.esp`, the seven inn-only origins above are
+destination-only under CFTO itself; the beta classification is therefore
+explicitly LoreRim/WCI-aware.
+
+All four are now structurally implemented with explicit `available_from`
+provider lists and no source actor. Gameplay verification remains before the
+beta package is promoted.
 
 ## Deliberately unsupported placeholders
 
@@ -74,13 +101,22 @@ pre-command save after each scenario. Never use target-selection-dependent
 ConsoleUtil commands for runtime travel logic: selected-reference changes are
 queued and are not safe to assume synchronous with the next command.
 
+The release harness is implemented at `test-harness/state-gated-release` as a
+plugin-free MO2 mod containing only console batch files. Its commands use
+stable EditorIDs, never `prid` or load-order-prefixed FormIDs, and deliberately
+provide no restore batch. The only supported restore operation is reloading the
+pre-command disposable save. The full matrix and log oracle are documented in
+`docs/STATE_GATED_RELEASE_TEST.md`.
+
 ## Recommended implementation order
 
-1. Add the four one-way destinations, restricted to their original providers.
-2. Mirror the three private-property ferry gates exactly.
-3. Reproduce the Castle Volkihar discovery/extra-fare/return flow after its
-   state transition is fully traced.
+1. **Implemented:** four CFTO one-way destinations, restricted to their original providers.
+2. **Implemented:** three private-property services delegated to CFTO's live
+   placed-ref enable state.
+3. **Implemented:** Castle Volkihar availability, extra outbound fare, free
+   return, and distinct Enthralled Ferryman using CFTO's live globals.
 4. **Implemented offline; live test pending:** Captain Remyris's three public
    merchant stops, in the isolated `boat-baan-malur` module.
-5. Add the six Baan Malur faction-unlocked ports by querying their original
-   source-mod factions.
+5. **Partial:** expose verified Raven Rock -> Sunmul stage 5 as one-way. Keep the
+   other five Baan Malur ports deferred until their areas and return services
+   are complete and their original unlocks can be verified.

@@ -24,5 +24,8 @@ installed CFTO plugin has no native executable handoff for them.
 The ordinary CFTO-derived destination dialogue remains the fallback.
 
 No BCD integration is required. The module reuses the generic native parchment
-runtime and references the same external `battlemap01.dds` path without
-packaging artwork.
+runtime and references the same external Skyrim Paper Map/FWMF
+`textures/terrain/tamriel/skyrim.dds` illustration used by the wizard provider.
+The carriage sheet defaults to Norden UI destination symbols and the exact
+Norden round-trip loading symbol as its selection ring. No background map
+artwork is packaged.

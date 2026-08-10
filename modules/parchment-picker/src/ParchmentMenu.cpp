@@ -89,11 +89,16 @@ namespace
         const DNT::MenuFramework::DrawList a_drawList,
         const DNT::MenuFramework::Texture a_idleMarkerTexture,
         const DNT::MenuFramework::Texture a_selectedMarkerTexture,
+        const DNT::MenuFramework::Texture a_selectionRingTexture,
         const DNT::MenuFramework::Vec2 a_center,
         const float a_radius,
         const bool a_highlighted,
         const bool a_scaleOnlyHighlight = false,
-        const float a_artScale = 1.0F)
+        const float a_artScale = 1.0F,
+        const float a_selectionRingScale = 2.0F,
+        const float a_selectionRingOffsetX = 0.0F,
+        const float a_selectionRingOffsetY = 0.0F,
+        const float a_destinationRingScale = 1.0F)
     {
         if (!a_drawList) {
             return;
@@ -105,11 +110,24 @@ namespace
         const auto baseExtent = std::clamp(a_radius, 17.0F, 34.0F);
         const auto extent = baseExtent * a_artScale *
             (a_highlighted && a_scaleOnlyHighlight ? 1.18F : 1.0F);
+        const auto iconExtent = extent * 1.12F;
         const auto ink = darkInk;
+
+        if (a_highlighted && a_selectionRingTexture) {
+            const auto ringExtent = extent * a_selectionRingScale * a_destinationRingScale;
+            const DNT::MenuFramework::Vec2 ringCenter{
+                a_center.x + iconExtent * a_selectionRingOffsetX,
+                a_center.y + iconExtent * a_selectionRingOffsetY
+            };
+            a_framework.AddImage(
+                a_drawList,
+                a_selectionRingTexture,
+                { ringCenter.x - ringExtent, ringCenter.y - ringExtent },
+                { ringCenter.x + ringExtent, ringCenter.y + ringExtent });
+        }
 
         if (a_highlighted) {
             if (a_selectedMarkerTexture) {
-                const auto iconExtent = extent * 1.12F;
                 a_framework.AddImage(
                     a_drawList,
                     a_selectedMarkerTexture,
@@ -120,7 +138,6 @@ namespace
         }
 
         if (!a_highlighted && a_idleMarkerTexture) {
-            const auto iconExtent = extent * 1.12F;
             a_framework.AddImage(
                 a_drawList,
                 a_idleMarkerTexture,
@@ -321,6 +338,7 @@ namespace
             a_drawList,
             nullptr,
             nullptr,
+            nullptr,
             a_center,
             a_radius,
             false);
@@ -464,8 +482,13 @@ namespace
     DNT::MenuFramework::Texture loadedOriginMarkerTexture{ nullptr };
     std::string loadedOriginMarkerTexturePath;
     bool originMarkerTextureLoadAttempted{ false };
+    DNT::MenuFramework::Texture loadedSelectionRingTexture{ nullptr };
+    std::string loadedSelectionRingTexturePath;
+    bool selectionRingTextureLoadAttempted{ false };
     std::unordered_map<std::string, DNT::MenuFramework::Texture> loadedDestinationMarkerTextures;
     std::unordered_set<std::string> destinationMarkerTextureLoadAttempts;
+    std::unordered_map<std::string, DNT::MenuFramework::Texture> loadedDestinationSelectionRingTextures;
+    std::unordered_set<std::string> destinationSelectionRingTextureLoadAttempts;
 
     void FinishRequest(std::int32_t a_selectionIndex, std::string_view a_reason)
     {
@@ -537,6 +560,14 @@ namespace
             if (!activeRequest || !activeRequest->visible) {
                 return false;
             }
+        }
+
+        if (a_event && a_event->device == RE::INPUT_DEVICE::kMouse) {
+            // Mouse interaction owns the highlight until the player explicitly
+            // returns to keyboard/gamepad navigation. Otherwise ImGui's retained
+            // first-item focus reappears as soon as the cursor leaves a marker.
+            navigationFocusEngaged.store(false, std::memory_order_relaxed);
+            return false;
         }
 
         const auto* button = a_event ? a_event->AsButtonEvent() : nullptr;
@@ -692,6 +723,30 @@ namespace
                         loadedOriginMarkerTexturePath);
                 }
             }
+            const std::string desiredSelectionRingTexturePath =
+                snapshot.request.selectionRingTexturePath;
+            if (desiredSelectionRingTexturePath != loadedSelectionRingTexturePath) {
+                if (loadedSelectionRingTexture && !loadedSelectionRingTexturePath.empty()) {
+                    framework.DisposeTexture(loadedSelectionRingTexturePath);
+                }
+                loadedSelectionRingTexture = nullptr;
+                loadedSelectionRingTexturePath = desiredSelectionRingTexturePath;
+                selectionRingTextureLoadAttempted = false;
+            }
+            if (!loadedSelectionRingTexture && !loadedSelectionRingTexturePath.empty() &&
+                !selectionRingTextureLoadAttempted) {
+                selectionRingTextureLoadAttempted = true;
+                loadedSelectionRingTexture = framework.LoadTexture(loadedSelectionRingTexturePath);
+                if (!loadedSelectionRingTexture) {
+                    logger::warn(
+                        "PARCHMENT_SELECTION_RING_MISSING path={}",
+                        loadedSelectionRingTexturePath);
+                } else {
+                    logger::info(
+                        "PARCHMENT_SELECTION_RING_READY path={}",
+                        loadedSelectionRingTexturePath);
+                }
+            }
             const std::string desiredIdleMarkerTexturePath =
                 snapshot.request.idleMarkerTexturePath.empty() ?
                     std::string(defaultIdleMarkerTexturePath) :
@@ -739,6 +794,29 @@ namespace
                         destination.id,
                         path,
                         loadedIdleMarkerTexturePath);
+                }
+            }
+            for (const auto& destination : snapshot.request.destinations) {
+                const auto& path = destination.selectionRingTexturePath;
+                if (path.empty() ||
+                    (path == loadedSelectionRingTexturePath && loadedSelectionRingTexture) ||
+                    loadedDestinationSelectionRingTextures.contains(path) ||
+                    destinationSelectionRingTextureLoadAttempts.contains(path)) {
+                    continue;
+                }
+                destinationSelectionRingTextureLoadAttempts.insert(path);
+                if (auto texture = framework.LoadTexture(path)) {
+                    loadedDestinationSelectionRingTextures.emplace(path, texture);
+                    logger::info(
+                        "PARCHMENT_DESTINATION_RING_READY destination={} path={}",
+                        destination.id,
+                        path);
+                } else {
+                    logger::warn(
+                        "PARCHMENT_DESTINATION_RING_MISSING destination={} path={} fallback={}",
+                        destination.id,
+                        path,
+                        loadedSelectionRingTexturePath);
                 }
             }
 
@@ -827,6 +905,7 @@ namespace
             const auto isCarriageProvider = EqualsAsciiInsensitive(
                 snapshot.request.providerId,
                 "carriage");
+            const auto isFormalMapProvider = isCollegeProvider || isCarriageProvider;
             const auto showRouteLines = !isBoatProvider && !isCollegeProvider;
             if (snapshot.request.routeOrigin) {
                 const DNT::MenuFramework::Vec2 routeOrigin{
@@ -900,10 +979,10 @@ namespace
             }
             for (std::size_t index = 0; index < destinationVisuals.size(); ++index) {
                 const auto& visual = destinationVisuals[index];
+                const auto& destination = snapshot.request.destinations[index];
                 auto idleMarkerTexture = loadedIdleMarkerTexture;
                 auto selectedMarkerTexture = loadedSelectedMarkerTexture;
-                const auto& destinationTexturePath =
-                    snapshot.request.destinations[index].idleMarkerTexturePath;
+                const auto& destinationTexturePath = destination.idleMarkerTexturePath;
                 if (!destinationTexturePath.empty()) {
                     const auto destinationTexture =
                         loadedDestinationMarkerTextures.find(destinationTexturePath);
@@ -921,16 +1000,30 @@ namespace
                             std::string::npos ?
                         1.25F : 0.84F;
                 }
+                markerArtScale *= destination.markerScale;
+                auto destinationSelectionRingTexture = loadedSelectionRingTexture;
+                if (!destination.selectionRingTexturePath.empty()) {
+                    const auto ringTexture = loadedDestinationSelectionRingTextures.find(
+                        destination.selectionRingTexturePath);
+                    if (ringTexture != loadedDestinationSelectionRingTextures.end()) {
+                        destinationSelectionRingTexture = ringTexture->second;
+                    }
+                }
                 DrawFerryDestinationMarker(
                     framework,
                     drawList,
                     idleMarkerTexture,
                     selectedMarkerTexture,
+                    destinationSelectionRingTexture,
                     visual.center,
                     visual.radius,
                     visual.highlighted,
                     isCollegeProvider,
-                    markerArtScale);
+                    markerArtScale,
+                    snapshot.request.selectionRingScale,
+                    destination.selectionRingOffsetX,
+                    destination.selectionRingOffsetY,
+                    destination.selectionRingScale);
             }
 
             if (!focusedDescription.empty()) {
@@ -938,7 +1031,7 @@ namespace
                 constexpr auto textShadow = MakeColor(20, 14, 10, 235);
                 constexpr auto inventoryIvory = MakeColor(238, 229, 207, 255);
                 constexpr auto wizardMapInk = MakeColor(69, 44, 13, 255);
-                const auto textColor = isCollegeProvider ? wizardMapInk : inventoryIvory;
+                const auto textColor = isFormalMapProvider ? wizardMapInk : inventoryIvory;
                 const auto paymentLabelPosition = snapshot.request.paymentLabelPosition.value_or(
                     DNT::Parchment::RoutePoint{ .normalizedX = 0.080F, .normalizedY = 0.760F });
                 framework.SetWindowFontScale(1.08F);
@@ -954,7 +1047,7 @@ namespace
                     std::clamp(centeredTextX, minimumTextX, maximumTextX),
                     layout.top + layout.height * paymentLabelPosition.normalizedY
                 };
-                if (!isCollegeProvider) {
+                if (!isFormalMapProvider) {
                     framework.SetCursorScreenPos({ textPosition.x + 2.0F, textPosition.y + 2.0F });
                     framework.PushStyleColor(textStyleIndex, textShadow);
                     framework.TextUnformatted(focusedDescription);
@@ -1152,6 +1245,64 @@ bool DNT::ParchmentMenu::SetOriginMarkerTexture(
     return added;
 }
 
+bool DNT::ParchmentMenu::SetSelectionRingTexture(
+    const std::string_view a_requestId,
+    const std::string_view a_texturePath)
+{
+    std::scoped_lock lock(requestLock);
+    if (!activeRequest || activeRequest->request.requestId != a_requestId || activeRequest->visible) {
+        return false;
+    }
+
+    std::string error;
+    const auto added = Parchment::SetSelectionRingTexture(
+        activeRequest->request,
+        std::string(a_texturePath),
+        error);
+    if (!added) {
+        logger::warn(
+            "PARCHMENT_SELECTION_RING_REJECT request={} path={} reason={}",
+            a_requestId,
+            a_texturePath,
+            error);
+    } else {
+        logger::info(
+            "PARCHMENT_SELECTION_RING_SET request={} path={}",
+            a_requestId,
+            a_texturePath);
+    }
+    return added;
+}
+
+bool DNT::ParchmentMenu::SetSelectionRingScale(
+    const std::string_view a_requestId,
+    const float a_scale)
+{
+    std::scoped_lock lock(requestLock);
+    if (!activeRequest || activeRequest->request.requestId != a_requestId || activeRequest->visible) {
+        return false;
+    }
+
+    std::string error;
+    const auto added = Parchment::SetSelectionRingScale(
+        activeRequest->request,
+        a_scale,
+        error);
+    if (!added) {
+        logger::warn(
+            "PARCHMENT_SELECTION_RING_SCALE_REJECT request={} scale={:.3f} reason={}",
+            a_requestId,
+            a_scale,
+            error);
+    } else {
+        logger::info(
+            "PARCHMENT_SELECTION_RING_SCALE_SET request={} scale={:.3f}",
+            a_requestId,
+            a_scale);
+    }
+    return added;
+}
+
 bool DNT::ParchmentMenu::SetSourceLabel(
     const std::string_view a_requestId,
     const std::string_view a_sourceLabel)
@@ -1215,6 +1366,60 @@ bool DNT::ParchmentMenu::AddDestination(
     return added;
 }
 
+bool DNT::ParchmentMenu::AddStyledDestination(
+    const std::string_view a_requestId,
+    const std::string_view a_destinationId,
+    const std::string_view a_label,
+    const std::int32_t a_fare,
+    const float a_normalizedX,
+    const float a_normalizedY,
+    const std::string_view a_markerTexturePath,
+    const float a_markerScale,
+    const float a_ringOffsetX,
+    const float a_ringOffsetY,
+    const float a_ringScale)
+{
+    std::scoped_lock lock(requestLock);
+    if (!activeRequest || activeRequest->request.requestId != a_requestId || activeRequest->visible) {
+        return false;
+    }
+
+    std::string error;
+    const auto added = Parchment::AddDestination(
+        activeRequest->request,
+        Parchment::Destination{
+            .id = std::string(a_destinationId),
+            .label = std::string(a_label),
+            .fare = a_fare,
+            .normalizedX = a_normalizedX,
+            .normalizedY = a_normalizedY,
+            .idleMarkerTexturePath = std::string(a_markerTexturePath),
+            .markerScale = a_markerScale,
+            .selectionRingOffsetX = a_ringOffsetX,
+            .selectionRingOffsetY = a_ringOffsetY,
+            .selectionRingScale = a_ringScale
+        },
+        error);
+    if (!added) {
+        logger::warn(
+            "PARCHMENT_STYLED_DESTINATION_REJECT request={} destination={} reason={}",
+            a_requestId,
+            a_destinationId,
+            error);
+    } else {
+        logger::info(
+            "PARCHMENT_STYLED_DESTINATION_SET request={} destination={} marker={} markerScale={:.3f} ringOffset=({:.3f},{:.3f}) ringScale={:.3f}",
+            a_requestId,
+            a_destinationId,
+            a_markerTexturePath,
+            a_markerScale,
+            a_ringOffsetX,
+            a_ringOffsetY,
+            a_ringScale);
+    }
+    return added;
+}
+
 bool DNT::ParchmentMenu::SetDestinationMarkerTexture(
     const std::string_view a_requestId,
     const std::string_view a_destinationId,
@@ -1244,6 +1449,113 @@ bool DNT::ParchmentMenu::SetDestinationMarkerTexture(
             a_requestId,
             a_destinationId,
             a_texturePath);
+    }
+    return added;
+}
+
+bool DNT::ParchmentMenu::SetDestinationSelectionRingTexture(
+    const std::string_view a_requestId,
+    const std::string_view a_destinationId,
+    const std::string_view a_texturePath)
+{
+    std::scoped_lock lock(requestLock);
+    if (!activeRequest || activeRequest->request.requestId != a_requestId || activeRequest->visible) {
+        return false;
+    }
+
+    std::string error;
+    const auto added = Parchment::SetDestinationSelectionRingTexture(
+        activeRequest->request,
+        a_destinationId,
+        std::string(a_texturePath),
+        error);
+    if (!added) {
+        logger::warn(
+            "PARCHMENT_DESTINATION_RING_REJECT request={} destination={} path={} reason={}",
+            a_requestId,
+            a_destinationId,
+            a_texturePath,
+            error);
+    } else {
+        logger::info(
+            "PARCHMENT_DESTINATION_RING_SET request={} destination={} path={}",
+            a_requestId,
+            a_destinationId,
+            a_texturePath);
+    }
+    return added;
+}
+
+bool DNT::ParchmentMenu::SetDestinationSelectionRingStyle(
+    const std::string_view a_requestId,
+    const std::string_view a_destinationId,
+    const float a_offsetX,
+    const float a_offsetY,
+    const float a_scale)
+{
+    std::scoped_lock lock(requestLock);
+    if (!activeRequest || activeRequest->request.requestId != a_requestId || activeRequest->visible) {
+        return false;
+    }
+
+    std::string error;
+    const auto added = Parchment::SetDestinationSelectionRingStyle(
+        activeRequest->request,
+        a_destinationId,
+        a_offsetX,
+        a_offsetY,
+        a_scale,
+        error);
+    if (!added) {
+        logger::warn(
+            "PARCHMENT_DESTINATION_RING_STYLE_REJECT request={} destination={} offset=({:.3f},{:.3f}) scale={:.3f} reason={}",
+            a_requestId,
+            a_destinationId,
+            a_offsetX,
+            a_offsetY,
+            a_scale,
+            error);
+    } else {
+        logger::info(
+            "PARCHMENT_DESTINATION_RING_STYLE_SET request={} destination={} offset=({:.3f},{:.3f}) scale={:.3f}",
+            a_requestId,
+            a_destinationId,
+            a_offsetX,
+            a_offsetY,
+            a_scale);
+    }
+    return added;
+}
+
+bool DNT::ParchmentMenu::SetDestinationMarkerScale(
+    const std::string_view a_requestId,
+    const std::string_view a_destinationId,
+    const float a_scale)
+{
+    std::scoped_lock lock(requestLock);
+    if (!activeRequest || activeRequest->request.requestId != a_requestId || activeRequest->visible) {
+        return false;
+    }
+
+    std::string error;
+    const auto added = Parchment::SetDestinationMarkerScale(
+        activeRequest->request,
+        a_destinationId,
+        a_scale,
+        error);
+    if (!added) {
+        logger::warn(
+            "PARCHMENT_DESTINATION_MARKER_SCALE_REJECT request={} destination={} scale={:.3f} reason={}",
+            a_requestId,
+            a_destinationId,
+            a_scale,
+            error);
+    } else {
+        logger::info(
+            "PARCHMENT_DESTINATION_MARKER_SCALE_SET request={} destination={} scale={:.3f}",
+            a_requestId,
+            a_destinationId,
+            a_scale);
     }
     return added;
 }
@@ -1424,7 +1736,7 @@ bool DNT::ParchmentMenu::Show(const std::string_view a_requestId)
     activeRequest->visible = true;
     pickerWindow->isOpen = true;
     logger::info(
-        "PARCHMENT_OPEN request={} provider={} destinations={} routeSegments={} routeLandmarks={} texture={} overlay={} idleMarker={} selectedMarker={} originMarker={}",
+        "PARCHMENT_OPEN request={} provider={} destinations={} routeSegments={} routeLandmarks={} texture={} overlay={} idleMarker={} selectedMarker={} originMarker={} selectionRing={}",
         activeRequest->request.requestId,
         activeRequest->request.providerId,
         activeRequest->request.destinations.size(),
@@ -1440,7 +1752,9 @@ bool DNT::ParchmentMenu::Show(const std::string_view a_requestId)
         activeRequest->request.originMarkerTexturePath.empty() ?
             (activeRequest->request.selectedMarkerTexturePath.empty() ?
                 defaultSelectedMarkerTexturePath : activeRequest->request.selectedMarkerTexturePath) :
-            activeRequest->request.originMarkerTexturePath);
+            activeRequest->request.originMarkerTexturePath,
+        activeRequest->request.selectionRingTexturePath.empty() ?
+            "<none>" : activeRequest->request.selectionRingTexturePath);
     return true;
 }
 

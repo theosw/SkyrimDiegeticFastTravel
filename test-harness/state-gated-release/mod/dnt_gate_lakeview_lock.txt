@@ -1,0 +1,2 @@
+KmodHouse1FerrymanMarker.disable
+BYOHHouse1MapMarker.disable

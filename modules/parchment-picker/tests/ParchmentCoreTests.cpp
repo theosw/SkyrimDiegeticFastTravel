@@ -39,13 +39,17 @@ namespace
         std::string error;
         Require(DNT::Parchment::SetMarkerTextures(
             request,
-            "Data/textures/DiegeticTravel/whiterun-dragonsreach.dds",
-            "Data/textures/DiegeticTravel/whiterun-dragonsreach.dds",
+            "Data/textures/DiegeticTravel/norden-town.dds",
+            "Data/textures/DiegeticTravel/norden-town.dds",
             error), "college marker theme should validate");
         Require(DNT::Parchment::SetOriginMarkerTexture(
             request,
-            "Data/textures/DiegeticTravel/winterhold-college.dds",
+            "Data/textures/DiegeticTravel/norden-winterhold-capital.dds",
             error), "college origin marker should validate");
+        Require(DNT::Parchment::SetSelectionRingTexture(
+            request,
+            "Data/textures/DiegeticTravel/norden-roundtrip-selection-ring.dds",
+            error), "college selection ring should validate");
         Require(DNT::Parchment::SetSourceLabel(
             request,
             "College of Winterhold",
@@ -59,13 +63,13 @@ namespace
             { 0.750802F, 0.167836F },
             error), "college route origin should validate");
         const std::pair<DNT::Parchment::Destination, const char*> destinations[]{
-            { { "whiterun", "Whiterun", 250, 0.532756F, 0.548290F }, "whiterun-dragonsreach.dds" },
-            { { "riften", "Riften", 250, 0.880078F, 0.833512F }, "riften-mistveil-keep.dds" },
-            { { "solitude", "Solitude", 250, 0.365471F, 0.191247F }, "solitude-blue-palace.dds" },
-            { { "windhelm", "Windhelm", 250, 0.793249F, 0.410699F }, "windhelm-palace-of-the-kings.dds" },
-            { { "markarth", "Markarth", 250, 0.094238F, 0.507741F }, "markarth-understone-keep.dds" },
-            { { "dawnstar", "Dawnstar", 250, 0.557529F, 0.185081F }, "dawnstar-white-hall.dds" },
-            { { "morthal", "Morthal", 250, 0.400452F, 0.311110F }, "morthal-highmoon-hall.dds" },
+            { { "whiterun", "Whiterun", 250, 0.532756F, 0.548290F }, "norden-whiterun-capital.dds" },
+            { { "riften", "Riften", 250, 0.880078F, 0.833512F }, "norden-riften-capital.dds" },
+            { { "solitude", "Solitude", 250, 0.365471F, 0.191247F }, "norden-solitude-capital.dds" },
+            { { "windhelm", "Windhelm", 250, 0.793249F, 0.410699F }, "norden-windhelm-capital.dds" },
+            { { "markarth", "Markarth", 250, 0.094238F, 0.507741F }, "norden-markarth-capital.dds" },
+            { { "dawnstar", "Dawnstar", 250, 0.557529F, 0.185081F }, "norden-dawnstar-capital.dds" },
+            { { "morthal", "Morthal", 250, 0.400452F, 0.311110F }, "norden-morthal-capital.dds" },
         };
         for (const auto& [destination, markerFile] : destinations) {
             Require(DNT::Parchment::AddDestination(request, destination, error), "college destination should validate");
@@ -88,17 +92,55 @@ namespace
         Require(request.routeOrigin.has_value(), "college request should define a route origin");
         Require(request.paymentLabelPosition.has_value(), "college request should define a payment label position");
         Require(request.idleMarkerTexturePath ==
-            "Data/textures/DiegeticTravel/whiterun-dragonsreach.dds",
+            "Data/textures/DiegeticTravel/norden-town.dds",
             "college request should retain its idle marker texture");
         Require(request.selectedMarkerTexturePath ==
-            "Data/textures/DiegeticTravel/whiterun-dragonsreach.dds",
+            "Data/textures/DiegeticTravel/norden-town.dds",
             "college request should use the generic hold marker only as a selection fallback");
         Require(request.originMarkerTexturePath ==
-            "Data/textures/DiegeticTravel/winterhold-college.dds",
+            "Data/textures/DiegeticTravel/norden-winterhold-capital.dds",
             "college request should retain its distinct origin marker texture");
+        Require(request.selectionRingTexturePath ==
+            "Data/textures/DiegeticTravel/norden-roundtrip-selection-ring.dds",
+            "college request should retain its round-trip selection ring");
+        RequireClose(request.selectionRingScale, 2.0F, 0.0001F,
+            "college request should default to the established global ring scale");
         Require(request.destinations[0].idleMarkerTexturePath ==
-            "Data/textures/DiegeticTravel/whiterun-dragonsreach.dds",
+            "Data/textures/DiegeticTravel/norden-whiterun-capital.dds",
             "each college destination should retain its neutral city marker");
+        Require(DNT::Parchment::AddDestination(
+            request,
+            {
+                .id = "styled_stop",
+                .label = "Styled Stop",
+                .fare = 50,
+                .normalizedX = 0.25F,
+                .normalizedY = 0.75F,
+                .idleMarkerTexturePath = "Data/textures/DiegeticTravel/norden-town.dds",
+                .markerScale = 0.8F,
+                .selectionRingOffsetX = 0.02F,
+                .selectionRingOffsetY = 0.15F,
+                .selectionRingScale = 1.0F,
+            },
+            error), "fully styled destinations should validate atomically");
+        Require(request.destinations.back().idleMarkerTexturePath ==
+            "Data/textures/DiegeticTravel/norden-town.dds",
+            "styled destinations should retain their marker texture");
+        Require(!DNT::Parchment::AddDestination(
+            request,
+            {
+                .id = "invalid_styled_stop",
+                .label = "Invalid Styled Stop",
+                .fare = 50,
+                .normalizedX = 0.25F,
+                .normalizedY = 0.75F,
+                .idleMarkerTexturePath = "Data/textures/DiegeticTravel/norden-town.dds",
+                .markerScale = 0.8F,
+                .selectionRingOffsetX = 1.1F,
+                .selectionRingOffsetY = 0.0F,
+                .selectionRingScale = 1.0F,
+            },
+            error), "atomic styled destinations should reject invalid ring optics");
         Require(!DNT::Parchment::SetDestinationMarkerTexture(
             request,
             "whiterun",
@@ -120,6 +162,87 @@ namespace
             request,
             "Data/textures/DiegeticTravel/docks-marker.dds",
             error), "origin marker texture may only be set once");
+
+        Require(!DNT::Parchment::SetSelectionRingTexture(
+            request,
+            "Data/textures/DiegeticTravel/duplicate-ring.dds",
+            error), "selection-ring texture may only be set once");
+
+        Require(DNT::Parchment::SetSelectionRingScale(
+            request,
+            2.25F,
+            error), "selection-ring scale should accept a bounded global multiplier");
+        RequireClose(request.selectionRingScale, 2.25F, 0.0001F,
+            "selection-ring scale should be retained");
+        Require(!DNT::Parchment::SetSelectionRingScale(
+            request,
+            4.1F,
+            error), "selection-ring scale should reject oversized values");
+
+        Require(DNT::Parchment::SetDestinationMarkerScale(
+            request,
+            "whiterun",
+            1.2F,
+            error), "destination marker scale should accept a bounded multiplier");
+        RequireClose(request.destinations[0].markerScale, 1.2F, 0.0001F,
+            "destination marker scale should be retained");
+        Require(!DNT::Parchment::SetDestinationMarkerScale(
+            request,
+            "missing",
+            1.0F,
+            error), "destination marker scale must target an existing destination");
+        Require(!DNT::Parchment::SetDestinationMarkerScale(
+            request,
+            "whiterun",
+            2.1F,
+            error), "destination marker scale should reject oversized values");
+
+        Require(DNT::Parchment::SetDestinationSelectionRingStyle(
+            request,
+            "whiterun",
+            0.12F,
+            -0.08F,
+            1.15F,
+            error), "destination selection-ring optics should validate");
+        RequireClose(request.destinations[0].selectionRingOffsetX, 0.12F, 0.0001F,
+            "destination ring X offset should be retained");
+        RequireClose(request.destinations[0].selectionRingOffsetY, -0.08F, 0.0001F,
+            "destination ring Y offset should be retained");
+        RequireClose(request.destinations[0].selectionRingScale, 1.15F, 0.0001F,
+            "destination ring scale should be retained");
+        Require(!DNT::Parchment::SetDestinationSelectionRingStyle(
+            request,
+            "missing",
+            0.0F,
+            0.0F,
+            1.0F,
+            error), "destination ring optics must target an existing destination");
+        Require(!DNT::Parchment::SetDestinationSelectionRingStyle(
+            request,
+            "whiterun",
+            1.1F,
+            0.0F,
+            1.0F,
+            error), "destination ring optics should reject out-of-range offsets");
+
+        Require(DNT::Parchment::SetDestinationSelectionRingTexture(
+            request,
+            "whiterun",
+            "Data/textures/DiegeticTravel/norden-oneway-selection-ring.dds",
+            error), "destination selection-ring texture should validate");
+        Require(request.destinations[0].selectionRingTexturePath ==
+            "Data/textures/DiegeticTravel/norden-oneway-selection-ring.dds",
+            "destination selection-ring texture should be retained");
+        Require(!DNT::Parchment::SetDestinationSelectionRingTexture(
+            request,
+            "whiterun",
+            "Data/textures/DiegeticTravel/duplicate-oneway-ring.dds",
+            error), "destination selection-ring texture may only be set once");
+        Require(!DNT::Parchment::SetDestinationSelectionRingTexture(
+            request,
+            "missing",
+            "Data/textures/DiegeticTravel/missing-oneway-ring.dds",
+            error), "destination selection-ring texture must target an existing destination");
 
         Require(!DNT::Parchment::SetSourceLabel(
             request,
@@ -145,6 +268,12 @@ namespace
         Require(!DNT::Parchment::ValidateReadyRequest(
             invalidPaymentLabel,
             error), "out-of-range payment label position must fail");
+
+        auto invalidDestinationMarkerScale = CollegeRequest();
+        invalidDestinationMarkerScale.destinations[0].markerScale = 0.49F;
+        Require(!DNT::Parchment::ValidateReadyRequest(
+            invalidDestinationMarkerScale,
+            error), "out-of-range destination marker scale must fail ready validation");
 
         auto missingSourceLabel = CollegeRequest();
         missingSourceLabel.sourceLabel.clear();
@@ -196,11 +325,23 @@ namespace
             oversizedMarkerTheme,
             error), "oversized marker texture paths must fail");
 
+        auto oversizedSelectionRing = CollegeRequest();
+        oversizedSelectionRing.selectionRingTexturePath.assign(513, 'x');
+        Require(!DNT::Parchment::ValidateReadyRequest(
+            oversizedSelectionRing,
+            error), "oversized selection-ring paths must fail");
+
         auto oversizedDestinationMarker = CollegeRequest();
         oversizedDestinationMarker.destinations[0].idleMarkerTexturePath.assign(513, 'x');
         Require(!DNT::Parchment::ValidateReadyRequest(
             oversizedDestinationMarker,
             error), "oversized destination marker texture paths must fail");
+
+        auto oversizedDestinationRing = CollegeRequest();
+        oversizedDestinationRing.destinations[0].selectionRingTexturePath.assign(513, 'x');
+        Require(!DNT::Parchment::ValidateReadyRequest(
+            oversizedDestinationRing,
+            error), "oversized destination selection-ring texture paths must fail");
 
         DNT::Parchment::Request trimmedRequest{
             .requestId = "trim-1",

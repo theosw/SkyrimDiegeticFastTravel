@@ -17,6 +17,11 @@ def main() -> int:
     parser.add_argument("--max-width", type=int, default=448)
     parser.add_argument("--max-height", type=int, default=448)
     parser.add_argument(
+        "--bounds-from",
+        type=Path,
+        help="use the alpha bounds of this reference image so related layers share one transform",
+    )
+    parser.add_argument(
         "--normalize-alpha-max",
         action="store_true",
         help="scale the strongest nonzero alpha to 255 while preserving edge antialiasing",
@@ -24,7 +29,12 @@ def main() -> int:
     args = parser.parse_args()
 
     image = Image.open(args.input).convert("RGBA")
-    bounds = image.getchannel("A").getbbox()
+    bounds_image = image
+    if args.bounds_from is not None:
+        bounds_image = Image.open(args.bounds_from).convert("RGBA")
+        if bounds_image.size != image.size:
+            raise SystemExit("bounds reference must use the same canvas size as the input")
+    bounds = bounds_image.getchannel("A").getbbox()
     if bounds is None:
         raise SystemExit("input contains no visible pixels")
 

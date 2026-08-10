@@ -16,7 +16,7 @@
       "id": "fare_label",
       "name": "Payment label",
       "sample": "Dawnstar to Solitude    50 gold",
-      "map_position": [0.569053, 0.905747]
+      "map_position": [0.647846, 0.899624]
     }
   ],
   "stops": [
@@ -70,25 +70,55 @@
       "map_position": [0.243465, 0.226437]
     }
   ],
-  "excluded_route_members": [
-    {
-      "id": "volkihar_ferryman",
-      "service_npc": "1F0E6A:CFTO.esp",
-      "reason": "Quest-special Castle Volkihar provider with a distinct prompt and extra fare."
-    }
-  ],
-  "deferred_stops": [
+  "destination_only_stops": [
     {
       "id": "frostflow_lighthouse",
-      "reason": "Destination-only Route 1 extension with no public return provider."
+      "name": "Frostflow Lighthouse",
+      "arrival_marker": "038411:CFTO.esp",
+      "fare_global": "00AA12:CFTO.esp",
+      "map_position": [0.629774, 0.159475],
+      "available_from": [
+        "dawnstar",
+        "solitude",
+        "windhelm",
+        "morthal",
+        "solitude_lighthouse",
+        "winterhold",
+        "dragon_bridge",
+        "windstad_manor",
+        "icewater_jetty"
+      ],
+      "provider_enabled": false
+    }
+  ],
+  "private_stops": [
+    {
+      "id": "windstad_manor",
+      "name": "Windstad Manor",
+      "service_npc": "014C89:CFTO.esp",
+      "service_ref": "014C8A:CFTO.esp",
+      "arrival_marker": "014C86:CFTO.esp",
+      "follower_marker": "195C3D:CFTO.esp",
+      "horse_marker": "195C3C:CFTO.esp",
+      "fare_global": "00AA12:CFTO.esp",
+      "fare_default": 50,
+      "availability": "service_ref_enabled",
+      "map_position": [0.427903, 0.159475]
     },
     {
       "id": "icewater_jetty",
-      "reason": "Castle Volkihar quest-special destination using KmodFerryCostExtra."
-    },
-    {
-      "id": "windstad_manor",
-      "reason": "Private Hearthfire provider gated by ownership and ferryman construction."
+      "name": "Icewater Jetty / Castle Volkihar",
+      "service_npc": "1F0E6A:CFTO.esp",
+      "service_ref": "1F0E6B:CFTO.esp",
+      "arrival_marker": "03840F:CFTO.esp",
+      "follower_marker": "195C42:CFTO.esp",
+      "horse_marker": "195C41:CFTO.esp",
+      "outbound_fare_global": "038425:CFTO.esp",
+      "outbound_fare_default": 100,
+      "return_fare_default": 0,
+      "availability_global": "038426:CFTO.esp",
+      "availability_minimum": 1,
+      "map_position": [0.122369, 0.097021]
     }
   ]
 }

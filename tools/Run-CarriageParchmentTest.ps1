@@ -85,6 +85,7 @@ function Assert-CarriageTestReady {
         (Join-Path (Join-Path $modsRoot $CoreModName) $CorePluginName),
         (Join-Path (Join-Path $modsRoot $CoreModName) "Seq\DiegeticTravel.seq"),
         (Join-Path (Join-Path $modsRoot $CoreModName) "SKSE\Plugins\DiegeticTravel\runtime.json"),
+        (Join-Path (Join-Path $modsRoot $CoreModName) "SKSE\Plugins\DiegeticTravel\dialogue_runtime.json"),
         (Join-Path (Join-Path $modsRoot $AdapterModName) $AdapterPluginName),
         (Join-Path (Join-Path $modsRoot $AdapterModName) "SEQ\DiegeticTravelCarriageParchment.seq"),
         (Join-Path (Join-Path $modsRoot $AdapterModName) "Scripts\DNT_CarriageParchmentPicker.pex"),
@@ -104,7 +105,8 @@ function Assert-CarriageTestReady {
         "norden-winterhold-capital.dds",
         "norden-morthal-capital.dds",
         "norden-falkreath-capital.dds",
-        "norden-dawnstar-capital.dds"
+        "norden-dawnstar-capital.dds",
+        "norden-roundtrip-selection-ring.dds"
     )
     $required += $nordenMarkerNames | ForEach-Object {
         Join-Path (Join-Path $modsRoot $ParchmentModName) `

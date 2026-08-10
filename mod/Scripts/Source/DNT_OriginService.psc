@@ -96,7 +96,8 @@ Function ExecuteDirectCarriageTravel(ObjectReference destinationMarker)
         PlayerRef.ModActorValue("CarryWeight", deltaWeight)
     EndIf
 
-    Game.FastTravel(destinationMarker)
+    Bool UsedApparition = DNT_TravelCompatibility.Travel(PlayerRef, destinationMarker)
+    Debug.Trace("[DNT] CARRIAGE_TRAVEL_MODE apparition=" + UsedApparition)
 
     If fadeHold
         If fadeBack

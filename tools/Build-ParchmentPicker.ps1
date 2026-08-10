@@ -27,7 +27,15 @@ $nordenMarkerNames = @(
     "norden-winterhold-capital.dds",
     "norden-morthal-capital.dds",
     "norden-falkreath-capital.dds",
-    "norden-dawnstar-capital.dds"
+    "norden-dawnstar-capital.dds",
+    "norden-shipwreck.dds",
+    "norden-docks.dds",
+    "thin-circle-selection-ring.dds",
+    "thin-circle-oneway-selection-ring.dds",
+    "parchment-thin-selection-ring.dds",
+    "parchment-thin-oneway-selection-ring.dds",
+    "norden-roundtrip-selection-ring.dds",
+    "norden-oneway-selection-ring.dds"
 )
 
 if (-not $PackageOnly) {
@@ -37,6 +45,9 @@ if (-not $PackageOnly) {
     & (Join-Path $PSScriptRoot "Build-VanillaHoldCapitalMarkers.ps1")
     & (Join-Path $PSScriptRoot "Build-CarriageParchmentMarkers.ps1")
     & (Join-Path $PSScriptRoot "Build-NordenCarriageMarkers.ps1")
+    & (Join-Path $PSScriptRoot "Build-NordenSelectionRing.ps1")
+    & (Join-Path $PSScriptRoot "Build-CalibratedSelectionRings.ps1")
+    & (Join-Path $PSScriptRoot "Build-NordenMaritimeMarkers.ps1")
     foreach ($obsoleteWizardMarker in @("winterhold-marker.dds", "wizard-hat-marker.dds")) {
         $obsoleteWizardMarkerPath = Join-Path $modRoot "textures\DiegeticTravel\$obsoleteWizardMarker"
         if (Test-Path -LiteralPath $obsoleteWizardMarkerPath -PathType Leaf) {
@@ -69,9 +80,11 @@ $requiredInputs = @(
     (Join-Path $modRoot "README-ParchmentPicker.txt"),
     (Join-Path $modRoot "SEQ\DiegeticTravelWizardParchment.seq"),
     (Join-Path $modRoot "Scripts\DNT_ParchmentNative.pex"),
+    (Join-Path $modRoot "Scripts\DNT_TravelCompatibility.pex"),
     (Join-Path $modRoot "Scripts\DNT_WizardParchmentFragment.pex"),
     (Join-Path $modRoot "Scripts\DNT_WizardParchmentPicker.pex"),
     (Join-Path $modRoot "Scripts\Source\DNT_ParchmentNative.psc"),
+    (Join-Path $modRoot "Scripts\Source\DNT_TravelCompatibility.psc"),
     (Join-Path $modRoot "Scripts\Source\DNT_WizardParchmentFragment.psc"),
     (Join-Path $modRoot "Scripts\Source\DNT_WizardParchmentPicker.psc"),
     (Join-Path $modRoot "SKSE\Plugins\DNTParchmentPicker.dll"),
@@ -193,5 +206,5 @@ Compress-Archive -Path (Join-Path $packageRoot "*") `
 
 $hash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash
 Write-Host "Packaged parchment-picker candidate: $archive"
-Write-Host "Bundled artwork: 2 user-authored/edited marker assets, 10 Skyrim-derived map markers, and 14 authorized Norden map markers"
+Write-Host "Bundled artwork: 2 user-authored/edited marker assets, 10 Skyrim-derived map markers, 14 authorized Norden map markers, and 2 authorized Norden selection rings"
 Write-Host "SHA-256: $hash"

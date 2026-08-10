@@ -11,6 +11,7 @@ Int Fare = 30
 Int BaanMalurStage = 1
 Int CormarisStage = 2
 Int RavenRockStage = 3
+Int SunmulStage = 5
 
 Int Function GetFare(String DestinationId)
     If GetDestinationStage(DestinationId) < 0
@@ -73,6 +74,8 @@ Int Function GetDestinationStage(String DestinationId)
         Return CormarisStage
     ElseIf DestinationId == "raven_rock"
         Return RavenRockStage
+    ElseIf DestinationId == "sunmul"
+        Return SunmulStage
     EndIf
     Return -1
 EndFunction

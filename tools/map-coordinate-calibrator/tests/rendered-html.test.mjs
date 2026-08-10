@@ -2,13 +2,13 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-async function render() {
+async function render(path = "/") {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
   const { default: worker } = await import(workerUrl.href);
 
   return worker.fetch(
-    new Request("http://localhost/", {
+    new Request(new URL(path, "http://localhost/"), {
       headers: { accept: "text/html" },
     }),
     {
@@ -40,8 +40,72 @@ test("server-renders the coordinate calibrator shell", async () => {
   assert.match(html, /Remyris merchant route/);
   assert.match(html, /norden/i);
   assert.match(html, /vanilla/i);
+  assert.match(html, /ferry/i);
   assert.match(html, /Copy changed patch/);
   assert.doesNotMatch(html, /codex-preview|SkeletonPreview|Your site is taking shape/);
+});
+
+test("server-renders the icon optical-alignment workspace", async () => {
+  const response = await render("/icon-alignment");
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
+
+  const html = await response.text();
+  assert.match(html, /Icon optical alignment/);
+  assert.match(html, /Map layout/);
+  assert.match(html, /Icon alignment/);
+  assert.match(html, /Ring and icon optics change; map anchor and clickbox stay fixed/);
+  assert.match(html, /Import optics JSON/);
+  assert.match(html, /Alpha bounds/);
+  assert.match(html, /norden/i);
+  assert.match(html, /vanilla/i);
+});
+
+test("ships the approved, versioned Norden icon-optics baseline", async () => {
+  const optics = JSON.parse(
+    await readFile(new URL("../public/icon-optics.json", import.meta.url), "utf8"),
+  );
+  assert.equal(optics.schema_version, 1);
+  assert.equal(optics.global_selection_ring_scale, 2);
+  assert.equal(optics.offset_space, "icon_half_extent");
+  assert.equal(Object.keys(optics.icon_optics.norden).length, 16);
+  assert.deepEqual(optics.icon_optics.vanilla, {});
+  assert.deepEqual(optics.selection_ring_textures, {
+    norden: "Data/textures/DiegeticTravel/thin-circle-selection-ring.dds",
+    vanilla: "Data/textures/DiegeticTravel/thin-circle-selection-ring.dds",
+    ferry: "Data/textures/DiegeticTravel/parchment-thin-selection-ring.dds",
+  });
+  assert.deepEqual(
+    optics.icon_optics.norden["norden-whiterun-capital"].ring_offset,
+    [0.0316, -0.0474],
+  );
+  assert.equal(
+    optics.icon_optics.norden["norden-wood-mill"].ring_scale,
+    1.09,
+  );
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(optics.icon_optics.norden).map(([id, profile]) => [id, profile.marker_scale])),
+    {
+      "norden-whiterun-capital": 1,
+      "norden-riften-capital": 0.99,
+      "norden-solitude-capital": 1,
+      "norden-windhelm-capital": 0.93,
+      "norden-markarth-capital": 0.95,
+      "norden-dawnstar-capital": 1.01,
+      "norden-morthal-capital": 0.95,
+      "norden-falkreath-capital": 0.96,
+      "norden-winterhold-capital": 0.96,
+      "norden-town": 0.8,
+      "norden-settlement": 0.8,
+      "norden-wood-mill": 0.73,
+      "norden-mine": 0.78,
+      "norden-farm": 0.78,
+      "norden-shipwreck": 0.91,
+      "norden-docks": 0.97,
+    },
+  );
+  assert.deepEqual(Object.keys(optics.icon_optics.ferry), ["ferry-docks"]);
+  assert.equal(optics.icon_optics.ferry["ferry-docks"].ring_scale, 0.94);
 });
 
 test("keeps authoring-only locations separate from playable stops", async () => {
@@ -61,5 +125,30 @@ test("keeps authoring-only locations separate from playable stops", async () => 
     ["pryai", "llethrin_fel", "sunmul", "seyda_neen", "vivec", "old_silgrad"],
   );
   assert.ok(merchant.authoring_stops.every((stop) => stop.runtime_enabled === false));
+  const sunmul = merchant.authoring_stops.find((stop) => stop.id === "sunmul");
+  assert.deepEqual(sunmul.map_position, [0.561367, 0.894535]);
+  assert.equal(sunmul.position_status, "calibrated");
+  assert.equal(merchant.map.marker_theme, "norden_maritime");
+  assert.equal(merchant.map.origin_marker, "norden_shipwreck");
+  assert.equal(merchant.map.destination_marker, "norden_docks");
+  assert.equal(merchant.map.selection_ring, "thin_circle");
   assert.deepEqual(honrich.authoring_stops.map((stop) => stop.id), ["honeyside"]);
+  assert.deepEqual(honrich.stops.find((stop) => stop.id === "riften").map_position, [0.905132, 0.835295]);
+  assert.deepEqual(honrich.authoring_stops[0].map_position, [0.89365, 0.80508]);
+  assert.equal(honrich.authoring_stops[0].position_status, "calibrated");
+});
+
+test("ships transparent maritime marker and thin selector previews", async () => {
+  const names = [
+    "norden-shipwreck.png",
+    "norden-docks.png",
+    "thin-circle-selection-ring.png",
+    "parchment-thin-selection-ring.png",
+  ];
+  const pngSignature = [137, 80, 78, 71, 13, 10, 26, 10];
+  for (const name of names) {
+    const bytes = await readFile(new URL(`../public/markers/${name}`, import.meta.url));
+    assert.deepEqual([...bytes.subarray(0, 8)], pngSignature, name);
+    assert.ok(bytes.length > 1_000, `${name} should contain rendered artwork`);
+  }
 });

@@ -5,6 +5,8 @@ String CftoPlugin = "CFTO.esp"
 Int BrittleshinFerrymanForm = 0x02E1E6
 Int HalfMoonFerrymanForm = 0x0332ED
 Int GuardianFerrymanForm = 0x0332F5
+Int LakeviewFerrymanForm = 0x014C80
+Int LakeviewFerrymanRefForm = 0x014C81
 
 Int BrittleshinMarkerForm = 0x014C8F
 Int BrittleshinHorseMarkerForm = 0x195C32
@@ -12,7 +14,14 @@ Int HalfMoonMarkerForm = 0x014C95
 Int GuardianMarkerForm = 0x0332F7
 Int GuardianFollowerMarkerForm = 0x195C33
 Int GuardianHorseMarkerForm = 0x195C34
+Int IlinataMarkerForm = 0x03840E
+Int IlinataFollowerMarkerForm = 0x195C43
+Int IlinataHorseMarkerForm = 0x195C35
+Int LakeviewMarkerForm = 0x014C7E
+Int LakeviewFollowerMarkerForm = 0x195C30
+Int LakeviewHorseMarkerForm = 0x195C31
 Int FerryCostLocalForm = 0x0BBF93
+Int FerryCostRegionalForm = 0x00AA12
 
 Int Gold001Form = 0x00000F
 Int FarePaymentSoundForm = 0x0334AB
@@ -29,7 +38,11 @@ Int Function GetFare(String DestinationId)
         Return -1
     EndIf
 
-    GlobalVariable FareGlobal = Game.GetFormFromFile(FerryCostLocalForm, CftoPlugin) as GlobalVariable
+    Int FareForm = FerryCostLocalForm
+    If DestinationId == "ilinatas_deep"
+        FareForm = FerryCostRegionalForm
+    EndIf
+    GlobalVariable FareGlobal = Game.GetFormFromFile(FareForm, CftoPlugin) as GlobalVariable
     If FareGlobal == None
         Return -1
     EndIf
@@ -48,12 +61,23 @@ String Function GetSourceId(ObjectReference SourceRef)
         Return "half_moon_mill"
     ElseIf SourceBase == Game.GetFormFromFile(GuardianFerrymanForm, CftoPlugin)
         Return "guardian_stones"
+    ElseIf SourceBase == Game.GetFormFromFile(LakeviewFerrymanForm, CftoPlugin)
+        Return "lakeview_manor"
     EndIf
     Return ""
 EndFunction
 
 Bool Function CanOfferService(ObjectReference SourceRef)
     Return GetSourceId(SourceRef) != ""
+EndFunction
+
+Bool Function CanOfferDestination(String DestinationId)
+    If DestinationId != "lakeview_manor"
+        Return GetDestinationMarker(DestinationId) != None
+    EndIf
+
+    ObjectReference FerrymanRef = Game.GetFormFromFile(LakeviewFerrymanRefForm, CftoPlugin) as ObjectReference
+    Return FerrymanRef != None && !FerrymanRef.IsDisabled()
 EndFunction
 
 Bool Function RequestTravel(String DestinationId, ObjectReference SourceRef)
@@ -69,6 +93,10 @@ Bool Function RequestTravel(String DestinationId, ObjectReference SourceRef)
     EndIf
     If SourceId == DestinationId
         Debug.Trace("[DNT] BOAT_TRAVEL_DENIED lane=lake_ilinalta source=" + SourceId + " destination=" + DestinationId + " reason=same_stop", 1)
+        Return False
+    EndIf
+    If !CanOfferDestination(DestinationId)
+        Debug.Trace("[DNT] BOAT_TRAVEL_DENIED lane=lake_ilinalta source=" + SourceId + " destination=" + DestinationId + " reason=private_service_locked", 1)
         Return False
     EndIf
 
@@ -123,11 +151,16 @@ Function ExecuteCftoStyleTravel(String DestinationId, ObjectReference Destinatio
         PlayerRef.ModActorValue("CarryWeight", DeltaWeight)
     EndIf
 
-    Game.FastTravel(DestinationMarker)
+    Bool UsedApparition = DNT_TravelCompatibility.Travel(PlayerRef, DestinationMarker)
+    Debug.Trace("[DNT] BOAT_TRAVEL_MODE lane=lake_ilinalta destination=" + DestinationId + " apparition=" + UsedApparition)
     If DestinationId == "brittleshin_pass"
         MoveHorseTo(BrittleshinHorseMarkerForm)
     ElseIf DestinationId == "guardian_stones"
         MoveFollowerAndHorseToGuardian()
+    ElseIf DestinationId == "ilinatas_deep"
+        MoveFollowerAndHorseToIlinata()
+    ElseIf DestinationId == "lakeview_manor"
+        MoveFollowerAndHorseTo(LakeviewFollowerMarkerForm, LakeviewHorseMarkerForm)
     EndIf
 
     If FadeToBlackHoldImod != None
@@ -164,6 +197,30 @@ Function MoveFollowerAndHorseToGuardian()
     MoveHorseTo(GuardianHorseMarkerForm)
 EndFunction
 
+Function MoveFollowerAndHorseToIlinata()
+    ObjectReference FollowerMarker = Game.GetFormFromFile(IlinataFollowerMarkerForm, CftoPlugin) as ObjectReference
+    Quest FollowerQuest = Game.GetFormFromFile(FollowerQuestForm, "Skyrim.esm") as Quest
+    If FollowerQuest != None && FollowerMarker != None
+        ReferenceAlias FollowerAlias = FollowerQuest.GetAlias(FollowerAliasIndex) as ReferenceAlias
+        If FollowerAlias != None && FollowerAlias.GetReference() != None
+            FollowerAlias.GetReference().MoveTo(FollowerMarker)
+        EndIf
+    EndIf
+    MoveHorseTo(IlinataHorseMarkerForm)
+EndFunction
+
+Function MoveFollowerAndHorseTo(Int FollowerMarkerForm, Int HorseMarkerForm)
+    ObjectReference FollowerMarker = Game.GetFormFromFile(FollowerMarkerForm, CftoPlugin) as ObjectReference
+    Quest FollowerQuest = Game.GetFormFromFile(FollowerQuestForm, "Skyrim.esm") as Quest
+    If FollowerQuest != None && FollowerMarker != None
+        ReferenceAlias FollowerAlias = FollowerQuest.GetAlias(FollowerAliasIndex) as ReferenceAlias
+        If FollowerAlias != None && FollowerAlias.GetReference() != None
+            FollowerAlias.GetReference().MoveTo(FollowerMarker)
+        EndIf
+    EndIf
+    MoveHorseTo(HorseMarkerForm)
+EndFunction
+
 ObjectReference Function GetDestinationMarker(String DestinationId)
     If DestinationId == "brittleshin_pass"
         Return Game.GetFormFromFile(BrittleshinMarkerForm, CftoPlugin) as ObjectReference
@@ -171,6 +228,10 @@ ObjectReference Function GetDestinationMarker(String DestinationId)
         Return Game.GetFormFromFile(HalfMoonMarkerForm, CftoPlugin) as ObjectReference
     ElseIf DestinationId == "guardian_stones"
         Return Game.GetFormFromFile(GuardianMarkerForm, CftoPlugin) as ObjectReference
+    ElseIf DestinationId == "ilinatas_deep"
+        Return Game.GetFormFromFile(IlinataMarkerForm, CftoPlugin) as ObjectReference
+    ElseIf DestinationId == "lakeview_manor"
+        Return Game.GetFormFromFile(LakeviewMarkerForm, CftoPlugin) as ObjectReference
     EndIf
     Return None
 EndFunction

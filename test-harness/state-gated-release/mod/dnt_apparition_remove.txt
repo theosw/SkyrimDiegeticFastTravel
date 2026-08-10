@@ -1,0 +1,1 @@
+player.removespell _PU_FastTravelApparition

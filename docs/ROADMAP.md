@@ -2,17 +2,17 @@
 
 ## Beta release gates
 
-- [x] Provider-separated carriage compilation.
-- [x] Up-to-three candidate paths with deterministic selection.
-- [x] Live-state hazard pricing with beta endpoint preservation.
-- [x] Strict hazard sensor and CFTO endpoint validation.
-- [x] Resolve and author live sensors for every routed dragon mound.
-- [x] Author the ESP generator for dialogue overrides, globals, quests, and VMAD properties.
+- [x] Replace the experimental graph runtime with a flat CFTO destination manifest.
+- [x] Use CFTO's live local, standard, and extra carriage-fare globals.
+- [x] Remove route-derived hours, hazards, and variable rates from beta UI/runtime.
+- [x] Author the ESP generator for dialogue overrides, cost/availability globals,
+  quests, and VMAD properties.
 - [x] Compile Papyrus against Skyrim, SKSE, JContainers, and CFTO sources.
 - [x] Smoke-test the unattended xEdit generator and inspect the resulting ESP.
 - [x] Verify the generated TES4 master order and expected generated-record counts.
 - [ ] Verify the nine CFTO driver actor identities in the target load order.
-- [ ] Verify CFTO charge handoff and free-carriage faction behavior in game.
+- [ ] Reverify CFTO-tier payment and free-carriage faction behavior in game.
+- [ ] Verify normal versus Apparition carriage travel time after the compatibility fix.
 - [ ] Verify conditional endpoints (three Hearthfire manors and intact Helgen).
 - [ ] Eyeball all low-confidence roads in game.
 - [ ] Run the Valtheim reroute smoke test and save/load regression test.
@@ -35,6 +35,8 @@
 - [x] Add a provider-neutral route-segment graph with connectivity validation
   and shortest-path hover highlighting; convert Lake Honrich and the northern
   coast to water-following networks without changing wizard spokes.
+- [ ] Revisit graph fares, hazards, variable rates, and predicted hours only
+  after release, starting from observed engine time passage.
 - [ ] Live-test the route-network visual candidate: Lake Honrich ring placement,
   northern-coast sea/channel placement, idle gold network, red hover path, and
   selection/cancel regression.
@@ -52,7 +54,8 @@
   - Follow-up proved the explicit Dialogue Menu close handoff at all three
     providers plus Riften -> Ivarstead -> Heartwood -> Riften. All six directed
     public-lane trips are exercised; Heartwood follower/horse arrival remains.
-- [ ] Add Honeyside only after its ownership/porch/ferryman gates are verified.
+- [x] Add Honeyside as a private provider gated by CFTO's live placed-ferryman
+  enable state.
 - [x] Build and structurally audit the public Lake Ilinalta Route 3 slice for
   Brittleshin Pass, Half-Moon Mill, and Guardian Stones.
 - [x] Live-test Lake Ilinalta: all three providers, no-Escape handoff, map
@@ -60,23 +63,32 @@
   three-stop cycle.
   - Bundle Brittleshin horse and Guardian Stones follower/horse placement with
     the existing Heartwood companion regression.
-- [ ] Add Lakeview Manor and Ilinata's Deep only after their private/drop-off
-  semantics and distinct fare rules are intentionally designed.
+- [x] Add Ilinata's Deep as a destination-only 50-gold regional trip with its
+  dedicated follower/horse markers and no return provider.
+- [x] Add Lakeview Manor as a private provider gated by CFTO's live
+  placed-ferryman enable state, with dedicated companion markers.
 - [x] Build and independently audit the public Solstheim Route 4 triangle for
   Raven Rock, Tel Mithryn, and Skaal Village. The functional live pass exposed
   the narrow physical-map art. A follow-up exposed stale saved auto properties;
   a 1.5:1 live pass proved too wide. The current candidate hard-codes a square
   1:1 physical-map presentation so visual revisions apply to existing saves.
 - [ ] Live-test Solstheim: all three providers, map crop/alignment, cancel,
-  0/low-gold denial, exact 50-gold payment, and one full three-stop cycle.
+  0/low-gold denial, exact 50-gold payment, one full three-stop cycle, and the
+  Northshore/Bujold destination-only trips with no return provider.
 - [x] Build and independently audit the seven ordinary public north-coast
   Route 1 providers as one network: Dawnstar, Solitude, Windhelm, Morthal,
   Solitude Lighthouse, Winterhold, and Dragon Bridge. The exact provider
-  whitelist excludes the Route 1 Enthralled Ferryman; Frostflow, Icewater,
-  and Windstad remain deliberately outside the public contract.
-- [ ] Live-test the north-coast module in one session: all seven providers,
-  six destinations per source, map alignment, cancel, denial, exact 50-gold
-  payment, one eastbound trip, and one westbound trip.
+  whitelist also admits gated Windstad and Icewater without admitting unrelated
+  actors. Frostflow is an explicit destination-only stop; private Windstad
+  follows its placed-ref gate and Icewater/Volkihar follows its live state,
+  extra outbound fare, and free-return contract.
+- [ ] Live-test the north-coast module in one session: seven public providers,
+  gated Windstad and Icewater providers, map alignment, cancel, denial, normal
+  and Volkihar fares, one eastbound trip, one westbound trip, and Frostflow with
+  no return provider.
+- [x] Soft-detect Wizarding Traversal's Apparition holder effect and use a
+  zero-time `MoveTo` arrival for direct DNT travel without adding a master or
+  mutating the source mod's fast-travel-speed global.
 - [x] Expand and independently audit the carriage parchment adapter to all 27
   destinations with a native CFTO handoff. The beta uses cached live fare/time
   quotes, revalidates at purchase, and deliberately draws no synthetic routes.

@@ -196,8 +196,8 @@ var
   Entries: IInterface;
 begin
   Entries := ElementByPath(ProviderWhitelist, 'FormIDs');
-  if not Assigned(Entries) or (ElementCount(Entries) <> 7) then
-    raise Exception.Create('Provider whitelist must contain seven actors');
+  if not Assigned(Entries) or (ElementCount(Entries) <> 9) then
+    raise Exception.Create('Provider whitelist must contain nine actors');
   AssertFormListEntry(ProviderWhitelist, 0, RequireRecord(
     CftoFile, $00AA07, 'NPC_', 'KmodFerrymanDawnstar'
   ));
@@ -219,7 +219,13 @@ begin
   AssertFormListEntry(ProviderWhitelist, 6, RequireRecord(
     CftoFile, $2D4C09, 'NPC_', 'KmodFerrymanDragonBridge'
   ));
-  ReportLines.Add('PASS provider_whitelist=7_public_route1_actors');
+  AssertFormListEntry(ProviderWhitelist, 7, RequireRecord(
+    CftoFile, $014C89, 'NPC_', 'KmodFerrymanWindstad'
+  ));
+  AssertFormListEntry(ProviderWhitelist, 8, RequireRecord(
+    CftoFile, $1F0E6A, 'NPC_', 'KmodFerrymanVolkihar'
+  ));
+  ReportLines.Add('PASS provider_whitelist=7_public_plus_2_private');
 end;
 
 procedure AuditMasters;
@@ -250,7 +256,7 @@ end;
 procedure AuditDialogue(QuestRecord, ProviderWhitelist: IInterface);
 var
   TopicRecord, BranchRecord, InfoGroup, InfoRecord, SharedInfo,
-    DialogueFaction, RouteFaction, FragmentScript, Conditions,
+    DialogueFaction, FragmentScript, Conditions,
     Fragments, Fragment: IInterface;
 begin
   TopicRecord := RequireBoatRecord(
@@ -291,18 +297,11 @@ begin
     'FACT',
     'KmodFastTravelDialogueFaction'
   );
-  RouteFaction := RequireRecord(
-    CftoFile,
-    $019DC6,
-    'FACT',
-    'KmodFerryRoute1Faction'
-  );
   Conditions := ElementByPath(InfoRecord, 'Conditions');
-  if not Assigned(Conditions) or (ElementCount(Conditions) <> 3) then
-    raise Exception.Create('North-coast INFO must have exactly three conditions');
+  if not Assigned(Conditions) or (ElementCount(Conditions) <> 2) then
+    raise Exception.Create('North-coast INFO must have exactly two conditions');
   AssertCondition(InfoRecord, 0, 'GetInFaction', DialogueFaction);
   AssertCondition(InfoRecord, 1, 'IsInList', ProviderWhitelist);
-  AssertCondition(InfoRecord, 2, 'GetInFaction', RouteFaction);
 
   FragmentScript := ScriptByName(
     InfoRecord,

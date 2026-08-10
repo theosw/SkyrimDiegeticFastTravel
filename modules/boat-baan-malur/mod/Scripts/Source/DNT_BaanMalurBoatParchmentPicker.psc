@@ -61,8 +61,12 @@ Function OpenMap(ObjectReference SourceRef)
         AbortOpen("begin_failed")
         Return
     EndIf
+    Bool MerchantStyleReady = DNT_ParchmentNative.SetMarkerTextures(ActiveRequest, "Data/textures/DiegeticTravel/norden-docks.dds", "Data/textures/DiegeticTravel/norden-docks.dds")
+    MerchantStyleReady = DNT_ParchmentNative.SetOriginMarkerTexture(ActiveRequest, "Data/textures/DiegeticTravel/norden-shipwreck.dds") && MerchantStyleReady
+    MerchantStyleReady = DNT_ParchmentNative.SetSelectionRingTexture(ActiveRequest, "Data/textures/DiegeticTravel/thin-circle-selection-ring.dds") && MerchantStyleReady
+    MerchantStyleReady = DNT_ParchmentNative.SetSelectionRingScale(ActiveRequest, 2.0) && MerchantStyleReady
 
-    If !AddLaneDestinations()
+    If !AddLaneDestinations() || !MerchantStyleReady
         DNT_ParchmentNative.Cancel(ActiveRequest)
         AbortOpen("destination_setup_failed")
         Return
@@ -85,21 +89,37 @@ Bool Function AddLaneDestinations()
 
     If ActiveSourceId == "raven_rock"
         AddedAll = DNT_ParchmentNative.SetRouteOrigin(ActiveRequest, 0.572274, 0.405605)
-        AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "baan_malur", "Baan Malur ", Fare, 0.510018, 0.640516) && AddedAll
-        AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "cormaris", "Cormaris ", Fare, 0.157237, 0.323277) && AddedAll
+        AddedAll = AddNordenDestination("baan_malur", "Baan Malur ", Fare, 0.510018, 0.640516) && AddedAll
+        AddedAll = AddNordenDestination("cormaris", "Cormaris ", Fare, 0.157237, 0.323277) && AddedAll
+        AddedAll = AddSunmul(Fare) && AddedAll
         Return AddedAll
     ElseIf ActiveSourceId == "baan_malur"
         AddedAll = DNT_ParchmentNative.SetRouteOrigin(ActiveRequest, 0.510018, 0.640516)
-        AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "raven_rock", "Raven Rock ", Fare, 0.572274, 0.405605) && AddedAll
-        AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "cormaris", "Cormaris ", Fare, 0.157237, 0.323277) && AddedAll
+        AddedAll = AddNordenDestination("raven_rock", "Raven Rock ", Fare, 0.572274, 0.405605) && AddedAll
+        AddedAll = AddNordenDestination("cormaris", "Cormaris ", Fare, 0.157237, 0.323277) && AddedAll
         Return AddedAll
     ElseIf ActiveSourceId == "cormaris"
         AddedAll = DNT_ParchmentNative.SetRouteOrigin(ActiveRequest, 0.157237, 0.323277)
-        AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "raven_rock", "Raven Rock ", Fare, 0.572274, 0.405605) && AddedAll
-        AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "baan_malur", "Baan Malur ", Fare, 0.510018, 0.640516) && AddedAll
+        AddedAll = AddNordenDestination("raven_rock", "Raven Rock ", Fare, 0.572274, 0.405605) && AddedAll
+        AddedAll = AddNordenDestination("baan_malur", "Baan Malur ", Fare, 0.510018, 0.640516) && AddedAll
         Return AddedAll
     EndIf
     Return False
+EndFunction
+
+Bool Function AddSunmul(Int Fare)
+    Bool Added = AddNordenDestination("sunmul", "Sunmul (one way) ", Fare, 0.561367, 0.894535)
+    If Added
+        Added = DNT_ParchmentNative.SetDestinationSelectionRingTexture(ActiveRequest, "sunmul", "Data/textures/DiegeticTravel/thin-circle-oneway-selection-ring.dds")
+    EndIf
+    Return Added
+EndFunction
+
+Bool Function AddNordenDestination(String DestinationId, String DestinationName, Int Fare, Float MapX, Float MapY)
+    Bool Added = DNT_ParchmentNative.AddDestination(ActiveRequest, DestinationId, DestinationName, Fare, MapX, MapY)
+    Added = DNT_ParchmentNative.SetDestinationMarkerScale(ActiveRequest, DestinationId, 0.97) && Added
+    Added = DNT_ParchmentNative.SetDestinationSelectionRingStyle(ActiveRequest, DestinationId, 0.0, 0.0, 0.89) && Added
+    Return Added
 EndFunction
 
 String Function GetSourceLabel(String SourceId)
@@ -157,6 +177,8 @@ String Function GetDestinationId(String SourceId, Int SelectionIndex)
             Return "baan_malur"
         ElseIf SelectionIndex == 1
             Return "cormaris"
+        ElseIf SelectionIndex == 2
+            Return "sunmul"
         EndIf
     ElseIf SourceId == "baan_malur"
         If SelectionIndex == 0

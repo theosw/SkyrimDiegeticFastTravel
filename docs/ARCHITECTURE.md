@@ -5,7 +5,7 @@
 CFTO remains responsible for carriage drivers, seating, scenes, and travel. This
 mod overrides CFTO's existing paid-carriage root and 27 existing destination
 topics; it does not redistribute CFTO assets. The legacy free-carriage root is
-disabled so free rides still pass through the same hazard checks. The carriage
+disabled so free rides still pass through the same availability checks. The carriage
 alpha does not alter ferry dialogue. A separate Lake Honrich boat module adds
 one new top-level line to CFTO Route 2 ferrymen without overriding CFTO's
 existing destination dialogue.
@@ -15,20 +15,17 @@ When the player asks a driver for a ride:
 1. A player quest alias registers for `Dialogue Menu`, re-registering after
    every save load. When the menu opens, it resolves the actor under the
    crosshair and refreshes that driver's complete origin quote set.
-2. The route service evaluates at most three precompiled candidates per
-   destination.
-3. It reads live `Location.IsCleared()`, mound-activation state, and Civil War
-   completion state.
-4. For the beta, it prices active/unknown hazards but retains every executable candidate.
-5. It publishes the cheapest remaining fare and travel-time estimate to shared
-   per-destination globals used by CFTO's existing topics.
-6. Selecting a destination re-evaluates the quote, charges the player, writes
-   CFTO's `KmodCarriageDestination`, and wakes the existing driver script.
+2. The flat route service checks the destination and any Hearthfire gate.
+3. It reads CFTO's local, standard, or extra carriage-cost global.
+4. It publishes availability and fare to shared per-destination globals.
+5. Selecting a destination repeats those checks, charges once, and travels to
+   CFTO's own arrival marker.
 
 Drivers in CFTO's free-carriage faction see zero-cost quotes and are not charged,
 but availability is evaluated exactly like a paid trip.
 
-No pathfinding occurs in Papyrus.
+No pathfinding, route candidate evaluation, hazard pricing, or hour estimation
+occurs in Papyrus.
 
 The root carriage INFO still carries `DNT_PrepareOrigin.Fragment_0`, but it is a
 cache-aware fallback. If the menu listener already completed the current
@@ -47,9 +44,10 @@ marshalling behavior.
 
 ## Provider separation
 
-The authored graph contains carriage and provisional ferry edges. A carriage
-driver must not silently route the player onto a ferry, so compilation creates a
-separate graph per provider. The beta emits only the carriage network.
+Each provider owns a fixed stop set and service rules. Carriage travel uses
+CFTO's 27 carriage destination numbers; each ferry module preserves its own
+CFTO lane and private/destination-only gates. No provider shares a runtime
+route graph with another.
 
 CFTO's four ferry route factions, ferrymen, destination INFOs, price globals,
 and travel fragments have now been decoded independently. Two isolated public
@@ -62,70 +60,56 @@ Raven Rock <-> Tel Mithryn <-> Skaal Village
 ```
 
 The boat plugin adds a start-game-enabled provider/service quest and a cloned,
-re-owned top-level dialogue branch. Its INFO requires both CFTO's general
-travel-dialogue faction and the lane's Route 2 or Route 3 faction, uses
+re-owned top-level dialogue branch. Its INFO requires CFTO's general
+travel-dialogue faction plus an exact lane-specific actor whitelist, uses
 Dawnguard's shared voiced “Where are you headed?” response, and opens the generic parchment
 on `OnEnd`. Selection returns a stable stop ID; the service then revalidates the
 speaker, destination, current `KmodFerryCostLocal`, and player gold before one
 charge. Execution mirrors the installed CFTO fragments: fade, temporary
-over-encumbrance allowance, `Game.FastTravel`, and each stop's dedicated
-companion markers. CFTO's ordinary dialogue remains the fallback.
+over-encumbrance allowance, normal `Game.FastTravel`, and each stop's dedicated
+companion markers. If the optional Wizarding Traversal Apparition holder effect
+is active, the shared travel helper substitutes `MoveTo` so the same trip takes
+no time. CFTO's ordinary dialogue remains the fallback.
 
-Honeyside and Lakeview Manor are not treated as public peers because their CFTO
-dialogue is conditional on private ownership and ferryman/jetty state.
-Ilinata's Deep is destination-only and uses the 50-gold regional fare. These
-extensions remain deferred rather than weakening the public-lane contract.
-The same rule keeps Northshore Landing and Bujold's Retreat out of the public
-Solstheim triangle: both are CFTO destination-only records without Route 4
-service providers.
+Honeyside, Lakeview Manor, and Windstad Manor are private peers only while
+CFTO's placed service refs are enabled. Icewater/Volkihar instead follows
+CFTO's dedicated state global and preserves its extra outbound/free-return fare.
+Destination-only stops are a separate runtime type: they have an arrival
+marker, fare, map position, and explicit `available_from` provider set, but no
+service NPC and no source identity. Ilinata's Deep uses that type with the
+50-gold regional fare; Frostflow Lighthouse, Northshore Landing, and Bujold's
+Retreat use it with their original public routes. This preserves one-way travel
+without inventing return services.
 
 The carriage parchment adapter is intentionally thinner than the boat service.
-It resolves the existing `DNT_OriginService` for the speaker, publishes live
-hazard-aware quotes through that service, and draws only available capital
-routes. Selection is sent back to `DNT_TravelCoordinator.Purchase`; the core
+It resolves the existing `DNT_OriginService` for the speaker, publishes CFTO
+tier fares through that service, and draws the available native destinations.
+Selection is sent back to `DNT_TravelCoordinator.Purchase`; the core
 then repeats the quote, checks free-driver and gold state, writes
 `KmodCarriageDestination`, and wakes CFTO's driver. The adapter therefore owns
 presentation and selection state only. Its first vertical slice is nine hold
 capitals; the existing 27-topic dialogue remains the fallback until density and
 real-ride behavior are proven.
 
-## Hazard state model
+## Deferred route model
 
-| Class | Dormant | Active | Cleared |
-| --- | --- | --- | --- |
-| Bandit | n/a | location not cleared | `Location.IsCleared()` |
-| Civil War fort | n/a | location not cleared and war unresolved | cleared or war resolved |
-| Giant camp | n/a | always; static toll | n/a |
-| Dragon mound | activation ref disabled | activation ref enabled and not cleared | `Location.IsCleared()` or verified mound dragon dead |
-
-Active and unknown hazards add a surcharge. Chokepoint refusal remains reserved
-in the compiled schema for a post-beta design pass; it does not remove an
-otherwise executable CFTO destination from the beta map.
-
-Unknown state is never silently treated as safe. The reference evaluator treats
-it conservatively as active, while the release compiler rejects incomplete
-sensors.
+Road edges, live hazards, candidate paths, variable rates, and predicted travel
+hours are explicitly outside the beta. The earlier compiler and sensor research
+remain useful evidence, but nothing from that model is loaded or packaged by
+the release build. It can be redesigned after release against observed Skyrim
+time passage instead of presenting false precision.
 
 ## Generated data
 
-`runtime.json` is shaped for JContainers and includes only what Papyrus needs:
-rules, nodes, hazards, and the provider-specific candidate table. Bethesda forms
-are emitted as JContainers `__formData|Plugin|0xID` references.
-
-`hazard_sensors.json` corrects the design graph's presentation-oriented `marker`
-field with the disabled/enabled references held by `dunDragonMoundQST` or the
-persistent mound dragon itself. These activation references—not world-map
-markers—supply dormancy state. Verified actor references can also use death as
-the cleared state where no reliable cleared `Location` exists.
-
-`dialogue_manifest.json` contains stable editor IDs for generated globals and the
-CFTO destination integer for each supported stop. Helgen and Granite Hill remain
-explicit custom-transport endpoints and are not emitted into CFTO dialogue until
-their travel handoff is implemented.
+`dialogue_manifest.json` contains stable editor IDs for availability/cost
+globals, CFTO destination integers, origin drivers, and copied dialogue forms.
+It is generated directly from `cfto_endpoints.json` plus a display-name table.
+It contains no routes or hours. Helgen and Granite Hill remain explicit deferred
+custom endpoints.
 
 The xEdit generator resolves those editor IDs to plugin-local form references and
 writes `dialogue_runtime.json`. Each origin quest has only ordinary scalar VMAD
-properties plus an origin ID; its route entries and generated globals are loaded
+properties plus an origin ID; its destination entries and generated globals are loaded
 through JContainers. This keeps the generated quest records simple and avoids
 large, brittle Papyrus property arrays.
 
@@ -144,7 +128,8 @@ The first full patched carriage run exposed a generator bug rather than a CLI
 bug: the script copied a complete player alias and then tried to rewrite its
 `Specific Reference` union through `ALFR`. xEdit correctly rejects editing that
 non-editable union container. Removing the redundant assignment made the full
-29-stop/812-route alpha build complete headlessly with 11 SEQ quest IDs.
+legacy alpha build complete headlessly. The beta generator now emits only the
+flat destination contract and its start-game quest IDs.
 
 The behavior is visible in xEdit's own source:
 [`CheckForcedMode`](https://github.com/TES5Edit/TES5Edit/blob/fd1e36020b2b5b6217e553dc0038983146a2e2dd/xEdit/xeInit.pas#L708-L727),

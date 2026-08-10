@@ -933,7 +933,8 @@ Brittleshin additionally binds horse marker `05195C32`, while Guardian Stones
 binds follower/horse markers `05195C33`/`05195C34`.
 
 Lakeview Manor is ownership/jetty/ferryman-gated. Ilinata's Deep has no Route 3
-provider and uses the 50-gold regional fare. Both are deliberately deferred.
+provider and uses the 50-gold regional fare; it is now represented as an
+explicit destination-only stop rather than a public peer.
 
 **Build evidence:** All three Papyrus scripts compile. The independent xEdit
 audit passes the exact Route 3 faction conditions, shared voice, OnEnd
@@ -1002,10 +1003,11 @@ dialogue gating would be too broad.
 
 **Scope evidence:** The generated INFO requires CFTO's travel-dialogue faction,
 Route 1 faction, and an output FLST containing exactly the seven ordinary
-providers. Frostflow Lighthouse remains destination-only; Icewater Jetty and
+providers. Frostflow Lighthouse is destination-only; Icewater Jetty and
 the Enthralled Ferryman retain their distinct Castle Volkihar flow and extra
-fare; Windstad Manor retains its ownership/construction gate. None are present
-in the picker or service.
+fare; Windstad Manor retains its ownership/construction gate. Frostflow is now
+present only as a marker-backed target; the other special/private routes remain
+absent from the picker and service.
 
 **Build evidence:** All three Papyrus scripts compile with zero errors and
 warnings. The independent xEdit audit passes six masters in order, the exact
@@ -1326,3 +1328,27 @@ These remain design goals, not implementation assumptions.
   Ilinalta `08DBC4FA0CFCD829328DCA5DC23DAFE13715A103633DB990FA6CFCF057CA5735`;
   Honrich `F0FA68EBF9DD228B5814CAA4EFE14537BFA258D1F1E8344C2894722287E7FC72`;
   North coast `1CE578E02A7D1363BCEDBCB5DEA7700B854FF3263D6B6463BA267151A3597FED`.
+
+# 2026-08-07: destination-only ferry contract
+
+- **Source proof:** isolated CFTO inventory resolves Frostflow Lighthouse
+  (`05038411`), Ilinata's Deep (`0503840E`), Northshore Landing (`0503840C`),
+  and Bujold's Retreat (`0503840D`) as executable arrival references. Their
+  original INFO records add only the normal gold condition; the one-way
+  restriction comes from their Route 1, Route 3, or Route 4 topic membership.
+- **Topology proof:** none of the four destinations has a service actor. The
+  runtime therefore records each under `destination_only_stops` with an exact
+  `available_from` provider list, no `service_npc`, and `provider_enabled=false`.
+  Source resolution remains exactly seven north-coast, three Ilinalta, and
+  three Solstheim actors.
+- **Fare/companion proof:** Frostflow, Northshore, and Bujold use regional
+  `KmodFerryCost` (`0500AA12`). Ilinata also uses that 50-gold regional fare
+  instead of Route 3's 30-gold local fare and retains follower/horse markers
+  `05195C43` and `05195C35`.
+- **Offline evidence:** all nine affected Papyrus targets compile with zero
+  errors/warnings. The three isolated xEdit/SEQ audits pass exact provider
+  counts, marker IDs, fares, map coordinates, and the absence of return-source
+  contracts.
+- **Live gate:** complete one trip to each destination, verify exact payment
+  and arrival placement, and confirm no parchment travel prompt appears at the
+  destination.

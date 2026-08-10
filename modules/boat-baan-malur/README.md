@@ -13,5 +13,7 @@ fragments. Journey to Baan Malur therefore remains responsible for its own
 30-septim check, feedback, and arrival logic.
 
 The module references the installed Solstheim and Baan Malur Paper Map for
-FWMF texture. It does not package that DDS. The six faction-unlocked mainland
-ports remain deferred until their original unlock conditions are mirrored.
+FWMF texture. It does not package that DDS. The verified stage-5 trip to Sunmul
+is also offered from Raven Rock only, marked with the one-way bottom-arrow
+selection ring. Its absent return service is not invented. The other five
+unfinished/faction-unlocked mainland ports remain deferred.

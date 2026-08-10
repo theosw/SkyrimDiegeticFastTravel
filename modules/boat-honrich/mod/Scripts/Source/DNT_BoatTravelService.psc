@@ -5,12 +5,15 @@ String CftoPlugin = "CFTO.esp"
 Int RiftenFerrymanForm = 0x00FB28
 Int HeartwoodFerrymanForm = 0x00FB24
 Int IvarsteadFerrymanForm = 0x014C52
+Int HoneysideFerrymanForm = 0x014C8C
+Int HoneysideFerrymanRefForm = 0x014C8D
 
 Int RiftenMarkerForm = 0x014C3C
 Int HeartwoodMarkerForm = 0x00FB31
 Int HeartwoodFollowerMarkerForm = 0x195C2E
 Int HeartwoodHorseMarkerForm = 0x195C2F
 Int IvarsteadMarkerForm = 0x014C54
+Int HoneysideMarkerForm = 0x014C8E
 Int FerryCostLocalForm = 0x0BBF93
 
 Int Gold001Form = 0x00000F
@@ -47,12 +50,23 @@ String Function GetSourceId(ObjectReference SourceRef)
         Return "heartwood_mill"
     ElseIf SourceBase == Game.GetFormFromFile(IvarsteadFerrymanForm, CftoPlugin)
         Return "ivarstead"
+    ElseIf SourceBase == Game.GetFormFromFile(HoneysideFerrymanForm, CftoPlugin)
+        Return "honeyside"
     EndIf
     Return ""
 EndFunction
 
 Bool Function CanOfferService(ObjectReference SourceRef)
     Return GetSourceId(SourceRef) != ""
+EndFunction
+
+Bool Function CanOfferDestination(String DestinationId)
+    If DestinationId != "honeyside"
+        Return GetDestinationMarker(DestinationId) != None
+    EndIf
+
+    ObjectReference FerrymanRef = Game.GetFormFromFile(HoneysideFerrymanRefForm, CftoPlugin) as ObjectReference
+    Return FerrymanRef != None && !FerrymanRef.IsDisabled()
 EndFunction
 
 Bool Function RequestTravel(String DestinationId, ObjectReference SourceRef)
@@ -68,6 +82,10 @@ Bool Function RequestTravel(String DestinationId, ObjectReference SourceRef)
     EndIf
     If SourceId == DestinationId
         Debug.Trace("[DNT] BOAT_TRAVEL_DENIED lane=lake_honrich source=" + SourceId + " destination=" + DestinationId + " reason=same_stop", 1)
+        Return False
+    EndIf
+    If !CanOfferDestination(DestinationId)
+        Debug.Trace("[DNT] BOAT_TRAVEL_DENIED lane=lake_honrich source=" + SourceId + " destination=" + DestinationId + " reason=private_service_locked", 1)
         Return False
     EndIf
 
@@ -126,7 +144,8 @@ Function ExecuteCftoStyleTravel(String DestinationId, ObjectReference Destinatio
     ; Heartwood fragment additionally moves the current follower and horse to
     ; dedicated jetty markers; the Riften and Ivarstead fragments rely on the
     ; normal fast-travel party handoff.
-    Game.FastTravel(DestinationMarker)
+    Bool UsedApparition = DNT_TravelCompatibility.Travel(PlayerRef, DestinationMarker)
+    Debug.Trace("[DNT] BOAT_TRAVEL_MODE lane=lake_honrich destination=" + DestinationId + " apparition=" + UsedApparition)
     If DestinationId == "heartwood_mill"
         MoveCompanionsToHeartwood()
     EndIf
@@ -169,6 +188,8 @@ ObjectReference Function GetDestinationMarker(String DestinationId)
         Return Game.GetFormFromFile(HeartwoodMarkerForm, CftoPlugin) as ObjectReference
     ElseIf DestinationId == "ivarstead"
         Return Game.GetFormFromFile(IvarsteadMarkerForm, CftoPlugin) as ObjectReference
+    ElseIf DestinationId == "honeyside"
+        Return Game.GetFormFromFile(HoneysideMarkerForm, CftoPlugin) as ObjectReference
     EndIf
     Return None
 EndFunction

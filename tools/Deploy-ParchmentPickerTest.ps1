@@ -73,6 +73,39 @@ try {
     $zip.Dispose()
 }
 
+# Deployments are archive-based. Refuse to launch a test if the candidate ZIP
+# was not rebuilt after the workspace DLL/PEX outputs changed.
+$workspaceModRoot = Join-Path $projectRoot "modules\parchment-picker\mod"
+$freshnessPairs = @(
+    @{
+        Source = Join-Path $workspaceModRoot "SKSE\Plugins\DNTParchmentPicker.dll"
+        Target = Join-Path $targetRoot "SKSE\Plugins\DNTParchmentPicker.dll"
+    },
+    @{
+        Source = Join-Path $workspaceModRoot "Scripts\DNT_ParchmentNative.pex"
+        Target = Join-Path $targetRoot "Scripts\DNT_ParchmentNative.pex"
+    },
+    @{
+        Source = Join-Path $workspaceModRoot "Scripts\DNT_TravelCompatibility.pex"
+        Target = Join-Path $targetRoot "Scripts\DNT_TravelCompatibility.pex"
+    },
+    @{
+        Source = Join-Path $workspaceModRoot "Scripts\DNT_WizardParchmentFragment.pex"
+        Target = Join-Path $targetRoot "Scripts\DNT_WizardParchmentFragment.pex"
+    },
+    @{
+        Source = Join-Path $workspaceModRoot "Scripts\DNT_WizardParchmentPicker.pex"
+        Target = Join-Path $targetRoot "Scripts\DNT_WizardParchmentPicker.pex"
+    }
+)
+foreach ($pair in $freshnessPairs) {
+    $sourceHash = (Get-FileHash -LiteralPath $pair.Source -Algorithm SHA256).Hash
+    $targetHash = (Get-FileHash -LiteralPath $pair.Target -Algorithm SHA256).Hash
+    if ($sourceHash -ne $targetHash) {
+        throw "Stale parchment candidate archive: rebuild before deploy. Workspace '$($pair.Source)' does not match archive '$($pair.Target)'."
+    }
+}
+
 $obsoleteRuntimeFiles = @(
     (Join-Path $targetRoot "Interface\DiegeticTravel\CollegeTravelMap.png"),
     (Join-Path $targetRoot "textures\DiegeticTravel\boat-route-chalk-overlay.dds"),
@@ -90,6 +123,7 @@ foreach ($obsoleteRuntimeFile in $obsoleteRuntimeFiles) {
 $requiredRuntime = @(
     (Join-Path $targetRoot "SKSE\Plugins\DNTParchmentPicker.dll"),
     (Join-Path $targetRoot "Scripts\DNT_ParchmentNative.pex"),
+    (Join-Path $targetRoot "Scripts\DNT_TravelCompatibility.pex"),
     (Join-Path $targetRoot "Scripts\DNT_WizardParchmentPicker.pex"),
     (Join-Path $targetRoot "textures\DiegeticTravel\docks-marker.dds"),
     (Join-Path $targetRoot "textures\DiegeticTravel\shipwreck-marker.dds"),
@@ -117,6 +151,13 @@ $requiredRuntime = @(
     (Join-Path $targetRoot "textures\DiegeticTravel\norden-morthal-capital.dds")
     (Join-Path $targetRoot "textures\DiegeticTravel\norden-falkreath-capital.dds")
     (Join-Path $targetRoot "textures\DiegeticTravel\norden-dawnstar-capital.dds")
+    (Join-Path $targetRoot "textures\DiegeticTravel\norden-shipwreck.dds")
+    (Join-Path $targetRoot "textures\DiegeticTravel\norden-docks.dds")
+    (Join-Path $targetRoot "textures\DiegeticTravel\thin-circle-selection-ring.dds")
+    (Join-Path $targetRoot "textures\DiegeticTravel\thin-circle-oneway-selection-ring.dds")
+    (Join-Path $targetRoot "textures\DiegeticTravel\parchment-thin-selection-ring.dds")
+    (Join-Path $targetRoot "textures\DiegeticTravel\norden-roundtrip-selection-ring.dds")
+    (Join-Path $targetRoot "textures\DiegeticTravel\norden-oneway-selection-ring.dds")
 )
 foreach ($runtimeFile in $requiredRuntime) {
     if (-not (Test-Path -LiteralPath $runtimeFile -PathType Leaf) -or
@@ -130,13 +171,13 @@ $wizardDependencyHash = (
     Get-FileHash -Algorithm SHA256 -LiteralPath $wizardArtDependency
 ).Hash
 Write-Host "Deployed isolated parchment-picker test mod: $targetRoot"
-Write-Host "Boat/carriage artwork dependency: $artDependency"
-Write-Host "Boat/carriage artwork SHA-256: $dependencyHash"
-Write-Host "Wizard artwork dependency: $wizardArtDependency"
-Write-Host "Wizard artwork SHA-256: $wizardDependencyHash"
+Write-Host "Boat artwork dependency: $artDependency"
+Write-Host "Boat artwork SHA-256: $dependencyHash"
+Write-Host "Wizard/carriage artwork dependency: $wizardArtDependency"
+Write-Host "Wizard/carriage artwork SHA-256: $wizardDependencyHash"
 Write-Host "Route artwork: deferred; no chalk overlay is shipped for beta."
 Write-Host "Bundled AI-assisted, user-edited idle marker: textures\DiegeticTravel\docks-marker.dds"
 Write-Host "Bundled AI-assisted, user-edited selected marker: textures\DiegeticTravel\shipwreck-marker.dds"
 Write-Host "Bundled Skyrim-derived fallback markers: 9 hold-capital and 1 town DDS texture"
-Write-Host "Bundled authorized Norden carriage markers: 9 capitals plus town, settlement, farm, wood mill, and mine"
+Write-Host "Bundled authorized Norden formal-map assets: 9 capitals; town, settlement, farm, wood mill, and mine; plus round-trip and one-way selection rings"
 Write-Host "MO2 profile files were not changed; enable the mod and plugin manually."

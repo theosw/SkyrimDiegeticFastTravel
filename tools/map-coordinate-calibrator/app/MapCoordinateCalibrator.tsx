@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   type ChangeEvent,
   type KeyboardEvent,
@@ -29,6 +30,7 @@ type Network = {
   map?: {
     uv_crop?: number[];
     art_aspect_ratio?: number;
+    selection_ring_scale?: number;
     [key: string]: unknown;
   };
   ui_elements?: UiElementSource[];
@@ -75,9 +77,9 @@ const PRESETS: Record<
 > = {
   carriage: {
     label: "Carriage network",
-    subtitle: "CFTO capitals and on-route stops",
+    subtitle: "CFTO capitals and on-route stops on the formal chart",
     url: "/presets/carriage.json",
-    mapSource: "/map-reference.jpg",
+    mapSource: "/wizard-map-reference.jpg",
   },
   wizard: {
     label: "Wizard guides",
@@ -127,6 +129,20 @@ function isBoatPreset(preset: PresetKey) {
   );
 }
 
+function isFormalPreset(preset: PresetKey) {
+  return preset === "wizard" || preset === "carriage";
+}
+
+function isNordenMaritimePreset(preset: PresetKey) {
+  return preset === "solstheim_merchant";
+}
+
+function selectionRingPreview(preset: PresetKey) {
+  return isFormalPreset(preset) || isNordenMaritimePreset(preset)
+    ? "/markers/thin-circle-selection-ring.png?v=20260808b"
+    : "/markers/parchment-thin-selection-ring.png?v=20260808c";
+}
+
 function isAuthoringOnly(marker: Marker) {
   return marker.runtime_enabled === false;
 }
@@ -149,6 +165,7 @@ const VANILLA_CAPITAL_ICONS: Record<string, string> = {
 };
 
 const SIX_DECIMALS = 1_000_000;
+const MAP_DRAFT_NAMESPACE = "dnt-map-calibrator:v2";
 
 function roundCoordinate(value: number) {
   return Math.round(value * SIX_DECIMALS) / SIX_DECIMALS;
@@ -168,6 +185,12 @@ function isChanged(item: {
 }
 
 function markerIcon(preset: PresetKey, marker: Marker, iconTheme: IconTheme) {
+  if (isNordenMaritimePreset(preset)) {
+    return marker.id === "raven_rock"
+      ? "/markers/norden-shipwreck.png"
+      : "/markers/norden-docks.png";
+  }
+
   if (isBoatPreset(preset)) {
     return "/markers/docks-marker.png";
   }
@@ -255,6 +278,8 @@ export function MapCoordinateCalibrator() {
   const [showGrid, setShowGrid] = useState(false);
   const [showAuthoringStops, setShowAuthoringStops] = useState(false);
   const [markerScale, setMarkerScale] = useState(1);
+  const [selectionRingScale, setSelectionRingScale] = useState(2);
+  const [originalSelectionRingScale, setOriginalSelectionRingScale] = useState(2);
   const [mapOpacity, setMapOpacity] = useState(1);
   const [mapSource, setMapSource] = useState(PRESETS.carriage.mapSource);
   const [notice, setNotice] = useState("Loading current coordinates…");
@@ -272,8 +297,9 @@ export function MapCoordinateCalibrator() {
       })
       .then((data) => {
         if (cancelled) return;
-        const draftKey = `dnt-map-calibrator:${preset}:positions`;
-        const uiDraftKey = `dnt-map-calibrator:${preset}:ui-positions`;
+        const draftKey = `${MAP_DRAFT_NAMESPACE}:${preset}:positions`;
+        const uiDraftKey = `${MAP_DRAFT_NAMESPACE}:${preset}:ui-positions`;
+        const ringDraftKey = `${MAP_DRAFT_NAMESPACE}:${preset}:selection-ring-scale`;
         let draft: Record<string, [number, number]> = {};
         let uiDraft: Record<string, [number, number]> = {};
         try {
@@ -303,9 +329,13 @@ export function MapCoordinateCalibrator() {
             originalY: element.map_position[1],
           };
         });
+        const sourceRingScale = Number(data.map?.selection_ring_scale ?? 2);
+        const savedRingScale = Number(localStorage.getItem(ringDraftKey) ?? sourceRingScale);
         setNetwork(data);
         setMarkers(loadedMarkers);
         setUiElements(loadedUiElements);
+        setOriginalSelectionRingScale(sourceRingScale);
+        setSelectionRingScale(Number.isFinite(savedRingScale) ? savedRingScale : sourceRingScale);
         setNotice(
           Object.keys(draft).length || Object.keys(uiDraft).length
             ? "Restored your local draft."
@@ -327,7 +357,7 @@ export function MapCoordinateCalibrator() {
       markers.map((marker) => [marker.id, [marker.x, marker.y]]),
     );
     localStorage.setItem(
-      `dnt-map-calibrator:${preset}:positions`,
+      `${MAP_DRAFT_NAMESPACE}:${preset}:positions`,
       JSON.stringify(positions),
     );
   }, [markers, network, preset]);
@@ -338,10 +368,18 @@ export function MapCoordinateCalibrator() {
       uiElements.map((element) => [element.id, [element.x, element.y]]),
     );
     localStorage.setItem(
-      `dnt-map-calibrator:${preset}:ui-positions`,
+      `${MAP_DRAFT_NAMESPACE}:${preset}:ui-positions`,
       JSON.stringify(positions),
     );
   }, [network, preset, uiElements]);
+
+  useEffect(() => {
+    if (!network) return;
+    localStorage.setItem(
+      `${MAP_DRAFT_NAMESPACE}:${preset}:selection-ring-scale`,
+      String(selectionRingScale),
+    );
+  }, [network, preset, selectionRingScale]);
 
   useEffect(() => {
     return () => {
@@ -360,8 +398,11 @@ export function MapCoordinateCalibrator() {
   );
 
   const changedCount = useMemo(
-    () => markers.filter(isChanged).length + uiElements.filter(isChanged).length,
-    [markers, uiElements],
+    () =>
+      markers.filter(isChanged).length +
+      uiElements.filter(isChanged).length +
+      (selectionRingScale !== originalSelectionRingScale ? 1 : 0),
+    [markers, originalSelectionRingScale, selectionRingScale, uiElements],
   );
 
   const authoringStopCount = useMemo(
@@ -399,6 +440,8 @@ export function MapCoordinateCalibrator() {
     setSelectedUiId(null);
     setFilter("all");
     setShowAuthoringStops(false);
+    setSelectionRingScale(2);
+    setOriginalSelectionRingScale(2);
     setPreset(nextPreset);
     setMapSource(PRESETS[nextPreset].mapSource);
     setNotice("Loading current coordinates…");
@@ -537,9 +580,11 @@ export function MapCoordinateCalibrator() {
         y: element.originalY,
       })),
     );
-    localStorage.removeItem(`dnt-map-calibrator:${preset}:positions`);
-    localStorage.removeItem(`dnt-map-calibrator:${preset}:ui-positions`);
-    setNotice("All markers and layout elements reset to the current source coordinates.");
+    localStorage.removeItem(`${MAP_DRAFT_NAMESPACE}:${preset}:positions`);
+    localStorage.removeItem(`${MAP_DRAFT_NAMESPACE}:${preset}:ui-positions`);
+    localStorage.removeItem(`${MAP_DRAFT_NAMESPACE}:${preset}:selection-ring-scale`);
+    setSelectionRingScale(originalSelectionRingScale);
+    setNotice("All markers, layout elements, and selection-ring scale reset to the current source values.");
   }
 
   function makePatch(includeAll = false) {
@@ -551,7 +596,12 @@ export function MapCoordinateCalibrator() {
       schema_version: 1,
       generated_by: "DNT Map Coordinate Calibrator",
       preset,
-      icon_theme_preview: isBoatPreset(preset) ? null : iconTheme,
+      icon_theme_preview: isNordenMaritimePreset(preset)
+        ? "norden_maritime"
+        : isBoatPreset(preset)
+          ? null
+          : iconTheme,
+      selection_ring_preview: selectionRingPreview(preset),
       coordinate_space: {
         origin: "top-left",
         x: "normalized 0..1, left to right",
@@ -577,6 +627,7 @@ export function MapCoordinateCalibrator() {
           [roundCoordinate(element.x), roundCoordinate(element.y)],
         ]),
       ),
+      visual_settings: { selection_ring_scale: roundCoordinate(selectionRingScale) },
       changes: Object.fromEntries(
         runtimeExported.map((marker) => [
           marker.id,
@@ -620,6 +671,17 @@ export function MapCoordinateCalibrator() {
           },
         ]),
       ),
+      visual_changes:
+        includeAll || selectionRingScale !== originalSelectionRingScale
+          ? {
+              selection_ring_scale: {
+                name: "Selection ring scale",
+                from: originalSelectionRingScale,
+                to: roundCoordinate(selectionRingScale),
+                delta: roundCoordinate(selectionRingScale - originalSelectionRingScale),
+              },
+            }
+          : {},
     };
   }
 
@@ -627,6 +689,10 @@ export function MapCoordinateCalibrator() {
     if (!network) return null;
     return {
       ...network,
+      map: {
+        ...(network.map ?? {}),
+        selection_ring_scale: roundCoordinate(selectionRingScale),
+      },
       stops: network.stops.map((stop) => {
         const marker = markers.find((item) => item.id === stop.id);
         return marker
@@ -717,6 +783,13 @@ export function MapCoordinateCalibrator() {
             }
           }
         }
+        const importedVisualSettings =
+          data.visual_settings && typeof data.visual_settings === "object"
+            ? (data.visual_settings as Record<string, unknown>)
+            : data.map && typeof data.map === "object"
+              ? (data.map as Record<string, unknown>)
+              : null;
+        const importedRingScale = Number(importedVisualSettings?.selection_ring_scale);
         const knownIds = new Set(markers.map((marker) => marker.id));
         const importedIds = Object.keys(positions).filter((id) => knownIds.has(id));
         const knownUiIds = new Set(uiElements.map((element) => element.id));
@@ -745,7 +818,13 @@ export function MapCoordinateCalibrator() {
               : element;
           }),
         );
-        const importedCount = importedIds.length + importedUiIds.length;
+        if (Number.isFinite(importedRingScale)) {
+          setSelectionRingScale(Math.min(2.8, Math.max(1.2, importedRingScale)));
+        }
+        const importedCount =
+          importedIds.length +
+          importedUiIds.length +
+          (Number.isFinite(importedRingScale) ? 1 : 0);
         setNotice(`Imported ${importedCount} matching coordinate set${importedCount === 1 ? "" : "s"}.`);
       })
       .catch(() => setNotice("That file was not a supported coordinate patch or network JSON."));
@@ -759,6 +838,10 @@ export function MapCoordinateCalibrator() {
           <p className="eyebrow">Diegetic Fast Travel / developer tool</p>
           <h1>Map coordinate calibrator</h1>
         </div>
+        <nav className="tool-navigation" aria-label="Calibrator pages">
+          <Link href="/" className="active" aria-current="page">Map layout</Link>
+          <Link href="/icon-alignment">Icon alignment</Link>
+        </nav>
         <div className="topbar-status" aria-live="polite">
           <span className={changedCount ? "status-dot changed" : "status-dot"} />
           {changedCount} changed
@@ -897,7 +980,7 @@ export function MapCoordinateCalibrator() {
                 onClick={() => {
                   setMapSource(PRESETS[preset].mapSource);
                   setNotice(
-                    preset === "wizard"
+                    preset === "wizard" || preset === "carriage"
                       ? "Using the local Skyrim Paper Map reference crop."
                       : preset === "solstheim_ferries"
                         ? "Using the local square-corrected Solstheim physical-map crop."
@@ -937,7 +1020,7 @@ export function MapCoordinateCalibrator() {
               {visibleMarkers.map((marker) => (
                 <button
                   key={marker.id}
-                  className={`map-marker ${selectedId === marker.id ? "selected" : ""} ${isChanged(marker) ? "moved" : ""} ${isAuthoringOnly(marker) ? "authoring-only" : ""}`}
+                  className={`map-marker ring-map-marker ${selectedId === marker.id ? "selected" : ""} ${isChanged(marker) ? "moved" : ""} ${isAuthoringOnly(marker) ? "authoring-only" : ""}`}
                   style={{
                     left: `${marker.x * 100}%`,
                     top: `${marker.y * 100}%`,
@@ -951,7 +1034,16 @@ export function MapCoordinateCalibrator() {
                   onPointerCancel={endDrag}
                   onKeyDown={(event) => nudgeMarker(marker.id, event)}
                 >
-                  <img src={markerIcon(preset, marker, iconTheme)} alt="" draggable={false} />
+                  {selectedId === marker.id && (
+                    <img
+                      className="selection-ring-preview"
+                      src={selectionRingPreview(preset)}
+                      alt=""
+                      draggable={false}
+                      style={{ width: `${(selectionRingScale / 1.12) * 100}%` }}
+                    />
+                  )}
+                  <img className="marker-icon" src={markerIcon(preset, marker, iconTheme)} alt="" draggable={false} />
                   {showLabels && <span>{marker.name}</span>}
                 </button>
               ))}
@@ -1096,8 +1188,19 @@ export function MapCoordinateCalibrator() {
 
           <div className="preview-controls">
             <label>
-              <span>Marker preview size <b>{Math.round(markerScale * 100)}%</b></span>
+              <span>Preview zoom (not exported) <b>{Math.round(markerScale * 100)}%</b></span>
               <input type="range" min="0.6" max="1.6" step="0.05" value={markerScale} onChange={(event) => setMarkerScale(Number(event.target.value))} />
+            </label>
+            <label>
+              <span>Selection ring extent <b>{selectionRingScale.toFixed(2)}×</b></span>
+              <input
+                type="range"
+                min="1.2"
+                max="2.8"
+                step="0.05"
+                value={selectionRingScale}
+                onChange={(event) => setSelectionRingScale(Number(event.target.value))}
+              />
             </label>
             <label>
               <span>Map opacity <b>{Math.round(mapOpacity * 100)}%</b></span>

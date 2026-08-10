@@ -9,6 +9,8 @@ Int TelMithrynFerrymanForm = 0x014C78
 Int SkaalMarkerForm = 0x014C6B
 Int RavenRockMarkerForm = 0x014C72
 Int TelMithrynMarkerForm = 0x014C7A
+Int NorthshoreMarkerForm = 0x03840C
+Int BujoldMarkerForm = 0x03840D
 Int FerryCostForm = 0x00AA12
 
 Int Gold001Form = 0x00000F
@@ -90,13 +92,13 @@ Bool Function RequestTravel(String DestinationId, ObjectReference SourceRef)
         PaymentSound.PlayAndWait(PlayerRef)
     EndIf
 
-    ExecuteCftoStyleTravel(DestinationMarker, PlayerRef)
+    ExecuteCftoStyleTravel(DestinationId, DestinationMarker, PlayerRef)
     Debug.Trace("[DNT] BOAT_TRAVEL_COMPLETE lane=solstheim source=" + SourceId + " destination=" + DestinationId + " fare=" + Fare)
     GoToState("")
     Return True
 EndFunction
 
-Function ExecuteCftoStyleTravel(ObjectReference DestinationMarker, Actor PlayerRef)
+Function ExecuteCftoStyleTravel(String DestinationId, ObjectReference DestinationMarker, Actor PlayerRef)
     ImageSpaceModifier FadeToBlackImod = Game.GetFormFromFile(FadeToBlackImodForm, "Skyrim.esm") as ImageSpaceModifier
     ImageSpaceModifier FadeToBlackHoldImod = Game.GetFormFromFile(FadeToBlackHoldImodForm, "Skyrim.esm") as ImageSpaceModifier
     ImageSpaceModifier FadeToBlackBackImod = Game.GetFormFromFile(FadeToBlackBackImodForm, "Skyrim.esm") as ImageSpaceModifier
@@ -116,7 +118,8 @@ Function ExecuteCftoStyleTravel(ObjectReference DestinationMarker, Actor PlayerR
         PlayerRef.ModActorValue("CarryWeight", DeltaWeight)
     EndIf
 
-    Game.FastTravel(DestinationMarker)
+    Bool UsedApparition = DNT_TravelCompatibility.Travel(PlayerRef, DestinationMarker)
+    Debug.Trace("[DNT] BOAT_TRAVEL_MODE lane=solstheim destination=" + DestinationId + " apparition=" + UsedApparition)
 
     If FadeToBlackHoldImod != None
         If FadeToBlackBackImod != None
@@ -136,6 +139,10 @@ ObjectReference Function GetDestinationMarker(String DestinationId)
         Return Game.GetFormFromFile(TelMithrynMarkerForm, CftoPlugin) as ObjectReference
     ElseIf DestinationId == "skaal_village"
         Return Game.GetFormFromFile(SkaalMarkerForm, CftoPlugin) as ObjectReference
+    ElseIf DestinationId == "northshore_landing"
+        Return Game.GetFormFromFile(NorthshoreMarkerForm, CftoPlugin) as ObjectReference
+    ElseIf DestinationId == "bujolds_retreat"
+        Return Game.GetFormFromFile(BujoldMarkerForm, CftoPlugin) as ObjectReference
     EndIf
     Return None
 EndFunction

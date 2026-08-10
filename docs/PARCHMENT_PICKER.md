@@ -62,23 +62,23 @@ Gamwich's page says not to repurpose or repost the textures without permission,
 so this is local-test evidence only until release permission is clarified:
 https://www.nexusmods.com/skyrimspecialedition/mods/42614
 
-The current wizard beta candidate uses a separate formal-map profile. It
+The current wizard and carriage beta candidates use a formal-map profile. They
 references LoreRim's installed Skyrim Paper Map by Caro Tuts for FWMF texture
 at `Data/textures/terrain/tamriel/skyrim.dds`, crops the useful illustration to
 `(0.088379,0.187012)-(0.932129,0.783691)`, and renders it at aspect `1.414075`.
 The FWMF terrain quad proves the full texture transform:
 `u=(worldX+262000)/524000` and `v=(262000-worldY)/524000`. Exact vanilla map
 marker reference positions are transformed through that formula and then into
-the crop, producing deterministic coordinates for the College and all seven
-wizard destinations. The Caro Tuts texture remains external and is pinned only
-as a local runtime dependency. Boats and carriages continue using the rougher
-RUSTIC MAPS profile.
+the crop, producing deterministic coordinates for the College, all seven wizard
+destinations, and the carriage sheet. The Caro Tuts texture remains external
+and is pinned only as a local runtime dependency. Ferries continue using the
+rougher RUSTIC MAPS profile.
 
-The provider passes the formal texture path and crop through local effective
+The formal providers pass the texture path and crop through local effective
 values so existing-save auto-properties cannot silently retain the earlier
-`battlemap01.dds` profile. Destination-specific hold icons also remain in place
-while hovered; selection is conveyed by the existing red halo instead of
-swapping every destination to the College icon.
+`battlemap01.dds` profile. Wizard and carriage destinations default to Norden
+UI symbols. Selection keeps the destination icon in place and draws Norden's
+two-arrow round-trip loading symbol behind it; the retired red halo is not used.
 
 An MCM artwork switch is intentionally deferred. The provider API already owns
 texture, crop, aspect, and destination coordinates, but a second complete and
@@ -194,6 +194,29 @@ translucent cursor looked good. Markarth parchment travel and Calcelmo's direct
 College return completed, then separate parchment opens proved Escape and
 close-button cancellation. Every completion restored all 12 HUD layers exactly
 and no DNT error/warning appeared.
+
+The formal-map selection ring follows the same input-ownership rule. Any mouse
+input now clears retained ImGui keyboard/controller focus, so leaving a marker
+produces no active selection instead of snapping the ring back to the first
+focusable item. Keyboard/gamepad input may explicitly re-engage navigation
+focus later. The ring extent is a separately calibrated presentation value;
+the current offline follow-up increases it from `1.52` to `2.00` and exposes it
+in the map-coordinate calibrator without resizing destination icons.
+
+The calibrator now has a separate **Icon alignment** workspace for the remaining
+optical-centering problem. It renders each exact Norden or vanilla marker on a
+fixed map anchor and independently changes the marker art and round-trip ring.
+Manual drag/nudge controls are augmented by visible alpha bounds and
+alpha-weighted centroid seeds. Exports use icon-half-extent offsets plus
+per-icon ring and marker multipliers in
+`modules/parchment-picker/config/icon-optics.json`. The native request boundary
+now validates `SetDestinationMarkerScale`, `SetSelectionRingScale`, and
+`SetDestinationSelectionRingStyle`. Marker scale changes only rendered art;
+ring style changes only ring geometry. Destination coordinates and clickboxes
+remain unchanged. The approved marker-size pass uses `0.93`-`0.96` for supplied
+capital profiles, `0.80` for towns/settlements, `0.73` for mills, and `0.78`
+for mines/farms. Dawnstar was absent from the changed export and therefore
+retains its checked-in `1.0` baseline pending gameplay review.
 
 The next offline polish candidate replaces the target-like hovered `X` with a
 provider-neutral ferry symbol. Local FFDec inspection proved that Norden's

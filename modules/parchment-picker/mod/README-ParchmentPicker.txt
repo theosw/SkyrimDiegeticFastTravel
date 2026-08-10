@@ -40,13 +40,14 @@ test. A rejected presentation falls back to the map. Other faculty retain
 normal parchment behavior.
 
 Requires the user's separately installed Skyrim/SKSE/Address Library, SKSE Menu
-Framework, RUSTIC MAPS for boat/carriage providers, Skyrim Paper Map by Caro
-Tuts for FWMF for the College provider, and DiegeticTravelWizardGuides.esp. This
+Framework, RUSTIC MAPS for boat providers, Skyrim Paper Map by Caro Tuts for
+FWMF for the College and carriage providers, and DiegeticTravelWizardGuides.esp. This
 package excludes the deferred ferry-route artwork for the beta. It includes
 AI-assisted/user-edited Docks and Ship markers, nine vanilla-derived hold-capital markers, and one
 vanilla-derived neutral town marker. It also includes fourteen exact Norden UI
 discovered-map symbols for carriage destinations under direct permission from
-the Norden UI author to the project owner. The
+the Norden UI author to the project owner, plus the exact Norden round-trip
+loading symbol used as the formal-map selection ring. The
 previously evaluated custom wizard markers and Dragonborn Reskin - Wheeler icon
 are not bundled. The package includes no background map artwork, voice asset,
 or dependency binary.

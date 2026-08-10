@@ -111,6 +111,7 @@ $expectedStages = @{
     baan_malur = 1
     cormaris = 2
     raven_rock = 3
+    sunmul = 5
 }
 foreach ($entry in $expectedStages.GetEnumerator()) {
     if ($network.travel_delegate.stages.($entry.Key) -ne $entry.Value) {
@@ -127,6 +128,7 @@ foreach ($sourceToken in @(
     'BaanMalurStage = 1',
     'CormarisStage = 2',
     'RavenRockStage = 3',
+    'SunmulStage = 5',
     'lane=baan_malur',
     'MapTexturePath = "Data/textures/terrain/dlc2solstheimworld/solstheim.dds"',
     'MapAspectRatio = 1.534',
@@ -141,10 +143,32 @@ foreach ($sourceToken in @(
         throw "Baan Malur source is missing contract: $sourceToken"
     }
 }
+$sunmul = @($network.one_way_stops | Where-Object { $_.id -eq "sunmul" })
+if ($sunmul.Count -ne 1 -or
+    @($sunmul[0].available_from).Count -ne 1 -or
+    $sunmul[0].available_from[0] -ne "raven_rock" -or
+    $sunmul[0].stage -ne 5 -or
+    $sunmul[0].fare_default -ne 30 -or
+    $sunmul[0].return_service_verified -ne $false -or
+    $sunmul[0].selection_ring -ne "Data/textures/DiegeticTravel/thin-circle-oneway-selection-ring.dds" -or
+    [Math]::Abs([double]$sunmul[0].map_position[0] - 0.561367) -gt 0.000001 -or
+    [Math]::Abs([double]$sunmul[0].map_position[1] - 0.894535) -gt 0.000001) {
+    throw "Baan Malur Sunmul one-way contract does not match the verified stage-5 route."
+}
+foreach ($oneWayToken in @(
+    'If ActiveSourceId == "raven_rock"',
+    'AddedAll = AddSunmul(Fare) && AddedAll',
+    'Return "sunmul"',
+    'SetDestinationSelectionRingTexture(ActiveRequest, "sunmul", "Data/textures/DiegeticTravel/thin-circle-oneway-selection-ring.dds")',
+    'Bool Function SetDestinationSelectionRingTexture('
+)) {
+    if (($pickerSource + $nativeSource) -notmatch [regex]::Escape($oneWayToken)) {
+        throw "Baan Malur Sunmul one-way runtime is missing contract: $oneWayToken"
+    }
+}
 foreach ($deferredId in @(
     "pryai",
     "llethrin_fel",
-    "sunmul",
     "seyda_neen",
     "vivec",
     "old_silgrad"
@@ -267,6 +291,8 @@ if ($actualQuestId -ne $expectedQuestId) {
 }
 
 $report
-Write-Host "PASS source -> three public stops, proven stages 1/2/3, six locked stops deferred"
+Write-Host "PASS source -> three public stops plus Raven Rock-only Sunmul stage-5 one-way route"
+Write-Host "PASS marker -> Sunmul uses the destination-specific bottom-arrow selection ring"
+Write-Host "PASS deferred -> five unverified Baan Malur destinations remain unavailable"
 Write-Host "PASS external chart -> present and not packaged"
 Write-Host ("PASS SEQ -> start-game quest {0:X8}" -f $actualQuestId)

@@ -13,5 +13,6 @@ Public providers:
 Fare and movement are delegated to Journey to Baan Malur's original ferry
 quest. The external map texture is referenced but not bundled.
 
-Pryai, Llethrin Fel, Sunmul, Seyda Neen, Vivec, and Old Silgrad are deferred
-until their original faction-unlock conditions are mirrored exactly.
+Sunmul is a Raven Rock-only stage-5 one-way destination. Pryai, Llethrin Fel,
+Seyda Neen, Vivec, and Old Silgrad remain deferred until their source areas and
+unlock conditions are complete and verified.

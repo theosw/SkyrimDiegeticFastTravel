@@ -14,6 +14,8 @@ Bool Function SetOverlayTexture(String RequestId, String TexturePath) Global Nat
 Bool Function SetMarkerTextures(String RequestId, String IdleTexturePath, String SelectedTexturePath) Global Native
 
 Bool Function SetOriginMarkerTexture(String RequestId, String TexturePath) Global Native
+Bool Function SetSelectionRingTexture(String RequestId, String TexturePath) Global Native
+Bool Function SetSelectionRingScale(String RequestId, Float Scale) Global Native
 
 Bool Function SetRouteOrigin(String RequestId, Float NormalizedX, Float NormalizedY) Global Native
 
@@ -22,8 +24,12 @@ Bool Function AddRouteSegment(String RequestId, Float StartNormalizedX, Float St
 Bool Function AddRouteLandmark(String RequestId, Float NormalizedX, Float NormalizedY) Global Native
 
 Bool Function AddDestination(String RequestId, String DestinationId, String Label, Int Fare, Float NormalizedX, Float NormalizedY) Global Native
+Bool Function AddStyledDestination(String RequestId, String DestinationId, String Label, Int Fare, Float NormalizedX, Float NormalizedY, String MarkerTexturePath, Float MarkerScale, Float RingOffsetX, Float RingOffsetY, Float RingScale) Global Native
 
 Bool Function SetDestinationMarkerTexture(String RequestId, String DestinationId, String TexturePath) Global Native
+Bool Function SetDestinationMarkerScale(String RequestId, String DestinationId, Float Scale) Global Native
+Bool Function SetDestinationSelectionRingStyle(String RequestId, String DestinationId, Float OffsetX, Float OffsetY, Float Scale) Global Native
+Bool Function SetDestinationSelectionRingTexture(String RequestId, String DestinationId, String TexturePath) Global Native
 
 Bool Function Show(String RequestId) Global Native
 

@@ -1,0 +1,1 @@
+player.addspell _PU_FastTravelApparition

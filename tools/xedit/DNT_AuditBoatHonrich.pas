@@ -165,6 +165,7 @@ end;
 procedure AssertCondition(
   InfoRecord: IInterface;
   Index: Integer;
+  const FunctionNameValue: string;
   ParameterRecord: IInterface
 );
 var
@@ -174,7 +175,8 @@ begin
   if not Assigned(Conditions) or (Index >= ElementCount(Conditions)) then
     raise Exception.Create('Missing boat INFO condition ' + IntToStr(Index));
   ConditionData := ElementByPath(ElementByIndex(Conditions, Index), 'CTDA');
-  if GetElementEditValues(ConditionData, 'Function') <> 'GetInFaction' then
+  if GetElementEditValues(ConditionData, 'Function') <>
+    FunctionNameValue then
     raise Exception.Create('Boat INFO condition function mismatch');
   if GetElementNativeValues(ConditionData, 'Type') <> EqualConditionType then
     raise Exception.Create('Boat INFO condition type mismatch');
@@ -189,6 +191,47 @@ begin
   if not Assigned(ActualParameter) or
     (FormID(ActualParameter) <> FormID(ParameterRecord)) then
     raise Exception.Create('Boat INFO condition parameter mismatch');
+end;
+
+procedure AssertFormListEntry(
+  ListRecord: IInterface;
+  Index: Integer;
+  ExpectedRecord: IInterface
+);
+var
+  Entries, ActualRecord: IInterface;
+begin
+  Entries := ElementByPath(ListRecord, 'FormIDs');
+  if not Assigned(Entries) or (Index >= ElementCount(Entries)) then
+    raise Exception.Create('Missing provider whitelist entry ' +
+      IntToStr(Index));
+  ActualRecord := LinksTo(ElementByIndex(Entries, Index));
+  if not Assigned(ActualRecord) or
+    (FormID(ActualRecord) <> FormID(ExpectedRecord)) then
+    raise Exception.Create('Provider whitelist entry mismatch at ' +
+      IntToStr(Index));
+end;
+
+procedure AuditProviderWhitelist(ProviderWhitelist: IInterface);
+var
+  Entries: IInterface;
+begin
+  Entries := ElementByPath(ProviderWhitelist, 'FormIDs');
+  if not Assigned(Entries) or (ElementCount(Entries) <> 4) then
+    raise Exception.Create('Provider whitelist must contain four actors');
+  AssertFormListEntry(ProviderWhitelist, 0, RequireRecord(
+    CftoFile, $014C52, 'NPC_', 'KmodFerrymanIvarstead'
+  ));
+  AssertFormListEntry(ProviderWhitelist, 1, RequireRecord(
+    CftoFile, $00FB28, 'NPC_', 'KmodFerrymanRiften'
+  ));
+  AssertFormListEntry(ProviderWhitelist, 2, RequireRecord(
+    CftoFile, $00FB24, 'NPC_', 'KmodFerrymanHeartwood'
+  ));
+  AssertFormListEntry(ProviderWhitelist, 3, RequireRecord(
+    CftoFile, $014C8C, 'NPC_', 'KmodFerrymanHoneyside'
+  ));
+  ReportLines.Add('PASS provider_whitelist=3_public_plus_honeyside');
 end;
 
 procedure AuditMasters;
@@ -216,9 +259,8 @@ begin
     HasMasterNamed('BCD - Carriages.esp') or
     HasMasterNamed('BCD - CFTO.esp') then
     raise Exception.Create('Boat plugin unexpectedly masters BCD');
-  if Assigned(GroupBySignature(BoatFile, 'FLST')) or
-    Assigned(GroupBySignature(BoatFile, 'FACT')) then
-    raise Exception.Create('Boat plugin unexpectedly defines routes/factions');
+  if Assigned(GroupBySignature(BoatFile, 'FACT')) then
+    raise Exception.Create('Boat plugin unexpectedly defines factions');
   ReportLines.Add('PASS masters -> official files plus CFTO only, no BCD');
 end;
 
@@ -251,7 +293,7 @@ procedure AuditDialogue;
 var
   BoatQuest, BoatBranch, BoatTopic, BoatInfo, InfoGroup, Conditions,
     TopicQuest, BranchQuest, StartingTopic, ActualBranch, SharedInfo,
-    ActualSharedInfo, DialogueFaction, RouteFaction, VMAD, Scripts,
+    ActualSharedInfo, DialogueFaction, ProviderWhitelist, VMAD, Scripts,
     FragmentScript, Properties: IInterface;
 begin
   BoatQuest := RequireBoatRecord('QUST', 'DNT_BoatHonrichQuest');
@@ -307,21 +349,20 @@ begin
 
   Conditions := ElementByPath(BoatInfo, 'Conditions');
   if not Assigned(Conditions) or (ElementCount(Conditions) <> 2) then
-    raise Exception.Create('Boat INFO does not have two faction conditions');
+    raise Exception.Create('Boat INFO does not have two eligibility conditions');
   DialogueFaction := RequireRecord(
     CftoFile,
     $00AA05,
     'FACT',
     'KmodFastTravelDialogueFaction'
   );
-  RouteFaction := RequireRecord(
-    CftoFile,
-    $01EED0,
-    'FACT',
-    'KmodFerryRoute2Faction'
+  ProviderWhitelist := RequireBoatRecord(
+    'FLST',
+    'DNT_BoatHonrichProviders'
   );
-  AssertCondition(BoatInfo, 0, DialogueFaction);
-  AssertCondition(BoatInfo, 1, RouteFaction);
+  AuditProviderWhitelist(ProviderWhitelist);
+  AssertCondition(BoatInfo, 0, 'GetInFaction', DialogueFaction);
+  AssertCondition(BoatInfo, 1, 'IsInList', ProviderWhitelist);
 
   VMAD := ElementByPath(BoatInfo, 'VMAD');
   if not Assigned(VMAD) or
@@ -342,7 +383,7 @@ begin
     raise Exception.Create('Boat fragment does not have one property');
   AssertProperty(FragmentScript, 'Picker', BoatQuest);
   ReportLines.Add(
-    'PASS dialogue -> Route 2 ferrymen, shared voice, and OnEnd picker'
+    'PASS dialogue -> explicit public/private whitelist, shared voice, and OnEnd picker'
   );
 end;
 

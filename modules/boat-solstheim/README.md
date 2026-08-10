@@ -20,6 +20,6 @@ for visual evaluation. No artwork is bundled. A purpose-built tattered
 fisherman chart remains the intended
 long-term art direction once its asset contract is stable.
 
-Northshore Landing and Bujold's Retreat remain intentionally deferred because
-CFTO exposes them as destination-only extensions without public Route 4
-ferrymen.
+Northshore Landing and Bujold's Retreat are offered by all three public Route 4
+ferrymen as destination-only extensions. Neither has a public provider, so the
+runtime accepts them as travel targets but never as a map source.

@@ -85,6 +85,24 @@ $parchmentTarget = Resolve-OwnedTarget $ParchmentModName
 Expand-IsolatedArchive $coreArchivePath $coreTarget
 Expand-IsolatedArchive $adapterArchivePath $adapterTarget
 
+# The adapter deployment is archive-based. Catch the easy-to-miss case where
+# Papyrus was recompiled but the candidate ZIP was not rebuilt.
+$workspaceAdapterRoot = Join-Path $projectRoot "modules\carriage-parchment\mod"
+foreach ($relativePath in @(
+    "DiegeticTravelCarriageParchment.esp",
+    "SEQ\DiegeticTravelCarriageParchment.seq",
+    "Scripts\DNT_CarriageParchmentFragment.pex",
+    "Scripts\DNT_CarriageParchmentPicker.pex"
+)) {
+    $workspacePath = Join-Path $workspaceAdapterRoot $relativePath
+    $deployedPath = Join-Path $adapterTarget $relativePath
+    $workspaceHash = (Get-FileHash -LiteralPath $workspacePath -Algorithm SHA256).Hash
+    $deployedHash = (Get-FileHash -LiteralPath $deployedPath -Algorithm SHA256).Hash
+    if ($workspaceHash -ne $deployedHash) {
+        throw "Stale carriage parchment candidate archive: rebuild before deploy. Workspace '$workspacePath' does not match archive '$deployedPath'."
+    }
+}
+
 $required = @(
     (Join-Path $coreTarget "DiegeticTravel.esp"),
     (Join-Path $coreTarget "Seq\DiegeticTravel.seq"),
@@ -114,7 +132,11 @@ $required = @(
     (Join-Path $parchmentTarget "textures\DiegeticTravel\norden-winterhold-capital.dds"),
     (Join-Path $parchmentTarget "textures\DiegeticTravel\norden-morthal-capital.dds"),
     (Join-Path $parchmentTarget "textures\DiegeticTravel\norden-falkreath-capital.dds"),
-    (Join-Path $parchmentTarget "textures\DiegeticTravel\norden-dawnstar-capital.dds")
+    (Join-Path $parchmentTarget "textures\DiegeticTravel\norden-dawnstar-capital.dds"),
+    (Join-Path $parchmentTarget "textures\DiegeticTravel\norden-roundtrip-selection-ring.dds"),
+    (Join-Path $parchmentTarget "textures\DiegeticTravel\norden-oneway-selection-ring.dds"),
+    (Join-Path $parchmentTarget "textures\DiegeticTravel\thin-circle-selection-ring.dds"),
+    (Join-Path $parchmentTarget "textures\DiegeticTravel\thin-circle-oneway-selection-ring.dds")
 )
 foreach ($path in $required) {
     if (-not (Test-Path -LiteralPath $path -PathType Leaf) -or

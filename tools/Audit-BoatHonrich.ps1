@@ -20,6 +20,8 @@ $seqPath = Join-Path $moduleRoot `
     "mod\SEQ\DiegeticTravelBoatHonrich.seq"
 $pickerSourcePath = Join-Path $moduleRoot `
     "mod\Scripts\Source\DNT_BoatParchmentPicker.psc"
+$serviceSourcePath = Join-Path $moduleRoot `
+    "mod\Scripts\Source\DNT_BoatTravelService.psc"
 $nativeSourcePath = Join-Path $projectRoot `
     "modules\parchment-picker\mod\Scripts\Source\DNT_ParchmentNative.psc"
 $networkPath = Join-Path $moduleRoot "config\network.json"
@@ -47,6 +49,7 @@ foreach ($required in @(
     $pluginPath,
     $seqPath,
     $pickerSourcePath,
+    $serviceSourcePath,
     $nativeSourcePath,
     $networkPath
 )) {
@@ -56,6 +59,7 @@ foreach ($required in @(
 }
 
 $pickerSource = Get-Content -LiteralPath $pickerSourcePath -Raw
+$serviceSource = Get-Content -LiteralPath $serviceSourcePath -Raw
 $nativeSource = Get-Content -LiteralPath $nativeSourcePath -Raw
 $network = Get-Content -LiteralPath $networkPath -Raw | ConvertFrom-Json
 foreach ($handoffToken in @(
@@ -111,6 +115,34 @@ if (($pickerSource | Select-String -Pattern "DNT_ParchmentNative.AddRouteSegment
 if (($pickerSource | Select-String -Pattern "DNT_ParchmentNative.AddRouteLandmark" -AllMatches).Matches.Count -ne 10 -or
     $pickerSource -notmatch [regex]::Escape("Bool Function AddInactiveMainlandLandmarks()")) {
     throw "Lake Honrich picker must expose the seven North-coast and three Lake Ilinalta inactive anchors."
+}
+
+if ($network.lane -ne "lake_honrich" -or $network.stops.Count -ne 3) {
+    throw "Lake Honrich network must define exactly three public stops."
+}
+$honeyside = @($network.private_stops | Where-Object { $_.id -eq "honeyside" })
+if ($honeyside.Count -ne 1 -or
+    $honeyside[0].service_npc -ne "014C8C:CFTO.esp" -or
+    $honeyside[0].service_ref -ne "014C8D:CFTO.esp" -or
+    $honeyside[0].arrival_marker -ne "014C8E:CFTO.esp" -or
+    $honeyside[0].fare_global -ne "0BBF93:CFTO.esp" -or
+    $honeyside[0].fare_default -ne 30 -or
+    $honeyside[0].availability -ne "service_ref_enabled" -or
+    [Math]::Abs([double]$honeyside[0].map_position[0] - 0.89365) -gt 0.000001 -or
+    [Math]::Abs([double]$honeyside[0].map_position[1] - 0.80508) -gt 0.000001) {
+    throw "Lake Honrich Honeyside private-service contract does not match CFTO."
+}
+foreach ($privateToken in @(
+    'HoneysideFerrymanForm = 0x014C8C',
+    'HoneysideFerrymanRefForm = 0x014C8D',
+    'HoneysideMarkerForm = 0x014C8E',
+    'FerryCostLocalForm = 0x0BBF93',
+    '"honeyside"',
+    '0.893650, 0.805080'
+)) {
+    if (($pickerSource + $serviceSource) -notmatch [regex]::Escape($privateToken)) {
+        throw "Lake Honrich Honeyside runtime is missing contract: $privateToken"
+    }
 }
 
 if (Test-Path -LiteralPath $auditRoot) {
@@ -224,4 +256,5 @@ if ($actualQuestId -ne $expectedQuestId) {
 }
 
 $report
+Write-Host "PASS source -> three public providers plus gated Honeyside private service"
 Write-Host ("PASS SEQ -> start-game quest {0:X8}" -f $actualQuestId)

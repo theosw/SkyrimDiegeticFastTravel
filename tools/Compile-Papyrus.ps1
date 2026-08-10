@@ -19,7 +19,8 @@ if (-not (Test-Path -LiteralPath $compiler)) {
 }
 
 New-Item -ItemType Directory -Force -Path $outputPath | Out-Null
-$imports = "$source;$stubs;$jcontainersSource"
+$parchmentSource = Join-Path $projectRoot "modules\parchment-picker\mod\Scripts\Source"
+$imports = "$source;$parchmentSource;$stubs;$jcontainersSource"
 $scripts = Get-ChildItem -LiteralPath $source -File -Filter "DNT_*.psc" | Sort-Object Name
 
 foreach ($script in $scripts) {

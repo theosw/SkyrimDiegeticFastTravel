@@ -49,11 +49,36 @@ $config = Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json
 if ($config.stops.Count -ne 27 -or $config.slice -ne "cfto_native_destinations") {
     throw "Carriage parchment config must define all 27 native CFTO destinations."
 }
+$expectedOneWayDestinations = @(
+    "darkwater_crossing",
+    "mixwater_mill",
+    "halfmoon_mill",
+    "karthwasten",
+    "soljunds_sinkhole",
+    "shors_stone",
+    "heartwood_mill",
+    "stonehills"
+)
+if (@($config.return_service_model.one_way_destinations).Count -ne $expectedOneWayDestinations.Count) {
+    throw "Carriage return-service model must define exactly eight verified one-way destinations."
+}
+foreach ($destinationId in $expectedOneWayDestinations) {
+    if (@($config.return_service_model.one_way_destinations) -notcontains $destinationId) {
+        throw "Carriage return-service model is missing one-way destination: $destinationId"
+    }
+}
+$paymentLabel = @($config.ui_elements | Where-Object { $_.id -eq 'fare_label' })
+if ($paymentLabel.Count -ne 1 -or
+    [math]::Abs([double]$paymentLabel[0].map_position[0] - 0.615551) -gt 0.000001 -or
+    [math]::Abs([double]$paymentLabel[0].map_position[1] - 0.922189) -gt 0.000001 -or
+    $picker -notmatch [regex]::Escape('SetPaymentLabelPosition(ActiveRequest, 0.615551, 0.922189)')) {
+    throw "Carriage payment-label position must match the live calibration."
+}
 $expectedCapitalPositions = @(
-    @{ id = "dawnstar"; x = 0.571558; y = 0.157923; token = "0.571558, 0.157923" },
-    @{ id = "falkreath"; x = 0.417708; y = 0.780867; token = "0.417708, 0.780867" },
-    @{ id = "riften"; x = 0.917183; y = 0.809050; token = "0.917183, 0.809050" },
-    @{ id = "windhelm"; x = 0.808415; y = 0.375613; token = "0.808415, 0.375613" }
+    @{ id = "dawnstar"; x = 0.557529; y = 0.185081; token = "0.557529, 0.185081" },
+    @{ id = "falkreath"; x = 0.417011; y = 0.800385; token = "0.417011, 0.800385" },
+    @{ id = "riften"; x = 0.880078; y = 0.833512; token = "0.880078, 0.833512" },
+    @{ id = "windhelm"; x = 0.793249; y = 0.410699; token = "0.793249, 0.410699" }
 )
 foreach ($expected in $expectedCapitalPositions) {
     $stop = @($config.stops | Where-Object { $_.id -eq $expected.id })[0]
@@ -74,7 +99,12 @@ foreach ($token in @(
     "GetPublishedFare",
     "GetPublishedHours",
     "SetMarkerTextures",
-    "SetDestinationMarkerTexture",
+    "SetSelectionRingTexture",
+    "SetDestinationSelectionRingTexture",
+    "AddStyledDestination",
+    "textures/terrain/tamriel/skyrim.dds",
+    "thin-circle-selection-ring.dds",
+    "thin-circle-oneway-selection-ring.dds",
     "norden-town.dds",
     "norden-settlement.dds",
     "norden-farm.dds",
@@ -91,7 +121,10 @@ foreach ($token in @(
 foreach ($forbidden in @(
     "RefreshDestinationQuote",
     "SetRouteOrigin",
-    "AddRouteSegment"
+    "AddRouteSegment",
+    "SetDestinationMarkerTexture",
+    "SetDestinationMarkerScale",
+    "SetDestinationSelectionRingStyle"
 )) {
     if ($picker -match [regex]::Escape($forbidden)) {
         throw "Beta carriage picker must not use per-stop refresh or route geometry: $forbidden"
@@ -104,24 +137,33 @@ foreach ($token in @(
     "GetPublishedHours",
     "GetCarriageDestinationMarker",
     "ExecuteDirectCarriageTravel",
-    "Game.FastTravel",
+    "DNT_TravelCompatibility.Travel(PlayerRef, destinationMarker)",
     "CARRIAGE_TRAVEL_COMPLETE"
 )) {
     if ($origin -notmatch [regex]::Escape($token)) {
         throw "Carriage core is missing quote API: $token"
     }
 }
+if ($origin -match [regex]::Escape("Game.FastTravel")) {
+    throw "Carriage core must delegate travel to DNT_TravelCompatibility."
+}
 foreach ($forbidden in @("LinkCarriageSeat", "CARRIAGE_LINK_BLOCKED", "RegisterForSingleUpdate")) {
     if ($origin -match [regex]::Escape($forbidden)) {
         throw "Direct carriage beta must not retain boarding-link execution: $forbidden"
     }
 }
-if ($config.execution -notmatch "Immediate Game.FastTravel") {
-    throw "Carriage network manifest does not declare direct marker travel."
+if ($config.execution -notmatch "DNT_TravelCompatibility") {
+    throw "Carriage network manifest does not declare compatibility-aware marker travel."
 }
-foreach ($token in @("BeginQuoteBatch", "EndQuoteBatch", "GetHazardPhaseForQuote")) {
+foreach ($token in @(
+    "RuntimePath",
+    "BeginQuoteBatch",
+    "EndQuoteBatch",
+    "GetHazardPhaseForQuote",
+    "QuoteCarriageRoute"
+)) {
     if ($route -notmatch [regex]::Escape($token)) {
-        throw "Carriage route service is missing batch quote cache: $token"
+        throw "Carriage route service is missing graph quote contract: $token"
     }
 }
 foreach ($token in @(
@@ -141,6 +183,26 @@ foreach ($forbidden in @(
     if ($route -match [regex]::Escape($forbidden)) {
         throw "Carriage route service retains a rejected beta filter/runtime error: $forbidden"
     }
+}
+$buildSource = Get-Content -Raw -LiteralPath `
+    (Join-Path $projectRoot "tools\Build-Alpha.ps1")
+$generatorSource = Get-Content -Raw -LiteralPath `
+    (Join-Path $projectRoot "tools\xedit\DNT_GeneratePlugin.pas")
+foreach ($token in @("--graph", "hazard_sensors.json", "runtime.json")) {
+    if ($buildSource -notmatch [regex]::Escape($token)) {
+        throw "Alpha build is missing graph runtime plumbing: $token"
+    }
+}
+foreach ($token in @("HoursGlobals", "hours_global", "GlobalSet.S['hours']")) {
+    if ($generatorSource -notmatch [regex]::Escape($token)) {
+        throw "Plugin generator is missing graph-hour plumbing: $token"
+    }
+}
+if ($coordinator -notmatch "hoursGlobal") {
+    throw "Travel coordinator must reset generated hours globals."
+}
+if ($config.ui_elements[0].sample -notmatch "hour") {
+    throw "Carriage payment sample must advertise its graph-derived duration."
 }
 foreach ($token in @("EnsureQuotesForSpeaker", "MENU_QUOTES_COALESCED")) {
     if ($coordinator -notmatch [regex]::Escape($token)) {

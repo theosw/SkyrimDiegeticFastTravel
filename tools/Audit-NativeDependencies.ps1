@@ -126,6 +126,11 @@ $null = Assert-Hash "SKSE Menu Framework" $runtime.menuFramework
 $null = Assert-Hash "RUSTIC MAPS artwork" $runtime.artwork
 $null = Assert-Hash "Caro Tuts wizard artwork" $runtime.wizardArtwork
 $null = Assert-Hash "Wizard core" $runtime.wizardCore
+$apparitionPath = Assert-Hash "optional Wizarding Traversal" $runtime.optionalApparitionTravel
+if ($runtime.optionalApparitionTravel.dependencyType -notmatch "optional soft lookup" -or
+    $runtime.optionalApparitionTravel.holderMagicEffectLocalFormId -ne "000808") {
+    throw "Wizarding Traversal compatibility must remain a soft lookup of holder effect 000808."
+}
 
 $wizardMarkerSource = $lock.assetSources.wizardTravelMarker
 $wizardMarkerSourcePath = [System.IO.Path]::GetFullPath((Join-Path `
@@ -191,6 +196,7 @@ if ($vcpkg.'builtin-baseline' -ne $lock.buildDependencies.vcpkgBaseline) {
 
 Write-Host "Native dependency audit passed."
 Write-Host "Skyrim runtime: $skyrimVersion"
+Write-Host "Optional Apparition compatibility: Wizarding Traversal $($runtime.optionalApparitionTravel.version), holder effect 000808"
 Write-Host "CommonLib commit: $commonLibCommit"
 Write-Host "Credited wizard marker source: $($wizardMarkerSource.name) $($wizardMarkerSource.version) ($wizardMarkerSourceHash)"
 Write-Host "CompileAndRun legacy ID $($relocation.legacyAeId): absent (expected)"

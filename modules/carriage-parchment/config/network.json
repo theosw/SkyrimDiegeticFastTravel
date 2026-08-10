@@ -3,21 +3,62 @@
   "provider": "carriage",
   "slice": "cfto_native_destinations",
   "authority": "DiegeticTravel.esp:DNT_TravelCoordinator",
-  "execution": "Immediate Game.FastTravel to CFTO ground-level arrival XMarkerHeading after atomic parchment purchase",
+  "execution": "Immediate DNT_TravelCompatibility marker travel to the CFTO ground-level arrival XMarkerHeading after atomic parchment purchase",
   "map": {
-    "texture": "Data/textures/dungeons/imperial/battlemap01.dds",
+    "texture": "Data/textures/terrain/tamriel/skyrim.dds",
     "uv_crop": [
-      0.0,
-      0.0,
-      1.0,
-      0.736328
+      0.088379,
+      0.187012,
+      0.932129,
+      0.783691
     ],
-    "art_aspect_ratio": 1.35809,
+    "art_aspect_ratio": 1.414075,
+    "selection_ring_scale": 2.0,
     "asset_policy": "reference-only; do not package the DDS"
   },
   "icon_themes": {
     "default": "norden",
     "fallback": "vanilla"
+  },
+  "return_service_model": {
+    "classification_context": "CFTO physical drivers plus LoreRim's installed Wait Carriage in Inns service",
+    "physical_driver_origins": [
+      "dawnstar",
+      "falkreath",
+      "markarth",
+      "morthal",
+      "riften",
+      "solitude",
+      "whiterun",
+      "windhelm",
+      "winterhold"
+    ],
+    "inn_return_origins": [
+      "kynesgrove",
+      "riverwood",
+      "old_hroldan",
+      "dragon_bridge",
+      "rorikstead",
+      "ivarstead",
+      "nightgate_inn"
+    ],
+    "conditional_private_origins": [
+      "lakeview_manor",
+      "heljarchen_hall",
+      "winstad_manor"
+    ],
+    "one_way_destinations": [
+      "darkwater_crossing",
+      "mixwater_mill",
+      "halfmoon_mill",
+      "karthwasten",
+      "soljunds_sinkhole",
+      "shors_stone",
+      "heartwood_mill",
+      "stonehills"
+    ],
+    "selection_ring": "Data/textures/DiegeticTravel/thin-circle-oneway-selection-ring.dds",
+    "compatibility_note": "Inn return classification depends on WaitCarriageInns.esp; without it, inn-only origins are destination-only under CFTO itself."
   },
   "ui_elements": [
     {
@@ -25,29 +66,29 @@
       "name": "Payment label",
       "sample": "Dawnstar to Windhelm (3.9 hours)    550 gold",
       "map_position": [
-        0.631072,
-        0.912903
+        0.615551,
+        0.922189
       ]
     }
   ],
   "position_model": {
     "method": "two-dimensional affine least-squares fit",
-    "calibration_stop_count": 9,
+    "calibration_stop_count": 7,
     "u_coefficients": [
-      2.398712e-06,
-      -6.5888e-08,
-      0.49749349758
+      2.253121e-06,
+      5.2845e-08,
+      0.489831775947
     ],
     "v_coefficients": [
-      6.273e-09,
-      -3.163103e-06,
-      0.494716609284
+      -4.97e-10,
+      -3.195346e-06,
+      0.524663257976
     ],
     "maximum_calibration_error": [
-      0.00839,
-      0.017816
+      0.016434,
+      0.000938
     ],
-    "note": "Positions begin with the audited world-map affine fit and are replaced with visually calibrated parchment coordinates as each stop is checked in game."
+    "note": "Seven shared capitals retain visually verified clean-map positions; all other stops are beta placements derived from audited world-map references."
   },
   "stops": [
     {
@@ -55,10 +96,10 @@
       "name": "Windhelm",
       "type": "capital",
       "map_position": [
-        0.808415,
-        0.375613
+        0.793249,
+        0.410699
       ],
-      "placement": "user_calibrated_against_parchment",
+      "placement": "verified_capital",
       "marker": {
         "plugin": "Skyrim.esm",
         "form": "00038436",
@@ -75,8 +116,8 @@
       "name": "Darkwater Crossing",
       "type": "town",
       "map_position": [
-        0.788602,
-        0.602873
+        0.759376,
+        0.633099
       ],
       "placement": "affine_from_map_marker",
       "marker": {
@@ -95,8 +136,8 @@
       "name": "Kynesgrove",
       "type": "town",
       "map_position": [
-        0.820442,
-        0.459519
+        0.794486,
+        0.488185
       ],
       "placement": "affine_from_map_marker",
       "marker": {
@@ -115,8 +156,8 @@
       "name": "Mixwater Mill",
       "type": "town",
       "map_position": [
-        0.759449,
-        0.515862
+        0.735146,
+        0.54528
       ],
       "placement": "affine_from_map_marker",
       "marker": {
@@ -135,10 +176,10 @@
       "name": "Falkreath",
       "type": "capital",
       "map_position": [
-        0.417708,
-        0.780867
+        0.417011,
+        0.800385
       ],
-      "placement": "user_calibrated_against_parchment",
+      "placement": "affine_from_map_marker",
       "marker": {
         "plugin": "Skyrim.esm",
         "form": "00017760",
@@ -155,10 +196,10 @@
       "name": "Riverwood",
       "type": "town",
       "map_position": [
-        0.540788,
-        0.643839
+        0.5369,
+        0.66778
       ],
-      "placement": "user_calibrated_against_parchment",
+      "placement": "affine_from_map_marker",
       "marker": {
         "plugin": "Skyrim.esm",
         "form": "000162A4",
@@ -175,10 +216,10 @@
       "name": "Half-Moon Mill",
       "type": "town",
       "map_position": [
-        0.397672,
-        0.69243
+        0.390284,
+        0.710628
       ],
-      "placement": "user_calibrated_against_parchment",
+      "placement": "affine_from_map_marker",
       "marker": {
         "plugin": "Skyrim.esm",
         "form": "00016370",
@@ -195,8 +236,8 @@
       "name": "Lakeview Manor",
       "type": "town",
       "map_position": [
-        0.478909,
-        0.713975
+        0.46442,
+        0.746222
       ],
       "placement": "affine_from_map_marker",
       "marker": {
@@ -215,8 +256,8 @@
       "name": "Markarth",
       "type": "capital",
       "map_position": [
-        0.079,
-        0.474
+        0.094238,
+        0.507741
       ],
       "placement": "verified_capital",
       "marker": {
@@ -235,10 +276,10 @@
       "name": "Karthwasten",
       "type": "town",
       "map_position": [
-        0.174411,
-        0.369782
+        0.192772,
+        0.401553
       ],
-      "placement": "user_calibrated_against_parchment",
+      "placement": "affine_from_map_marker",
       "marker": {
         "plugin": "Skyrim.esm",
         "form": "0001779A",
@@ -255,10 +296,10 @@
       "name": "Soljund's Sinkhole",
       "type": "town",
       "map_position": [
-        0.213053,
-        0.475712
+        0.225058,
+        0.504729
       ],
-      "placement": "user_calibrated_against_parchment",
+      "placement": "affine_from_map_marker",
       "marker": {
         "plugin": "Skyrim.esm",
         "form": "000162BB",
@@ -275,8 +316,8 @@
       "name": "Old Hroldan",
       "type": "town",
       "map_position": [
-        0.223189,
-        0.515493
+        0.231397,
+        0.546434
       ],
       "placement": "affine_from_map_marker",
       "marker": {
@@ -295,10 +336,10 @@
       "name": "Solitude",
       "type": "capital",
       "map_position": [
-        0.331839,
-        0.148204
+        0.365471,
+        0.191247
       ],
-      "placement": "user_calibrated_against_parchment",
+      "placement": "verified_capital",
       "marker": {
         "plugin": "Skyrim.esm",
         "form": "0004D0F4",
@@ -315,10 +356,10 @@
       "name": "Dragon Bridge",
       "type": "town",
       "map_position": [
-        0.242391,
-        0.225951
+        0.264061,
+        0.259819
       ],
-      "placement": "user_calibrated_against_parchment",
+      "placement": "affine_from_map_marker",
       "marker": {
         "plugin": "Skyrim.esm",
         "form": "00017753",
@@ -335,10 +376,10 @@
       "name": "Whiterun",
       "type": "capital",
       "map_position": [
-        0.550806,
-        0.50681
+        0.532756,
+        0.54829
       ],
-      "placement": "user_calibrated_against_parchment",
+      "placement": "verified_capital",
       "marker": {
         "plugin": "Skyrim.esm",
         "form": "000162CE",
@@ -355,8 +396,8 @@
       "name": "Rorikstead",
       "type": "town",
       "map_position": [
-        0.288904,
-        0.474497
+        0.300256,
+        0.502491
       ],
       "placement": "affine_from_map_marker",
       "marker": {
@@ -375,10 +416,10 @@
       "name": "Winterhold",
       "type": "capital",
       "map_position": [
-        0.754746,
-        0.170557
+        0.741325,
+        0.195923
       ],
-      "placement": "user_calibrated_against_parchment",
+      "placement": "affine_from_map_marker",
       "marker": {
         "plugin": "Skyrim.esm",
         "form": "000177EF",
@@ -395,10 +436,10 @@
       "name": "Riften",
       "type": "capital",
       "map_position": [
-        0.917183,
-        0.80905
+        0.880078,
+        0.833512
       ],
-      "placement": "user_calibrated_against_parchment",
+      "placement": "verified_capital",
       "marker": {
         "plugin": "Skyrim.esm",
         "form": "0001C390",
@@ -415,10 +456,10 @@
       "name": "Ivarstead",
       "type": "town",
       "map_position": [
-        0.670308,
-        0.700205
+        0.658517,
+        0.729967
       ],
-      "placement": "user_calibrated_against_parchment",
+      "placement": "affine_from_map_marker",
       "marker": {
         "plugin": "Skyrim.esm",
         "form": "00017791",
@@ -435,10 +476,10 @@
       "name": "Shor's Stone",
       "type": "town",
       "map_position": [
-        0.875679,
-        0.700205
+        0.85372,
+        0.717995
       ],
-      "placement": "user_calibrated_against_parchment",
+      "placement": "affine_from_map_marker",
       "marker": {
         "plugin": "Skyrim.esm",
         "form": "000177D7",
@@ -455,10 +496,10 @@
       "name": "Heartwood Mill",
       "type": "town",
       "map_position": [
-        0.819148,
-        0.792529
+        0.784775,
+        0.830702
       ],
-      "placement": "user_calibrated_against_parchment",
+      "placement": "affine_from_map_marker",
       "marker": {
         "plugin": "Skyrim.esm",
         "form": "0001634F",
@@ -475,10 +516,10 @@
       "name": "Dawnstar",
       "type": "capital",
       "map_position": [
-        0.571558,
-        0.157923
+        0.557529,
+        0.185081
       ],
-      "placement": "user_calibrated_against_parchment",
+      "placement": "verified_capital",
       "marker": {
         "plugin": "Skyrim.esm",
         "form": "0001773A",
@@ -495,8 +536,8 @@
       "name": "Nightgate Inn",
       "type": "town",
       "map_position": [
-        0.671551,
-        0.349567
+        0.658606,
+        0.37753
       ],
       "placement": "affine_from_map_marker",
       "marker": {
@@ -515,10 +556,10 @@
       "name": "Heljarchen Hall",
       "type": "town",
       "map_position": [
-        0.569411,
-        0.372698
+        0.562709,
+        0.401255
       ],
-      "placement": "user_calibrated_against_parchment",
+      "placement": "affine_from_map_marker",
       "marker": {
         "plugin": "HearthFires.esm",
         "form": "02010DE8",
@@ -535,10 +576,10 @@
       "name": "Morthal",
       "type": "capital",
       "map_position": [
-        0.403397,
-        0.290092
+        0.400452,
+        0.31111
       ],
-      "placement": "user_calibrated_against_parchment",
+      "placement": "verified_capital",
       "marker": {
         "plugin": "Skyrim.esm",
         "form": "000177B0",
@@ -555,8 +596,8 @@
       "name": "Stonehills",
       "type": "town",
       "map_position": [
-        0.475788,
-        0.291388
+        0.476818,
+        0.319312
       ],
       "placement": "affine_from_map_marker",
       "marker": {
@@ -575,8 +616,8 @@
       "name": "Windstad Manor",
       "type": "town",
       "map_position": [
-        0.434172,
-        0.17917
+        0.441794,
+        0.206062
       ],
       "placement": "affine_from_map_marker",
       "marker": {

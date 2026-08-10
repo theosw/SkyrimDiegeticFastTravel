@@ -95,32 +95,38 @@ Function OpenMap(ObjectReference SourceRef)
     ; Papyrus interns string constants case-insensitively. The trailing space
     ; keeps each display label distinct from its lowercase service ID; the
     ; native boundary trims it before rendering.
-    ; The beta uses one consistent vanilla map-marker language. Every neutral
-    ; destination owns its city/castle marker and keeps that identity while
-    ; highlighted. The vanilla Winterhold castle identifies only the College
-    ; origin. Whiterun remains the generic fallback if a destination texture
-    ; cannot be loaded.
-    Bool AddedAll = DNT_ParchmentNative.SetMarkerTextures(ActiveRequest, "Data/textures/DiegeticTravel/whiterun-dragonsreach.dds", "Data/textures/DiegeticTravel/whiterun-dragonsreach.dds")
-    AddedAll = DNT_ParchmentNative.SetOriginMarkerTexture(ActiveRequest, "Data/textures/DiegeticTravel/winterhold-college.dds") && AddedAll
+    ; Formal wizard and carriage maps default to Norden's discovered-map
+    ; language. Vanilla hold markers remain packaged as a future/fallback
+    ; theme, but every live wizard destination uses the Norden symbol set.
+    Bool AddedAll = DNT_ParchmentNative.SetMarkerTextures(ActiveRequest, "Data/textures/DiegeticTravel/norden-town.dds", "Data/textures/DiegeticTravel/norden-town.dds")
+    AddedAll = DNT_ParchmentNative.SetOriginMarkerTexture(ActiveRequest, "Data/textures/DiegeticTravel/norden-winterhold-capital.dds") && AddedAll
+    AddedAll = DNT_ParchmentNative.SetSelectionRingTexture(ActiveRequest, "Data/textures/DiegeticTravel/thin-circle-selection-ring.dds") && AddedAll
     AddedAll = DNT_ParchmentNative.SetSourceLabel(ActiveRequest, "College of Winterhold") && AddedAll
     AddedAll = DNT_ParchmentNative.SetPaymentLabelPosition(ActiveRequest, 0.616470, 0.924230) && AddedAll
     ; Positions are calculated from the FWMF Tamriel quad and the exact vanilla
     ; map-marker world coordinates, then normalized into the crop above.
     AddedAll = DNT_ParchmentNative.SetRouteOrigin(ActiveRequest, 0.750802, 0.167836) && AddedAll
     AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "whiterun", "Whiterun ", Service.GetFare("whiterun"), 0.532756, 0.548290) && AddedAll
-    AddedAll = DNT_ParchmentNative.SetDestinationMarkerTexture(ActiveRequest, "whiterun", "Data/textures/DiegeticTravel/whiterun-dragonsreach.dds") && AddedAll
+    AddedAll = DNT_ParchmentNative.SetDestinationMarkerTexture(ActiveRequest, "whiterun", "Data/textures/DiegeticTravel/norden-whiterun-capital.dds") && AddedAll
+    AddedAll = ApplyDestinationSelectionRingStyle("whiterun") && AddedAll
     AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "riften", "Riften ", Service.GetFare("riften"), 0.880078, 0.833512) && AddedAll
-    AddedAll = DNT_ParchmentNative.SetDestinationMarkerTexture(ActiveRequest, "riften", "Data/textures/DiegeticTravel/riften-mistveil-keep.dds") && AddedAll
+    AddedAll = DNT_ParchmentNative.SetDestinationMarkerTexture(ActiveRequest, "riften", "Data/textures/DiegeticTravel/norden-riften-capital.dds") && AddedAll
+    AddedAll = ApplyDestinationSelectionRingStyle("riften") && AddedAll
     AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "solitude", "Solitude ", Service.GetFare("solitude"), 0.365471, 0.191247) && AddedAll
-    AddedAll = DNT_ParchmentNative.SetDestinationMarkerTexture(ActiveRequest, "solitude", "Data/textures/DiegeticTravel/solitude-blue-palace.dds") && AddedAll
+    AddedAll = DNT_ParchmentNative.SetDestinationMarkerTexture(ActiveRequest, "solitude", "Data/textures/DiegeticTravel/norden-solitude-capital.dds") && AddedAll
+    AddedAll = ApplyDestinationSelectionRingStyle("solitude") && AddedAll
     AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "windhelm", "Windhelm ", Service.GetFare("windhelm"), 0.793249, 0.410699) && AddedAll
-    AddedAll = DNT_ParchmentNative.SetDestinationMarkerTexture(ActiveRequest, "windhelm", "Data/textures/DiegeticTravel/windhelm-palace-of-the-kings.dds") && AddedAll
+    AddedAll = DNT_ParchmentNative.SetDestinationMarkerTexture(ActiveRequest, "windhelm", "Data/textures/DiegeticTravel/norden-windhelm-capital.dds") && AddedAll
+    AddedAll = ApplyDestinationSelectionRingStyle("windhelm") && AddedAll
     AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "markarth", "Markarth ", Service.GetFare("markarth"), 0.094238, 0.507741) && AddedAll
-    AddedAll = DNT_ParchmentNative.SetDestinationMarkerTexture(ActiveRequest, "markarth", "Data/textures/DiegeticTravel/markarth-understone-keep.dds") && AddedAll
+    AddedAll = DNT_ParchmentNative.SetDestinationMarkerTexture(ActiveRequest, "markarth", "Data/textures/DiegeticTravel/norden-markarth-capital.dds") && AddedAll
+    AddedAll = ApplyDestinationSelectionRingStyle("markarth") && AddedAll
     AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "dawnstar", "Dawnstar ", Service.GetFare("dawnstar"), 0.557529, 0.185081) && AddedAll
-    AddedAll = DNT_ParchmentNative.SetDestinationMarkerTexture(ActiveRequest, "dawnstar", "Data/textures/DiegeticTravel/dawnstar-white-hall.dds") && AddedAll
+    AddedAll = DNT_ParchmentNative.SetDestinationMarkerTexture(ActiveRequest, "dawnstar", "Data/textures/DiegeticTravel/norden-dawnstar-capital.dds") && AddedAll
+    AddedAll = ApplyDestinationSelectionRingStyle("dawnstar") && AddedAll
     AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "morthal", "Morthal ", Service.GetFare("morthal"), 0.400452, 0.311110) && AddedAll
-    AddedAll = DNT_ParchmentNative.SetDestinationMarkerTexture(ActiveRequest, "morthal", "Data/textures/DiegeticTravel/morthal-highmoon-hall.dds") && AddedAll
+    AddedAll = DNT_ParchmentNative.SetDestinationMarkerTexture(ActiveRequest, "morthal", "Data/textures/DiegeticTravel/norden-morthal-capital.dds") && AddedAll
+    AddedAll = ApplyDestinationSelectionRingStyle("morthal") && AddedAll
 
     If !AddedAll
         DNT_ParchmentNative.Cancel(ActiveRequest)
@@ -134,6 +140,47 @@ Function OpenMap(ObjectReference SourceRef)
         Return
     EndIf
     Debug.Trace("[DNT] WIZARD_PARCHMENT_OPEN source=" + SourceRef + " request=" + ActiveRequest + " presentationVoice=" + VoiceStarted)
+EndFunction
+
+Bool Function ApplyDestinationSelectionRingStyle(String DestinationId)
+    If !DNT_ParchmentNative.SetDestinationMarkerScale(ActiveRequest, DestinationId, GetDestinationMarkerScale(DestinationId))
+        Return False
+    EndIf
+    If DestinationId == "whiterun"
+        Return DNT_ParchmentNative.SetDestinationSelectionRingStyle(ActiveRequest, DestinationId, 0.0316, -0.0474, 0.88)
+    ElseIf DestinationId == "riften"
+        Return DNT_ParchmentNative.SetDestinationSelectionRingStyle(ActiveRequest, DestinationId, 0.0, -0.0580, 0.88)
+    ElseIf DestinationId == "solitude"
+        Return DNT_ParchmentNative.SetDestinationSelectionRingStyle(ActiveRequest, DestinationId, 0.0, -0.0474, 0.85)
+    ElseIf DestinationId == "windhelm"
+        Return DNT_ParchmentNative.SetDestinationSelectionRingStyle(ActiveRequest, DestinationId, 0.0316, -0.1001, 0.89)
+    ElseIf DestinationId == "markarth"
+        Return DNT_ParchmentNative.SetDestinationSelectionRingStyle(ActiveRequest, DestinationId, 0.0, -0.1107, 0.89)
+    ElseIf DestinationId == "dawnstar"
+        Return DNT_ParchmentNative.SetDestinationSelectionRingStyle(ActiveRequest, DestinationId, 0.0, -0.0474, 0.86)
+    ElseIf DestinationId == "morthal"
+        Return DNT_ParchmentNative.SetDestinationSelectionRingStyle(ActiveRequest, DestinationId, 0.0, -0.0896, 0.92)
+    EndIf
+    Return True
+EndFunction
+
+Float Function GetDestinationMarkerScale(String DestinationId)
+    If DestinationId == "whiterun"
+        Return 1.0
+    ElseIf DestinationId == "riften"
+        Return 0.99
+    ElseIf DestinationId == "solitude"
+        Return 1.0
+    ElseIf DestinationId == "windhelm"
+        Return 0.93
+    ElseIf DestinationId == "markarth"
+        Return 0.95
+    ElseIf DestinationId == "morthal"
+        Return 0.95
+    ElseIf DestinationId == "dawnstar"
+        Return 1.01
+    EndIf
+    Return 1.0
 EndFunction
 
 Function AbortOpen(String Reason)

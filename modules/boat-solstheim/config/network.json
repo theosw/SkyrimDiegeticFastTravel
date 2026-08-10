@@ -17,7 +17,7 @@
       "id": "fare_label",
       "name": "Payment label",
       "sample": "Raven Rock to Skaal Village    50 gold",
-      "map_position": [0.5, 0.93]
+      "map_position": [0.501441, 0.91934]
     }
   ],
   "stops": [
@@ -45,14 +45,25 @@
       "map_position": [0.813066, 0.347056]
     }
   ],
-  "deferred_stops": [
+  "destination_only_stops": [
     {
       "id": "northshore_landing",
-      "reason": "CFTO exposes this as a destination-only extension with no public Route 4 ferryman."
+      "name": "Northshore Landing",
+      "arrival_marker": "03840C:CFTO.esp",
+      "fare_global": "00AA12:CFTO.esp",
+      "map_position": [0.126267, 0.16212],
+      "available_from": ["raven_rock", "tel_mithryn", "skaal_village"],
+      "provider_enabled": false
     },
     {
       "id": "bujolds_retreat",
-      "reason": "CFTO exposes this as a destination-only extension with no public Route 4 ferryman."
+      "name": "Bujold's Retreat",
+      "arrival_marker": "03840D:CFTO.esp",
+      "fare_global": "00AA12:CFTO.esp",
+      "map_position": [0.842557, 0.47233],
+      "available_from": ["raven_rock", "tel_mithryn", "skaal_village"],
+      "provider_enabled": false
     }
-  ]
+  ],
+  "deferred_stops": []
 }

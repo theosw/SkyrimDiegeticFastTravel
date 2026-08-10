@@ -236,7 +236,7 @@ var
   SourceTopic, SourceBranch, TopicRecord, BranchRecord, InfoRecord,
     InfoGroup, TemplateInfo, SharedInfo, FragmentScript, QuestElement,
     BranchElement, BranchQuestElement, StartingTopicElement, ReadBack,
-    Conditions, DialogueFaction, RouteFaction: IInterface;
+    Conditions, DialogueFaction: IInterface;
 begin
   SourceTopic := RequireRecord(
     CftoFile,
@@ -311,12 +311,6 @@ begin
     'FACT',
     'KmodFastTravelDialogueFaction'
   );
-  RouteFaction := RequireRecord(
-    CftoFile,
-    $019DC6,
-    'FACT',
-    'KmodFerryRoute1Faction'
-  );
   Add(InfoRecord, 'Conditions', True);
   Conditions := ElementByPath(InfoRecord, 'Conditions');
   while Assigned(Conditions) and (ElementCount(Conditions) > 0) do
@@ -335,14 +329,6 @@ begin
     EqualConditionType,
     1.0
   );
-  AddSubjectCondition(
-    InfoRecord,
-    'GetInFaction',
-    RouteFaction,
-    EqualConditionType,
-    1.0
-  );
-
   SharedInfo := RequireRecord(DawnguardFile, $01683A, 'INFO', '');
   Add(InfoRecord, 'DNAM', True);
   SetEditValue(ElementByPath(InfoRecord, 'DNAM'), Name(SharedInfo));
@@ -434,6 +420,12 @@ begin
     ));
     AddFormListEntry(ProviderWhitelist, RequireRecord(
       CftoFile, $2D4C09, 'NPC_', 'KmodFerrymanDragonBridge'
+    ));
+    AddFormListEntry(ProviderWhitelist, RequireRecord(
+      CftoFile, $014C89, 'NPC_', 'KmodFerrymanWindstad'
+    ));
+    AddFormListEntry(ProviderWhitelist, RequireRecord(
+      CftoFile, $1F0E6A, 'NPC_', 'KmodFerrymanVolkihar'
     ));
 
     BoatQuest := NewQuest('DNT_BoatNorthCoastQuest');

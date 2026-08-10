@@ -121,22 +121,69 @@ if ([math]::Abs([double]$halfMoonMill.map_position[0] - 0.396241) -gt 0.000001 -
     $pickerSource -notmatch [regex]::Escape("0.396241, 0.692916")) {
     throw "Lake Ilinalta Half-Moon Mill anchor must use the live-corrected shoreline position."
 }
-foreach ($deferredId in @("lakeview_manor", "ilinatas_deep")) {
-    if (@($network.deferred_stops | Where-Object {
-        $_.id -eq $deferredId
-    }).Count -ne 1) {
-        throw "Lake Ilinalta network must defer $deferredId."
+$lakeview = @($network.private_stops | Where-Object { $_.id -eq "lakeview_manor" })
+if ($lakeview.Count -ne 1 -or
+    $lakeview[0].service_npc -ne "014C80:CFTO.esp" -or
+    $lakeview[0].service_ref -ne "014C81:CFTO.esp" -or
+    $lakeview[0].arrival_marker -ne "014C7E:CFTO.esp" -or
+    $lakeview[0].follower_marker -ne "195C30:CFTO.esp" -or
+    $lakeview[0].horse_marker -ne "195C31:CFTO.esp" -or
+    $lakeview[0].fare_global -ne "0BBF93:CFTO.esp" -or
+    $lakeview[0].fare_default -ne 30 -or
+    $lakeview[0].availability -ne "service_ref_enabled" -or
+    [Math]::Abs([double]$lakeview[0].map_position[0] - 0.423729) -gt 0.000001 -or
+    [Math]::Abs([double]$lakeview[0].map_position[1] - 0.709260) -gt 0.000001) {
+    throw "Lake Ilinalta Lakeview Manor private-service contract does not match CFTO."
+}
+foreach ($privateToken in @(
+    'LakeviewFerrymanForm = 0x014C80',
+    'LakeviewFerrymanRefForm = 0x014C81',
+    'LakeviewMarkerForm = 0x014C7E',
+    'LakeviewFollowerMarkerForm = 0x195C30',
+    'LakeviewHorseMarkerForm = 0x195C31',
+    '"lakeview_manor"',
+    '0.423729, 0.709260'
+)) {
+    if (($pickerSource + $serviceSource) -notmatch [regex]::Escape($privateToken)) {
+        throw "Lake Ilinalta Lakeview runtime is missing contract: $privateToken"
     }
-    if ($pickerSource -match [regex]::Escape('"' + $deferredId + '"')) {
-        throw "Lake Ilinalta picker unexpectedly exposes $deferredId."
-    }
+}
+$ilinata = @($network.destination_only_stops | Where-Object {
+    $_.id -eq "ilinatas_deep"
+})
+if ($ilinata.Count -ne 1 -or
+    $ilinata[0].provider_enabled -ne $false -or
+    $ilinata[0].arrival_marker -ne "03840E:CFTO.esp" -or
+    $ilinata[0].follower_marker -ne "195C43:CFTO.esp" -or
+    $ilinata[0].horse_marker -ne "195C35:CFTO.esp" -or
+    $ilinata[0].fare_global -ne "00AA12:CFTO.esp" -or
+    $ilinata[0].fare_default -ne 50 -or
+    $ilinata[0].PSObject.Properties.Name -contains "service_npc" -or
+    [Math]::Abs([double]$ilinata[0].map_position[0] - 0.412943) -gt 0.000001 -or
+    [Math]::Abs([double]$ilinata[0].map_position[1] - 0.664269) -gt 0.000001) {
+    throw "Lake Ilinalta destination-only contract does not match."
+}
+$allProviderIds = $expectedIds + @("lakeview_manor")
+if (@($ilinata[0].available_from).Count -ne 4 -or
+    @($ilinata[0].available_from | Where-Object { $_ -notin $allProviderIds }).Count -ne 0 -or
+    $pickerSource -notmatch [regex]::Escape('"ilinatas_deep"') -or
+    $pickerSource -notmatch [regex]::Escape("0.412943, 0.664269") -or
+    $serviceSource -notmatch [regex]::Escape("IlinataMarkerForm = 0x03840E") -or
+    $serviceSource -notmatch [regex]::Escape("FerryCostRegionalForm = 0x00AA12")) {
+    throw "Lake Ilinalta runtime does not expose Ilinata's Deep from every available provider."
 }
 foreach ($companionToken in @(
     "BrittleshinHorseMarkerForm = 0x195C32",
     "GuardianFollowerMarkerForm = 0x195C33",
     "GuardianHorseMarkerForm = 0x195C34",
+    "IlinataFollowerMarkerForm = 0x195C43",
+    "IlinataHorseMarkerForm = 0x195C35",
+    "LakeviewFollowerMarkerForm = 0x195C30",
+    "LakeviewHorseMarkerForm = 0x195C31",
     'DestinationId == "brittleshin_pass"',
-    'DestinationId == "guardian_stones"'
+    'DestinationId == "guardian_stones"',
+    'DestinationId == "ilinatas_deep"',
+    'DestinationId == "lakeview_manor"'
 )) {
     if ($serviceSource -notmatch [regex]::Escape($companionToken)) {
         throw "Lake Ilinalta service is missing companion contract: $companionToken"
@@ -252,5 +299,7 @@ if ($actualQuestId -ne $expectedQuestId) {
 }
 
 $report
-Write-Host "PASS source -> three public stops and exact companion handoffs"
+Write-Host "PASS source -> three public providers plus gated Lakeview Manor private service"
+Write-Host "PASS scope -> Ilinata's Deep is destination-only from all four providers"
+Write-Host "PASS companion -> exact public, Ilinata, and Lakeview follower/horse handoffs"
 Write-Host ("PASS SEQ -> start-game quest {0:X8}" -f $actualQuestId)

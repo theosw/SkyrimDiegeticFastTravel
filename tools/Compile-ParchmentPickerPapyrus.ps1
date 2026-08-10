@@ -23,9 +23,9 @@ foreach ($requiredPath in @($compiler, $flags, $source, $wizardSource, $stubs)) 
 
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 $imports = "$source;$wizardSource;$stubs"
-$scripts = Get-ChildItem -LiteralPath $source -File -Filter "DNT_*Parchment*.psc" | Sort-Object Name
-if ($scripts.Count -ne 3) {
-    throw "Expected exactly three parchment-picker scripts, found $($scripts.Count)."
+$scripts = Get-ChildItem -LiteralPath $source -File -Filter "DNT_*.psc" | Sort-Object Name
+if ($scripts.Count -ne 4) {
+    throw "Expected exactly four parchment-picker scripts, found $($scripts.Count)."
 }
 
 foreach ($script in $scripts) {

@@ -12,5 +12,5 @@ Public providers:
 
 Fare: CFTO KmodFerryCost (50 gold in the audited LoreRim build).
 
-Northshore Landing and Bujold's Retreat are not exposed by this candidate.
-They are CFTO destination-only extensions rather than public Route 4 providers.
+Northshore Landing and Bujold's Retreat are exposed as one-way destinations
+from each public Route 4 ferryman. They never become return providers.

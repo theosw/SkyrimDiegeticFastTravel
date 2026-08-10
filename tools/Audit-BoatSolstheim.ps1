@@ -116,17 +116,47 @@ foreach ($stopId in $expectedIds) {
         throw "Solstheim service is missing stop $stopId."
     }
 }
-foreach ($deferredId in @("northshore_landing", "bujolds_retreat")) {
-    if (@($network.deferred_stops | Where-Object {
-        $_.id -eq $deferredId
-    }).Count -ne 1) {
-        throw "Solstheim network must defer $deferredId."
+if (@($network.deferred_stops).Count -ne 0) {
+    throw "Solstheim public Route 4 scope should have no remaining deferred stops."
+}
+$destinationOnlyContracts = @(
+    @{
+        Id = "northshore_landing"; Marker = "03840C:CFTO.esp"
+        MarkerToken = "NorthshoreMarkerForm = 0x03840C"
+        Position = @(0.126267, 0.162120)
+    },
+    @{
+        Id = "bujolds_retreat"; Marker = "03840D:CFTO.esp"
+        MarkerToken = "BujoldMarkerForm = 0x03840D"
+        Position = @(0.842557, 0.472330)
     }
-    if ($pickerSource -match [regex]::Escape('"' + $deferredId + '"')) {
-        throw "Solstheim picker unexpectedly exposes $deferredId."
-    }
-    if ($serviceSource -match [regex]::Escape('"' + $deferredId + '"')) {
-        throw "Solstheim service unexpectedly exposes $deferredId."
+)
+if (@($network.destination_only_stops).Count -ne 2) {
+    throw "Solstheim network must define exactly two destination-only stops."
+}
+$paymentLabel = @($network.ui_elements | Where-Object { $_.id -eq 'fare_label' })
+if ($paymentLabel.Count -ne 1 -or
+    [Math]::Abs([double]$paymentLabel[0].map_position[0] - 0.501441) -gt 0.000001 -or
+    [Math]::Abs([double]$paymentLabel[0].map_position[1] - 0.919340) -gt 0.000001) {
+    throw "Solstheim payment-label position must match the live calibration."
+}
+foreach ($contract in $destinationOnlyContracts) {
+    $stop = @($network.destination_only_stops | Where-Object {
+        $_.id -eq $contract.Id
+    })
+    if ($stop.Count -ne 1 -or
+        $stop[0].provider_enabled -ne $false -or
+        $stop[0].arrival_marker -ne $contract.Marker -or
+        $stop[0].fare_global -ne "00AA12:CFTO.esp" -or
+        $stop[0].PSObject.Properties.Name -contains "service_npc" -or
+        @($stop[0].available_from).Count -ne 3 -or
+        @($stop[0].available_from | Where-Object { $_ -notin $expectedIds }).Count -ne 0 -or
+        [Math]::Abs([double]$stop[0].map_position[0] - $contract.Position[0]) -gt 0.000001 -or
+        [Math]::Abs([double]$stop[0].map_position[1] - $contract.Position[1]) -gt 0.000001 -or
+        $pickerSource -notmatch [regex]::Escape('"' + $contract.Id + '"') -or
+        $pickerSource -notmatch [regex]::Escape(("{0:F6}, {1:F6}" -f $contract.Position[0], $contract.Position[1])) -or
+        $serviceSource -notmatch [regex]::Escape($contract.MarkerToken)) {
+        throw "Solstheim destination-only contract does not match: $($contract.Id)."
     }
 }
 foreach ($sourceToken in @(
@@ -136,6 +166,7 @@ foreach ($sourceToken in @(
     '0.239171, 0.676223',
     '0.705729, 0.771395',
     '0.813066, 0.347056',
+    'SetPaymentLabelPosition(ActiveRequest, 0.501441, 0.919340)',
     'FerryCostForm = 0x00AA12',
     'lane=solstheim'
 )) {
@@ -254,5 +285,6 @@ if ($actualQuestId -ne $expectedQuestId) {
 }
 
 $report
-Write-Host "PASS source -> three public stops, clean map crop, two deferred stops"
+Write-Host "PASS source -> three public providers plus two destination-only stops"
+Write-Host "PASS scope -> Northshore and Bujold cannot become return providers"
 Write-Host ("PASS SEQ -> start-game quest {0:X8}" -f $actualQuestId)

@@ -39,14 +39,38 @@
       "map_position": [0.501218, 0.685304]
     }
   ],
-  "deferred_stops": [
-    {
-      "id": "lakeview_manor",
-      "reason": "CFTO gates this private stop behind Hearthfire ownership, jetty, and ferryman state."
-    },
+  "destination_only_stops": [
     {
       "id": "ilinatas_deep",
-      "reason": "This is a destination-only extension using CFTO's 50-gold regional fare, not a public Route 3 ferryman."
+      "name": "Ilinata's Deep",
+      "arrival_marker": "03840E:CFTO.esp",
+      "follower_marker": "195C43:CFTO.esp",
+      "horse_marker": "195C35:CFTO.esp",
+      "fare_global": "00AA12:CFTO.esp",
+      "fare_default": 50,
+      "map_position": [0.412943, 0.664269],
+      "available_from": [
+        "brittleshin_pass",
+        "half_moon_mill",
+        "guardian_stones",
+        "lakeview_manor"
+      ],
+      "provider_enabled": false
+    }
+  ],
+  "private_stops": [
+    {
+      "id": "lakeview_manor",
+      "name": "Lakeview Manor",
+      "service_npc": "014C80:CFTO.esp",
+      "service_ref": "014C81:CFTO.esp",
+      "arrival_marker": "014C7E:CFTO.esp",
+      "follower_marker": "195C30:CFTO.esp",
+      "horse_marker": "195C31:CFTO.esp",
+      "fare_global": "0BBF93:CFTO.esp",
+      "fare_default": 30,
+      "availability": "service_ref_enabled",
+      "map_position": [0.423729, 0.709260]
     }
   ]
 }

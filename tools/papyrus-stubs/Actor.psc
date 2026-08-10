@@ -3,6 +3,7 @@ Scriptname Actor extends ObjectReference Hidden
 
 Bool Function IsInFaction(Faction targetFaction) Native
 Bool Function IsDead() Native
+Bool Function HasMagicEffect(MagicEffect effect) Native
 Int Function GetItemCount(Form item) Native
 Function RemoveItem(Form item, Int count = 1, Bool silent = False, ObjectReference otherContainer = None) Native
 Float Function GetActorValue(String actorValueName) Native

@@ -35,16 +35,21 @@ required game dependency; these files are intended only for use with Skyrim.
 Norden UI map markers
 ---------------------
 
-Carriage destinations use fourteen discovered-map symbols exported from
-Norden UI 1.2.5's `Interface/skyui/mapmarkerart.swf`: nine hold-capital
-symbols plus the Town, Settlement, Farm, Wood Mill, and Mine symbols.
+Wizard and carriage destinations use fourteen discovered-map symbols exported
+from Norden UI 1.2.5's `Interface/skyui/mapmarkerart.swf`: nine hold-capital
+symbols plus the Town, Settlement, Farm, Wood Mill, and Mine symbols. Their
+round-trip selection indicator uses shape 48 exported from
+`Interface/loadingmenu.swf`.
 
 Source: https://www.nexusmods.com/skyrimspecialedition/mods/166086
 Installed source SHA-256: AF39A7C181E8BF6187E389CC6D5F333780F11057C562673BC40A78490998B1AA
+Loading-menu source SHA-256: A2C39E2F99F1506ABAABE65DF4FA8EF2192A57E6B5156557B0441C658F4BA4AD
 
 The project owner reports direct permission from the Norden UI author to use
 and redistribute these assets. The exact exported SVGs and their pinned hashes
 are retained under `assets/norden-interface/carriage-markers/`.
+The pinned selection-ring export and provenance are retained under
+`assets/norden-interface/selection-ring/`.
 
 CommonLibSSE-NG
 Copyright (c) 2018 Ryan-rsm-McKenzie

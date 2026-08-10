@@ -36,6 +36,27 @@ namespace
                a_y >= 0.0F && a_y <= 1.0F;
     }
 
+    bool IsValidSelectionRingScale(const float a_scale)
+    {
+        return std::isfinite(a_scale) && a_scale >= 0.5F && a_scale <= 4.0F;
+    }
+
+    bool IsValidDestinationRingStyle(
+        const float a_offsetX,
+        const float a_offsetY,
+        const float a_scale)
+    {
+        return std::isfinite(a_offsetX) && std::isfinite(a_offsetY) &&
+               a_offsetX >= -1.0F && a_offsetX <= 1.0F &&
+               a_offsetY >= -1.0F && a_offsetY <= 1.0F &&
+               std::isfinite(a_scale) && a_scale >= 0.5F && a_scale <= 2.0F;
+    }
+
+    bool IsValidDestinationMarkerScale(const float a_scale)
+    {
+        return std::isfinite(a_scale) && a_scale >= 0.5F && a_scale <= 2.0F;
+    }
+
     constexpr float RoutePointTolerance = 0.0001F;
 
     bool SameRoutePoint(
@@ -108,13 +129,18 @@ bool DNT::Parchment::ValidateRequestHeader(const Request& a_request, std::string
     }
     if (a_request.idleMarkerTexturePath.size() > 512 ||
         a_request.selectedMarkerTexturePath.size() > 512 ||
-        a_request.originMarkerTexturePath.size() > 512) {
+        a_request.originMarkerTexturePath.size() > 512 ||
+        a_request.selectionRingTexturePath.size() > 512) {
         a_error = "marker texture path exceeds 512 characters";
         return false;
     }
     if (a_request.idleMarkerTexturePath.empty() !=
         a_request.selectedMarkerTexturePath.empty()) {
         a_error = "idle and selected marker texture paths must be set together";
+        return false;
+    }
+    if (!IsValidSelectionRingScale(a_request.selectionRingScale)) {
+        a_error = "selection-ring scale must be between 0.5 and 4.0";
         return false;
     }
     if (!std::isfinite(a_request.artAspectRatio) || a_request.artAspectRatio < 0.5F ||
@@ -216,6 +242,36 @@ bool DNT::Parchment::SetOriginMarkerTexture(
         return false;
     }
     a_request.originMarkerTexturePath = std::move(a_texturePath);
+    return true;
+}
+
+bool DNT::Parchment::SetSelectionRingTexture(
+    Request& a_request,
+    std::string a_texturePath,
+    std::string& a_error)
+{
+    if (!a_request.selectionRingTexturePath.empty()) {
+        a_error = "selection-ring texture is already set";
+        return false;
+    }
+    if (a_texturePath.empty() || a_texturePath.size() > 512) {
+        a_error = "selection-ring texture path must contain 1-512 characters";
+        return false;
+    }
+    a_request.selectionRingTexturePath = std::move(a_texturePath);
+    return true;
+}
+
+bool DNT::Parchment::SetSelectionRingScale(
+    Request& a_request,
+    const float a_scale,
+    std::string& a_error)
+{
+    if (!IsValidSelectionRingScale(a_scale)) {
+        a_error = "selection-ring scale must be between 0.5 and 4.0";
+        return false;
+    }
+    a_request.selectionRingScale = a_scale;
     return true;
 }
 
@@ -327,8 +383,20 @@ bool DNT::Parchment::AddDestination(Request& a_request, Destination a_destinatio
         a_error = "destination coordinates must be normalized to [0, 1]";
         return false;
     }
-    if (a_destination.idleMarkerTexturePath.size() > 512) {
-        a_error = "destination marker texture path exceeds 512 characters";
+    if (a_destination.idleMarkerTexturePath.size() > 512 ||
+        a_destination.selectionRingTexturePath.size() > 512) {
+        a_error = "destination texture path exceeds 512 characters";
+        return false;
+    }
+    if (!IsValidDestinationMarkerScale(a_destination.markerScale)) {
+        a_error = "destination marker scale must be between 0.5 and 2.0";
+        return false;
+    }
+    if (!IsValidDestinationRingStyle(
+            a_destination.selectionRingOffsetX,
+            a_destination.selectionRingOffsetY,
+            a_destination.selectionRingScale)) {
+        a_error = "destination selection-ring offsets must be inside [-1, 1] and scale inside [0.5, 2.0]";
         return false;
     }
     const auto duplicate = std::ranges::find(a_request.destinations, a_destination.id, &Destination::id);
@@ -367,6 +435,80 @@ bool DNT::Parchment::SetDestinationMarkerTexture(
     return true;
 }
 
+bool DNT::Parchment::SetDestinationMarkerScale(
+    Request& a_request,
+    const std::string_view a_destinationId,
+    const float a_scale,
+    std::string& a_error)
+{
+    const auto destination = std::ranges::find(
+        a_request.destinations,
+        a_destinationId,
+        &Destination::id);
+    if (destination == a_request.destinations.end()) {
+        a_error = "destination marker-scale target was not found";
+        return false;
+    }
+    if (!IsValidDestinationMarkerScale(a_scale)) {
+        a_error = "destination marker scale must be between 0.5 and 2.0";
+        return false;
+    }
+    destination->markerScale = a_scale;
+    return true;
+}
+
+bool DNT::Parchment::SetDestinationSelectionRingStyle(
+    Request& a_request,
+    const std::string_view a_destinationId,
+    const float a_offsetX,
+    const float a_offsetY,
+    const float a_scale,
+    std::string& a_error)
+{
+    const auto destination = std::ranges::find(
+        a_request.destinations,
+        a_destinationId,
+        &Destination::id);
+    if (destination == a_request.destinations.end()) {
+        a_error = "destination selection-ring target was not found";
+        return false;
+    }
+    if (!IsValidDestinationRingStyle(a_offsetX, a_offsetY, a_scale)) {
+        a_error = "destination selection-ring offsets must be inside [-1, 1] and scale inside [0.5, 2.0]";
+        return false;
+    }
+    destination->selectionRingOffsetX = a_offsetX;
+    destination->selectionRingOffsetY = a_offsetY;
+    destination->selectionRingScale = a_scale;
+    return true;
+}
+
+bool DNT::Parchment::SetDestinationSelectionRingTexture(
+    Request& a_request,
+    const std::string_view a_destinationId,
+    std::string a_texturePath,
+    std::string& a_error)
+{
+    const auto destination = std::ranges::find(
+        a_request.destinations,
+        a_destinationId,
+        &Destination::id);
+    if (destination == a_request.destinations.end()) {
+        a_error = "destination selection-ring target was not found";
+        return false;
+    }
+    if (!destination->selectionRingTexturePath.empty()) {
+        a_error = "destination selection-ring texture is already set";
+        return false;
+    }
+    if (a_texturePath.empty() || a_texturePath.size() > 512) {
+        a_error = "destination selection-ring texture path must contain 1-512 characters";
+        return false;
+    }
+    destination->selectionRingTexturePath = std::move(a_texturePath);
+    return true;
+}
+
 bool DNT::Parchment::ValidateReadyRequest(const Request& a_request, std::string& a_error)
 {
     if (!ValidateRequestHeader(a_request, a_error)) {
@@ -393,9 +535,25 @@ bool DNT::Parchment::ValidateReadyRequest(const Request& a_request, std::string&
         return false;
     }
     if (std::ranges::any_of(a_request.destinations, [](const Destination& a_destination) {
-            return a_destination.idleMarkerTexturePath.size() > 512;
+            return a_destination.idleMarkerTexturePath.size() > 512 ||
+                a_destination.selectionRingTexturePath.size() > 512;
         })) {
         a_error = "destination marker texture path exceeds 512 characters";
+        return false;
+    }
+    if (std::ranges::any_of(a_request.destinations, [](const Destination& a_destination) {
+            return !IsValidDestinationMarkerScale(a_destination.markerScale);
+        })) {
+        a_error = "destination marker scale is invalid";
+        return false;
+    }
+    if (std::ranges::any_of(a_request.destinations, [](const Destination& a_destination) {
+            return !IsValidDestinationRingStyle(
+                a_destination.selectionRingOffsetX,
+                a_destination.selectionRingOffsetY,
+                a_destination.selectionRingScale);
+        })) {
+        a_error = "destination selection-ring style is invalid";
         return false;
     }
     if (std::ranges::any_of(a_request.routeLandmarks, [](const RoutePoint& a_landmark) {

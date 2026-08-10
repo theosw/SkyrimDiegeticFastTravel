@@ -1,0 +1,7 @@
+KmodHouse1FerrymanMarker.enable
+KmodHouse2FerrymanMarker.enable
+RiftenPlayerHouseDecoratePorch.enable
+set KmodFerryVolkihar to 1
+BYOHHouse1MapMarker.enable
+BYOHHouse2MapMarker.enable
+BYOHHouse3MapMarker.enable

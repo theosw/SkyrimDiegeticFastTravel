@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Build the beta carriage parchment stop catalogue from audited map markers.
+"""Build the beta carriage chart stop catalogue from audited map markers.
 
-The rough RUSTIC parchment is not a geometrically exact world map.  Nine
-visually verified capital positions therefore act as calibration points for a
-two-dimensional affine transform.  CFTO's other executable destinations are
-projected from their persistent Skyrim/HearthFires map-marker references.
+Seven visually verified capital positions shared with the clean wizard map act
+as calibration points for a two-dimensional affine transform. CFTO's other
+executable destinations are projected from their persistent Skyrim/HearthFires
+map-marker references.
 """
 
 from __future__ import annotations
@@ -70,21 +70,32 @@ def load_markers() -> dict[str, dict[str, object]]:
         r"\|X=(?P<x>-?[0-9.]+)\|Y=(?P<y>-?[0-9.]+)\|Z=(?P<z>-?[0-9.]+)$"
     )
     markers: dict[str, dict[str, object]] = {}
-    for line in REPORT_PATH.read_text(encoding="utf-8-sig").splitlines():
-        match = pattern.match(line.strip())
-        if not match:
-            continue
-        values = match.groupdict()
-        markers[values["id"]] = {
-            "plugin": values["plugin"],
-            "form": values["form"],
-            "editor_id": values["edid"],
-            "world_position": [
-                float(values["x"]),
-                float(values["y"]),
-                float(values["z"]),
-            ],
-        }
+    if REPORT_PATH.exists():
+        for line in REPORT_PATH.read_text(encoding="utf-8-sig").splitlines():
+            match = pattern.match(line.strip())
+            if not match:
+                continue
+            values = match.groupdict()
+            markers[values["id"]] = {
+                "plugin": values["plugin"],
+                "form": values["form"],
+                "editor_id": values["edid"],
+                "world_position": [
+                    float(values["x"]),
+                    float(values["y"]),
+                    float(values["z"]),
+                ],
+            }
+
+    # The checked-in manifest is also a pinned inventory of the audited xEdit
+    # marker records. It keeps coordinate-only regeneration deterministic when
+    # the transient build report has been cleaned between sessions.
+    if OUTPUT_PATH.exists():
+        existing = json.loads(OUTPUT_PATH.read_text(encoding="utf-8"))
+        for stop in existing.get("stops", []):
+            marker = stop.get("marker")
+            if marker and stop.get("id") not in markers:
+                markers[stop["id"]] = marker
     return markers
 
 
@@ -160,8 +171,20 @@ def main() -> None:
         "provider": "carriage",
         "slice": "cfto_native_destinations",
         "authority": "DiegeticTravel.esp:DNT_TravelCoordinator",
-        "execution": "CFTO KmodCarriageDestination plus driver update",
+        "execution": "Immediate Game.FastTravel to CFTO ground-level arrival XMarkerHeading after atomic parchment purchase",
         "map": calibration["map"],
+        "icon_themes": {
+            "default": "norden",
+            "fallback": "vanilla",
+        },
+        "ui_elements": [
+            {
+                "id": "fare_label",
+                "name": "Payment label",
+                "sample": "Dawnstar to Windhelm (3.9 hours)    550 gold",
+                "map_position": [0.615551, 0.922189],
+            }
+        ],
         "position_model": {
             "method": "two-dimensional affine least-squares fit",
             "calibration_stop_count": len(verified),
@@ -171,7 +194,7 @@ def main() -> None:
                 round(max(abs(error[0]) for error in residuals), 6),
                 round(max(abs(error[1]) for error in residuals), 6),
             ],
-            "note": "Capitals retain visually verified positions; other stops are beta placements derived from audited world-map references.",
+            "note": "Seven shared capitals retain visually verified clean-map positions; all other stops are beta placements derived from audited world-map references.",
         },
         "stops": stops,
         "deferred_destinations": {

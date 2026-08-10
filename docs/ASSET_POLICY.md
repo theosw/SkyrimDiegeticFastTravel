@@ -30,6 +30,10 @@ permission.
   author. Exported, hash-pinned SVG sources are retained under
   `assets/norden-interface/carriage-markers/`; the installed source SWF hash and
   Nexus identity are pinned in `dependencies.lock.json`.
+- Formal wizard and carriage sheets use the exact two-arrow round-trip symbol
+  exported from Norden UI's loading menu as a selection ring. Its hash-pinned
+  SVG source and extraction record live under
+  `assets/norden-interface/selection-ring/`.
 - The earlier Skyrim-derived Docks and Shipwreck vectors remain in
   `assets/vanilla-interface/` as rollback sources, but are not bundled by the
   current build.
@@ -39,9 +43,9 @@ permission.
 
 ## Referenced, not bundled
 
-- Boat and carriage providers currently resolve to RUSTIC MAPS'
+- Boat providers currently resolve to RUSTIC MAPS'
   `textures/dungeons/imperial/battlemap01.dds`.
-- The wizard provider resolves to Skyrim Paper Map by Caro Tuts for FWMF's
+- Wizard and carriage providers resolve to Skyrim Paper Map by Caro Tuts for FWMF's
   `textures/terrain/tamriel/skyrim.dds`. It is referenced only and is not
   redistributed.
 - Provider voice paths resolve to FUZ files in the user's installed Bethesda

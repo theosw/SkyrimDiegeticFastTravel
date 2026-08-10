@@ -120,6 +120,36 @@ begin
   SetElementNativeValues(Result, 'DNAM\Priority', 60);
 end;
 
+function NewFormList(const EditorIDValue: string): IInterface;
+begin
+  Result := Add(EnsureTopGroup('FLST'), 'FLST', True);
+  SetElementEditValues(Result, 'EDID', EditorIDValue);
+  if GetElementEditValues(Result, 'EDID') <> EditorIDValue then
+    raise Exception.Create('Could not set FLST EditorID: ' + EditorIDValue);
+end;
+
+procedure AddFormListEntry(ListRecord, EntryRecord: IInterface);
+var
+  Entries, Entry, ReadBack: IInterface;
+begin
+  Entries := ElementByPath(ListRecord, 'FormIDs');
+  if not Assigned(Entries) then begin
+    Add(ListRecord, 'FormIDs', True);
+    Entries := ElementByPath(ListRecord, 'FormIDs');
+  end;
+  if not Assigned(Entries) then
+    raise Exception.Create('Could not create FLST entries');
+  if (ElementCount(Entries) = 1) and
+    not Assigned(LinksTo(ElementByIndex(Entries, 0))) then
+    Entry := ElementByIndex(Entries, 0)
+  else
+    Entry := ElementAssign(Entries, HighInteger, nil, False);
+  SetEditValue(Entry, Name(EntryRecord));
+  ReadBack := LinksTo(Entry);
+  if not Assigned(ReadBack) or (FormID(ReadBack) <> FormID(EntryRecord)) then
+    raise Exception.Create('FLST entry did not read back');
+end;
+
 procedure AddSubjectCondition(
   RecordElement: IInterface;
   const FunctionName: string;
@@ -201,12 +231,12 @@ begin
   SetElementEditValues(Fragment, 'FragmentName', 'Fragment_0');
 end;
 
-procedure ConfigureDialogue(PickerQuest: IInterface);
+procedure ConfigureDialogue(PickerQuest, ProviderWhitelist: IInterface);
 var
   SourceTopic, SourceBranch, TopicRecord, BranchRecord, InfoRecord,
     InfoGroup, TemplateInfo, SharedInfo, FragmentScript, QuestElement,
     BranchElement, BranchQuestElement, StartingTopicElement, ReadBack,
-    Conditions, DialogueFaction, RouteFaction: IInterface;
+    Conditions, DialogueFaction: IInterface;
 begin
   SourceTopic := RequireRecord(
     CftoFile,
@@ -281,12 +311,6 @@ begin
     'FACT',
     'KmodFastTravelDialogueFaction'
   );
-  RouteFaction := RequireRecord(
-    CftoFile,
-    $02E1DF,
-    'FACT',
-    'KmodFerryRoute3Faction'
-  );
   Add(InfoRecord, 'Conditions', True);
   Conditions := ElementByPath(InfoRecord, 'Conditions');
   while Assigned(Conditions) and (ElementCount(Conditions) > 0) do
@@ -300,8 +324,8 @@ begin
   );
   AddSubjectCondition(
     InfoRecord,
-    'GetInFaction',
-    RouteFaction,
+    'IsInList',
+    ProviderWhitelist,
     EqualConditionType,
     1.0
   );
@@ -347,7 +371,7 @@ end;
 
 function Initialize: Integer;
 var
-  BoatQuest, ServiceScript, PickerScript: IInterface;
+  BoatQuest, ServiceScript, PickerScript, ProviderWhitelist: IInterface;
 begin
   Result := 1;
   StatusPath := ScriptsPath + '..\..\build\boat-ilinalta.status';
@@ -376,12 +400,26 @@ begin
     AddMasterIfMissing(OutputFile, 'Dragonborn.esm');
     AddMasterIfMissing(OutputFile, 'CFTO.esp');
 
+    ProviderWhitelist := NewFormList('DNT_BoatIlinaltaProviders');
+    AddFormListEntry(ProviderWhitelist, RequireRecord(
+      CftoFile, $0332F5, 'NPC_', 'KmodFerrymanGuardian'
+    ));
+    AddFormListEntry(ProviderWhitelist, RequireRecord(
+      CftoFile, $0332ED, 'NPC_', 'KmodFerrymanHalfMoon'
+    ));
+    AddFormListEntry(ProviderWhitelist, RequireRecord(
+      CftoFile, $02E1E6, 'NPC_', 'KmodFerrymanBrittleshin'
+    ));
+    AddFormListEntry(ProviderWhitelist, RequireRecord(
+      CftoFile, $014C80, 'NPC_', 'KmodFerrymanLakeview'
+    ));
+
     BoatQuest := NewQuest('DNT_BoatIlinaltaQuest');
     ServiceScript := AddScript(BoatQuest, 'DNT_IlinaltaBoatTravelService');
     PickerScript := AddScript(BoatQuest, 'DNT_IlinaltaBoatParchmentPicker');
     AddObjectProperty(PickerScript, 'Service', BoatQuest);
 
-    ConfigureDialogue(BoatQuest);
+    ConfigureDialogue(BoatQuest, ProviderWhitelist);
     SaveGeneratedPlugin;
     SaveGeneratedSeqFormID(BoatQuest);
     WriteTextFile(StatusPath, 'success');

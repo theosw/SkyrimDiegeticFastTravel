@@ -13,5 +13,7 @@ Requirements:
 - The external parchment artwork dependency used by that picker
 
 Load this plugin after CFTO.esp. The original CFTO destination dialogue remains
-as a fallback. Lakeview Manor and Ilinata's Deep are intentionally deferred.
+as a fallback. Ilinata's Deep is a 50-gold destination-only trip from every
+available provider. Lakeview Manor joins as a private 30-gold provider only
+while CFTO's placed ferryman is enabled.
 No artwork or audio is bundled in this package.

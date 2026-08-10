@@ -64,7 +64,11 @@ Function OpenMap(ObjectReference SourceRef)
         Return
     EndIf
 
-    Bool AddedAll = AddLaneDestinations()
+    Bool FerryStyleReady = DNT_ParchmentNative.SetMarkerTextures(ActiveRequest, "Data/textures/DiegeticTravel/docks-marker.dds", "Data/textures/DiegeticTravel/docks-marker.dds")
+    FerryStyleReady = DNT_ParchmentNative.SetOriginMarkerTexture(ActiveRequest, "Data/textures/DiegeticTravel/shipwreck-marker.dds") && FerryStyleReady
+    FerryStyleReady = DNT_ParchmentNative.SetSelectionRingTexture(ActiveRequest, "Data/textures/DiegeticTravel/parchment-thin-selection-ring.dds") && FerryStyleReady
+    FerryStyleReady = DNT_ParchmentNative.SetSelectionRingScale(ActiveRequest, 1.88) && FerryStyleReady
+    Bool AddedAll = AddLaneDestinations() && FerryStyleReady
     If !AddedAll
         DNT_ParchmentNative.Cancel(ActiveRequest)
         AbortOpen("destination_setup_failed")
@@ -81,6 +85,7 @@ EndFunction
 Bool Function AddLaneDestinations()
     Int Fare = Service.GetFare("raven_rock")
     Bool AddedAll = DNT_ParchmentNative.SetSourceLabel(ActiveRequest, GetSourceLabel(ActiveSourceId))
+    AddedAll = DNT_ParchmentNative.SetPaymentLabelPosition(ActiveRequest, 0.501441, 0.919340) && AddedAll
     If Fare < 0 || !AddedAll
         Return False
     EndIf
@@ -89,19 +94,32 @@ Bool Function AddLaneDestinations()
         AddedAll = DNT_ParchmentNative.SetRouteOrigin(ActiveRequest, 0.239171, 0.676223)
         AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "tel_mithryn", "Tel Mithryn ", Fare, 0.705729, 0.771395) && AddedAll
         AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "skaal_village", "Skaal Village ", Fare, 0.813066, 0.347056) && AddedAll
+        AddedAll = AddOneWayDestination("northshore_landing", "Northshore Landing ", Fare, 0.126267, 0.162120) && AddedAll
+        AddedAll = AddOneWayDestination("bujolds_retreat", "Bujold's Retreat ", Fare, 0.842557, 0.472330) && AddedAll
         Return AddedAll
     ElseIf ActiveSourceId == "tel_mithryn"
         AddedAll = DNT_ParchmentNative.SetRouteOrigin(ActiveRequest, 0.705729, 0.771395)
         AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "raven_rock", "Raven Rock ", Fare, 0.239171, 0.676223) && AddedAll
         AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "skaal_village", "Skaal Village ", Fare, 0.813066, 0.347056) && AddedAll
+        AddedAll = AddOneWayDestination("northshore_landing", "Northshore Landing ", Fare, 0.126267, 0.162120) && AddedAll
+        AddedAll = AddOneWayDestination("bujolds_retreat", "Bujold's Retreat ", Fare, 0.842557, 0.472330) && AddedAll
         Return AddedAll
     ElseIf ActiveSourceId == "skaal_village"
         AddedAll = DNT_ParchmentNative.SetRouteOrigin(ActiveRequest, 0.813066, 0.347056)
         AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "raven_rock", "Raven Rock ", Fare, 0.239171, 0.676223) && AddedAll
         AddedAll = DNT_ParchmentNative.AddDestination(ActiveRequest, "tel_mithryn", "Tel Mithryn ", Fare, 0.705729, 0.771395) && AddedAll
+        AddedAll = AddOneWayDestination("northshore_landing", "Northshore Landing ", Fare, 0.126267, 0.162120) && AddedAll
+        AddedAll = AddOneWayDestination("bujolds_retreat", "Bujold's Retreat ", Fare, 0.842557, 0.472330) && AddedAll
         Return AddedAll
     EndIf
     Return False
+EndFunction
+
+Bool Function AddOneWayDestination(String DestinationId, String DestinationName, Int Fare, Float MapX, Float MapY)
+    If !DNT_ParchmentNative.AddDestination(ActiveRequest, DestinationId, DestinationName, Fare, MapX, MapY)
+        Return False
+    EndIf
+    Return DNT_ParchmentNative.SetDestinationSelectionRingTexture(ActiveRequest, DestinationId, "Data/textures/DiegeticTravel/parchment-thin-oneway-selection-ring.dds")
 EndFunction
 
 String Function GetSourceLabel(String SourceId)
@@ -159,18 +177,30 @@ String Function GetDestinationId(String SourceId, Int SelectionIndex)
             Return "tel_mithryn"
         ElseIf SelectionIndex == 1
             Return "skaal_village"
+        ElseIf SelectionIndex == 2
+            Return "northshore_landing"
+        ElseIf SelectionIndex == 3
+            Return "bujolds_retreat"
         EndIf
     ElseIf SourceId == "tel_mithryn"
         If SelectionIndex == 0
             Return "raven_rock"
         ElseIf SelectionIndex == 1
             Return "skaal_village"
+        ElseIf SelectionIndex == 2
+            Return "northshore_landing"
+        ElseIf SelectionIndex == 3
+            Return "bujolds_retreat"
         EndIf
     ElseIf SourceId == "skaal_village"
         If SelectionIndex == 0
             Return "raven_rock"
         ElseIf SelectionIndex == 1
             Return "tel_mithryn"
+        ElseIf SelectionIndex == 2
+            Return "northshore_landing"
+        ElseIf SelectionIndex == 3
+            Return "bujolds_retreat"
         EndIf
     EndIf
     Return ""

@@ -4,7 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "DNT Map Coordinate Calibrator",
   description:
-    "Drag Diegetic Fast Travel markers into place and export normalized map coordinates.",
+    "Calibrate Diegetic Fast Travel map coordinates and selection-ring optics.",
 };
 
 export default function RootLayout({
