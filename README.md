@@ -140,36 +140,26 @@ The carriage beta now contains a flat, reproducible CFTO manifest; 27 direct
 destinations; nine origin services; CFTO local/standard/extra fare lookup;
 Hearthfire destination gates; direct arrival-marker travel; and the parchment
 picker. No graph runtime, candidate paths, hazard sensors, generated hour
-globals, or route-derived prices enter the release package. The older route
-compiler remains in the repository only as a post-release research lab.
+globals, or route-derived prices enter the release package or repository
+product code.
 
 ## Developer quick start
 
 ```powershell
-python .\tools\Generate-FlatDialogueManifest.py `
-  --endpoints .\config\cfto_endpoints.json `
-  --names .\config\cfto_destination_names.json `
-  --out .\build\dialogue_manifest.json
-
-.\tools\Compile-Papyrus.ps1 -LoreRimRoot "D:\Lorerim"
-.\tools\Audit-CarriageParchment.ps1
+.\tools\Build-Release.ps1 -LoreRimRoot "D:\Lorerim"
 ```
 
-The complete build is:
-
-```powershell
-.\tools\Build-Alpha.ps1
-```
-
-It generates the flat manifest, compiles Papyrus, generates
-`DiegeticTravel.esp`, stages the mod,
-and writes `dist\DiegeticTravel-alpha.zip`. The installable alpha requires
-SKSE64, JContainers SE, and CFTO, and the generated plugin must load after
-`CFTO.esp`.
+The release build checks the dependency lock, builds and tests the native menu,
+compiles all 22 Papyrus scripts, generates and audits the consolidated
+ESL-flagged `DiegeticTravel.esp`, and writes
+`dist\DiegeticTravel-beta.zip`. The package requires SKSE64, Address Library,
+SKSE Menu Framework, CFTO, and the external map-art dependencies listed in
+`mod\README.txt`. It does not require JContainers.
 
 To repackage already-generated, already-validated build artifacts without
-reopening xEdit, use `.\tools\Build-Alpha.ps1 -PackageOnly`. It verifies that
-every `DNT_*.psc` source has its matching compiled PEX before creating the ZIP.
+reopening xEdit, use `.\tools\Build-Release.ps1 -PackageOnly`. Packaging copies
+only the 22 source/PEX pairs in the release inventory, so stale compiler output
+cannot enter the ZIP.
 
 Stock xEdit 4.1.x does not offer a truly headless `-script` mode: `-script`
 selects Script mode, while `-autoload` and `-autoexit` are parsed only in Edit
@@ -186,13 +176,11 @@ so it bypasses Diegetic Travel's own parchment handoff and availability gates.
 See [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md) for the analyzed integration
 path.
 
-Quote globals are prepared by a player-alias listener registered for SkyUI's
-`Dialogue Menu` event. The listener re-registers after every save load, resolves
-the carriage driver under the crosshair, and completes the whole origin quote
-set before CFTO constructs its destination choices. The root INFO fragment is a
-cache-aware fallback; it no longer clears a successfully preloaded menu. The
-package ships `Seq\DiegeticTravel.seq` so the listener and service quests start
-reliably.
+Carriage dialogue closes into one native request built from
+`travel_catalog.tsv`. The selected stable destination ID is returned to a small
+Papyrus service, which revalidates fare and availability, charges the player,
+and performs the final world mutation. There is no dialogue listener, quote
+cache, generated global set, or Papyrus destination array.
 
 The standalone wizard-guide Phase 1 package is built separately:
 

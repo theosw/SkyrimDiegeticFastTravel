@@ -37,6 +37,11 @@
       "configuration": "RelWithDebInfo"
     },
     {
+      "name": "parchment-ae-release",
+      "configurePreset": "ae",
+      "configuration": "Release"
+    },
+    {
       "name": "parchment-core",
       "configurePreset": "parchment-core",
       "configuration": "Release"
@@ -47,6 +52,14 @@
       "name": "parchment-ae",
       "configurePreset": "ae",
       "configuration": "RelWithDebInfo",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "parchment-ae-release",
+      "configurePreset": "ae",
+      "configuration": "Release",
       "output": {
         "outputOnFailure": true
       }

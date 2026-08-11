@@ -29,8 +29,8 @@ window before entering its existing dialogue-close and picker path. It returns
 - The picker still owns only UI and selection.
 - The service still owns availability, fare, time, and movement.
 
-The existing `PlayVoiceProbe` function remains as a Mirabelle-only compatibility
-wrapper. New providers use `PlayPresentation`.
+The earlier Mirabelle-only diagnostic wrapper has been removed. Every provider
+uses the same validated `PlayPresentation` contract.
 
 ## Safety constraints
 

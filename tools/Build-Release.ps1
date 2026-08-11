@@ -1,5 +1,4 @@
 param(
-    [string]$Graph = "C:\Users\Theo\Documents\LoreRim Info\travel-network\graph.json",
     [string]$LoreRimRoot = "D:\Lorerim",
     [string]$XEdit = "build\xedit-patched\SSEEdit64.exe",
     [string]$PackageName = "DiegeticTravel-beta",
@@ -38,24 +37,10 @@ if (-not $PackageOnly) {
             -LoreRimRoot $LoreRimRoot
     }
     Invoke-BuildStep "native parchment menu" {
-        & cmake --build --preset parchment-ae
+        & cmake --build --preset parchment-ae-release
     }
     Invoke-BuildStep "native tests" {
-        & ctest --preset parchment-ae
-    }
-
-    $oldPythonPath = $env:PYTHONPATH
-    try {
-        $env:PYTHONPATH = Join-Path $projectRoot "src"
-        Invoke-BuildStep "runtime manifests" {
-            & python -m diegetic_travel compile `
-                --graph $Graph `
-                --endpoints (Join-Path $projectRoot "config\cfto_endpoints.json") `
-                --sensors (Join-Path $projectRoot "config\hazard_sensors.json") `
-                --out $buildRoot
-        }
-    } finally {
-        $env:PYTHONPATH = $oldPythonPath
+        & ctest --preset parchment-ae-release
     }
 
     $compilers = @(
@@ -82,8 +67,6 @@ if (-not $PackageOnly) {
 $required = @(
     (Join-Path $releaseRoot "DiegeticTravel.esp"),
     (Join-Path $releaseRoot "SEQ\DiegeticTravel.seq"),
-    (Join-Path $releaseRoot "SKSE\Plugins\DiegeticTravel\dialogue_runtime.json"),
-    (Join-Path $buildRoot "runtime.json"),
     (Join-Path $projectRoot "THIRD_PARTY_NOTICES.txt")
 )
 foreach ($path in $required) {
@@ -120,30 +103,37 @@ Copy-Item -LiteralPath (Join-Path $releaseRoot "DiegeticTravel.esp") `
     -Destination $packageRoot -Force
 Copy-Item -LiteralPath (Join-Path $releaseRoot "SEQ\DiegeticTravel.seq") `
     -Destination (Join-Path $packageRoot "SEQ") -Force
-Copy-Item -LiteralPath (Join-Path $buildRoot "runtime.json") `
-    -Destination (Join-Path $packageRoot "SKSE\Plugins\DiegeticTravel") -Force
-Copy-Item -LiteralPath (Join-Path $releaseRoot `
-        "SKSE\Plugins\DiegeticTravel\dialogue_runtime.json") `
-    -Destination (Join-Path $packageRoot "SKSE\Plugins\DiegeticTravel") -Force
-Copy-Item -LiteralPath (Join-Path $projectRoot "mod\SKSE\Plugins\DiegeticTravel\README.txt") `
-    -Destination (Join-Path $packageRoot "SKSE\Plugins\DiegeticTravel") -Force
-
-Copy-Item -Path (Join-Path $buildRoot "Scripts\*.pex") `
-    -Destination (Join-Path $packageRoot "Scripts") -Force
-Copy-Item -Path (Join-Path $projectRoot "mod\Scripts\Source\*.psc") `
-    -Destination (Join-Path $packageRoot "Scripts\Source") -Force
-foreach ($module in $supportedModules) {
-    $moduleMod = Join-Path $projectRoot "modules\$module\mod"
-    $compiled = Join-Path $moduleMod "Scripts"
-    $source = Join-Path $compiled "Source"
-    if (Test-Path -LiteralPath $compiled) {
-        Copy-Item -Path (Join-Path $compiled "*.pex") `
-            -Destination (Join-Path $packageRoot "Scripts") -Force
+$sourceRoots = @("mod\Scripts\Source") + @($supportedModules | ForEach-Object {
+    "modules\$_\mod\Scripts\Source"
+})
+$sourceFiles = @($sourceRoots | ForEach-Object {
+    Get-ChildItem -LiteralPath (Join-Path $projectRoot $_) `
+        -File -Filter "DNT_*.psc"
+})
+if ($sourceFiles.Count -ne 22) {
+    throw "Release source inventory changed; expected 22 scripts, found $($sourceFiles.Count)"
+}
+$duplicateNames = @($sourceFiles | Group-Object BaseName | Where-Object Count -ne 1)
+if ($duplicateNames.Count -gt 0) {
+    throw "Release script names must be unique: $($duplicateNames.Name -join ', ')"
+}
+foreach ($sourceFile in $sourceFiles) {
+    $compiledRoot = if ($sourceFile.FullName.StartsWith(
+        (Join-Path $projectRoot "mod\Scripts\Source"),
+        [StringComparison]::OrdinalIgnoreCase
+    )) {
+        Join-Path $buildRoot "Scripts"
+    } else {
+        $sourceFile.Directory.Parent.FullName
     }
-    if (Test-Path -LiteralPath $source) {
-        Copy-Item -Path (Join-Path $source "*.psc") `
-            -Destination (Join-Path $packageRoot "Scripts\Source") -Force
+    $compiledFile = Join-Path $compiledRoot ($sourceFile.BaseName + ".pex")
+    if (-not (Test-Path -LiteralPath $compiledFile -PathType Leaf)) {
+        throw "Compiled release script not found: $compiledFile"
     }
+    Copy-Item -LiteralPath $sourceFile.FullName `
+        -Destination (Join-Path $packageRoot "Scripts\Source") -Force
+    Copy-Item -LiteralPath $compiledFile `
+        -Destination (Join-Path $packageRoot "Scripts") -Force
 }
 
 $parchmentMod = Join-Path $projectRoot "modules\parchment-picker\mod"

@@ -1,73 +1,48 @@
 # Native travel architecture
 
-## Goal
+## Purpose
 
-Move catalogue lookup, quote construction, travel-time estimation, travel-mode
-resolution, and parchment request assembly out of the Papyrus/JContainers hot
-path. Papyrus remains the final world-mutation bridge until native execution has
-its own dedicated integration tests.
+The native layer removes catalogue lookup, quote calculation, request assembly,
+and menu interaction from the Papyrus hot path. Papyrus remains responsible for
+gold mutation and movement because those operations are small and easy to
+validate in game.
 
-## Migration order
+## Catalogue contract
 
-1. Instrument the working release path.
-2. Load the flat native catalogue in observe-only shadow mode.
-3. Compare native direct estimates with legacy graph quotes in the log.
-4. Let native code construct the menu request from the catalogue.
-5. Switch quote publication to native results after integration tests pass.
-6. Resolve Apparition and execute travel through one authoritative mode result.
-7. Finish explicit controller navigation and controller regression tests.
-8. Leave old quests, globals, and scripts dormant for save/FormID stability.
+`travel_catalog.tsv` contains one schema row, one carriage policy, 27 stable
+locations, and optional direct overrides. A location supplies its stable ID,
+display name, normalized map position, plugin-local arrival FormID, and open,
+one-way, or quest-locked availability class.
 
-## Phase-one contract
+The estimator performs a direct distance calculation plus the provider policy
+and optional override. It has no graph search, road edges, hazards, wars,
+candidate paths, or variable-rate layer.
 
-`travel_catalog.tsv` is deliberately small and dependency-free. It contains:
+## Menu request flow
 
-- a schema version;
-- provider policies;
-- stable destination IDs and display names;
-- normalized map coordinates;
-- plugin-local arrival-marker FormIDs;
-- open, one-way, or quest-locked availability metadata;
-- optional direct route overrides.
+1. Papyrus resolves the speaking CFTO driver to an origin service.
+2. Native code begins one carriage request and enumerates the loaded catalogue.
+3. Native code filters live availability, estimates each quote, and adds styled
+   destinations directly to the menu.
+4. The menu returns an index; native request state translates it back to the
+   stable destination ID and is immediately discarded.
+5. Papyrus re-queries the authoritative native quote, charges the player,
+   resolves the CFTO arrival marker, and travels.
 
-The estimator performs one location lookup for each endpoint, one Euclidean
-distance calculation, policy scaling, and optional override application. It
-does not search paths or inspect candidate routes, hazards, wars, or graph
-edges. Instant travel always reports zero elapsed hours; a free ride always
-reports zero fare.
+The request map is protected by a mutex and erased on selection/cancel. No
+quote or selection data is persisted into the save.
 
-## Shadow logging
+## Apparition
 
-The first integration candidate keeps all gameplay behavior on the proven
-legacy path. It adds these diagnostics:
+Wizarding Traversal is soft-detected. Its live
+`fFastTravelSpeedMult >= 99999` override is the authoritative enabled signal.
+The holder magic effect is logged only for diagnostics because it can remain on
+the actor after Apparition is toggled off. Active Apparition uses `MoveTo` and
+passes no time; otherwise providers retain `Game.FastTravel`.
 
-- `QUOTE_BATCH_COMPLETE`: total legacy quote-preparation time;
-- `MENU_QUOTES_READY`: dialogue preload time;
-- `CARRIAGE_PARCHMENT_OPEN`: handoff, quote, and request-build spans;
-- `PARCHMENT_OPEN`: native request-build time;
-- `PARCHMENT_FIRST_FRAME`: show-to-first-frame and total native latency;
-- `TRAVEL_SHADOW_CATALOG_READY`: catalogue load/count validation;
-- `TRAVEL_SHADOW_QUOTE`: legacy/native fare and hour deltas.
+## Diagnostics
 
-No shadow result is published to dialogue, charged to the player, or used to
-execute travel.
-
-## First integration gate
-
-The phase-one candidate is intentionally a narrow carriage smoke test. Install
-the candidate over the consolidated test profile, then use a disposable save:
-
-1. Open one carriage driver's dialogue and select the route-map prompt.
-2. Confirm the parchment appears, remains responsive, and has no default
-   destination selection.
-3. Hover two destinations and confirm their labels, fares, and times still
-   match the proven legacy behavior.
-4. Close and reopen the parchment once. Travel is optional for this gate.
-5. Capture the native plugin and Papyrus logs without saving altered state.
-
-The gate passes when behavior is unchanged, `TRAVEL_SHADOW_CATALOG_READY`
-reports one policy and 27 locations, every displayed quote has a corresponding
-`TRAVEL_SHADOW_QUOTE`, and all timing events listed above are present. Fare and
-hour deltas are tuning evidence, not failures, because the native result is
-still observe-only. Any missing catalogue, unresolved stable ID, crash, or menu
-regression blocks phase two.
+The supported native events are `TRAVEL_CATALOG_READY`,
+`TRAVEL_CATALOG_REJECT`, `CARRIAGE_NATIVE_REQUEST_READY`, request rejection
+events, and parchment timing/input events. The former observe-only
+`TRAVEL_SHADOW_*` comparison path and Mirabelle voice probe were removed.

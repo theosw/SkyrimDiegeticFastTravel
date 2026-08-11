@@ -1,273 +1,62 @@
-# Parchment-picker design ledger
+# Parchment picker design contract
 
-Status: core interaction and the original five routes are gameplay-proven in the isolated
-`UltraDiegeticTravel` profile; the ASCII footer, funded Solitude/Markarth paths,
-and multi-menu HUD lifecycle are gameplay-proven. The corrected crop, five
-crest centers, Winterhold origin, and route behavior are also visually proven.
-The stronger gold/red visibility treatment and Norden-style monochrome cursor
-are now gameplay-proven. No-default-focus startup, the translucent cursor
-center, and Escape cancellation are also gameplay-proven. Dawnstar and Morthal
-form the current seven-route wizard candidate. Provider-defined route graphs,
-shortest-path hover highlighting, the ten-segment Lake Honrich ring, and the
-23-segment northern-coast water network are offline-proven and await one live
-visual pass.
-
-Candidate artifacts:
-
-- `DiegeticTravelWizardParchment.esp` SHA-256
-  `5A6E8305BB1C0E9EDD62A32B3C144700AA788AD427F968F2451BD3742018A8CC`;
-- `DNTParchmentPicker.dll` SHA-256
-  `6A049AB1A2D3732904B1809FA468146DA1C8742741DA19D90B6BFD780EAE3A22`;
-- `dist/DiegeticTravelParchmentPicker-offline-candidate.zip` SHA-256
-  `A454A384E121E6936997BE192ACB1849CAE937BC9761747AE67EF03AB11176E9`.
+Status: gameplay-proven with mouse and controller at 32:9. The release uses one
+native picker for wizard guides, carriages, mainland ferries, Lake Honrich,
+Lake Ilinalta, and Solstheim ferries.
 
 ## Accepted architecture
 
-The reusable UI is a provider-neutral selection frontend. Wizard guides,
-carriages, and later travel pillars provide their own allowed destinations and
-interpret the returned index. Their existing service layer remains responsible
-for payment, time, route rules, and movement.
+The picker is a provider-neutral selection frontend. It owns presentation and
+input only. Provider services remain responsible for availability, payment,
+time, fade, and movement.
 
-This preserves the live-proven wizard service and avoids coupling the new UI to
-Better Carriage Destinations or Skyrim's native MapMenu.
+Each request contains bounded value data:
 
-Providers may optionally add an undirected normalized route graph after
-setting the origin. The picker draws each shared segment once in gold and uses
-Dijkstra shortest-path selection to redraw only the hovered/focused journey in
-red. Ready validation rejects duplicate or zero-length segments and any graph
-that does not connect every offered destination. Providers without a graph
-retain the gameplay-proven straight origin-to-destination spokes.
+- request/provider IDs and source label;
+- external map texture, UV crop, and aspect ratio;
+- destination IDs, labels, fares, normalized coordinates, and marker optics;
+- optional route origin and inactive landmark markers;
+- optional payment-label position and actor-targeted presentation.
 
-## Asset policy
+The release deliberately excludes the experimental transparent-overlay and
+dynamic route-segment/pathfinding systems. Current maps communicate topology
+through provider-filtered markers, round-trip/one-way selection rings, and
+inactive dock landmarks.
 
-Prototype and release integrations may reference a separately installed map or
-sound dependency. Third-party assets are not copied into this repository,
-package, or download. The provider exposes a configurable path and aspect ratio
-so another mod manager dependency can supply the file. Licence and attribution
-requirements still need to be recorded for each selected dependency before a
-public release page is written.
+## Input and lifecycle
 
-The first local proof references LoreRim's already-enabled RUSTIC MAPS texture
-at `Data/textures/dungeons/imperial/battlemap01.dds`. Source inspection places
-the ragged parchment edge at row 3016 of 4096. The provider-owned crop is now
-`(0,0)-(1,0.736328)` with aspect `1.358090`, excluding the opaque backing strip
-that the prior 0.75 crop exposed. Five corrected destination coordinates are
-gameplay-proven; Dawnstar `(0.570,0.177)` and Morthal `(0.402,0.298)` extend the
-same normalized contract and await visual proof. The optional Winterhold route
-origin targets its printed crest. The installed
-4K texture remains outside the repository and candidate archive; its local-test
-SHA-256 is
-`C77E6B93129577CD23C6AC733310A5EA6A028F4BE00B472F9AA62018C4C239F8`.
-Gamwich's page says not to repurpose or repost the textures without permission,
-so this is local-test evidence only until release permission is clarified:
-https://www.nexusmods.com/skyrimspecialedition/mods/42614
+- Mouse hover and controller focus select exactly one destination visually.
+- Click/confirm returns its zero-based index.
+- Escape/cancel returns `-1`.
+- No destination receives default focus when the menu first opens.
+- HUD layers hidden for the picker are restored on every close path.
+- Missing map or marker artwork logs a warning and retains a usable fallback.
 
-The current wizard and carriage beta candidates use a formal-map profile. They
-references LoreRim's installed Skyrim Paper Map by Caro Tuts for FWMF texture
-at `Data/textures/terrain/tamriel/skyrim.dds`, crops the useful illustration to
-`(0.088379,0.187012)-(0.932129,0.783691)`, and renders it at aspect `1.414075`.
-The FWMF terrain quad proves the full texture transform:
-`u=(worldX+262000)/524000` and `v=(262000-worldY)/524000`. Exact vanilla map
-marker reference positions are transformed through that formula and then into
-the crop, producing deterministic coordinates for the College, all seven wizard
-destinations, and the carriage sheet. The Caro Tuts texture remains external
-and is pinned only as a local runtime dependency. Ferries continue using the
-rougher RUSTIC MAPS profile.
+## Provider boundary
 
-The formal providers pass the texture path and crop through local effective
-values so existing-save auto-properties cannot silently retain the earlier
-`battlemap01.dds` profile. Wizard and carriage destinations default to Norden
-UI symbols. Selection keeps the destination icon in place and draws Norden's
-two-arrow round-trip loading symbol behind it; the retired red halo is not used.
+Generic provider Papyrus builds the request through `DNT_ParchmentNative` and
+translates the result index through its stable destination list. Carriages use
+the native catalogue builder and consume a stable destination ID, avoiding a
+27-stop Papyrus construction loop.
 
-An MCM artwork switch is intentionally deferred. The provider API already owns
-texture, crop, aspect, and destination coordinates, but a second complete and
-tested theme is required before exposing a user-facing selector.
+The selected destination is revalidated by the provider service immediately
+before payment and travel. Apparition compatibility is evaluated at commit
+time from the current speed override, so adding or removing the effect between
+trips is respected.
 
-## Framework evidence
+## Artwork policy
 
-The implementation was based on the public dynamic interface demonstrated by
-SKSE Menu Framework 3. The local source inspection was pinned to framework
-commit `3a65dc0147388da177c324cff4d89d9e25094623` and example commit
-`974e82a094b16c4e5469a0d2189b2caff3f9742a`. Only the original module's small
-ABI wrapper is tracked; the downloaded upstream repositories remain under the
-ignored `.tools` directory.
+Third-party map artwork is referenced from installed dependencies and is not
+redistributed. Bundled marker provenance and permissions are recorded in
+`ASSET_POLICY.md` and `THIRD_PARTY_ASSETS.md`.
 
-LoreRim's installed framework file is labelled 3.9.0, while the dynamic API
-reported framework version `3.7` in the successful runtime log. The picker
-limits itself to the established v3 window, input, texture, and basic ImGui
-exports, all of which resolved successfully. Record both observations rather
-than treating the packaging label and runtime API value as interchangeable.
+Formal wizard/carriage maps use the calibrated FWMF paper-map crop and Norden
+symbols by default. Ferry maps use the rough parchment profile and the
+project's edited anchor/boat language.
 
-## Evidence levels
+## Verification
 
-- Source-backed: framework exposes blocking windows, input callbacks, and
-  conventional image textures.
-- Offline-proven: request validation, destination uniqueness, normalized
-  coordinates, provider-specific art ratios, and centered 16:9/21:9/32:9
-  layout math.
-- Build-proven: the AE DLL builds cleanly; all three Papyrus scripts compile
-  with zero errors and warnings; every dynamically used export exists in
-  LoreRim's installed SKSE Menu Framework DLL; the generated ESP is
-  byte-idempotent and passes its independent headless-xEdit audit.
-- Gameplay-proven: dialogue-to-window timing after the compatibility reload,
-  RUSTIC texture/crop and marker alignment at 32:9, mouse selection, button
-  cancel, result-event handoff, funded Whiterun travel, and underfunded
-  Whiterun/Solitude denial. Later passes proved the ASCII footer, funded
-  Solitude/Markarth travel, and exact hide/restore of 12 LoreRim HUD movies.
-- Still pending: the formal Caro Tuts map crop/marker alignment in gameplay,
-  the replacement Morthal carriage-marker arrival, controller-B
-  cancellation, keyboard/controller destination activation, missing-art
-  fallback, and the seven-choice dialogue fallback.
-
-The final package audit reports zero bundled artwork/audio assets. Champollion
-readback confirms the provider PEX embeds the configurable default texture path
-and aspect ratio, preserves capitalized display labels, and maps selection
-indices back to the seven lowercase service IDs.
-
-## Existing-save compatibility
-
-On the first live install, the new top-level dialogue branch did not appear
-until the user saved and reloaded once with the adapter installed. Stopping and
-starting its quest did not fix the same session. This matches the documented
-custom-dialogue save/load workaround on the Creation Kit Wiki discussion:
-https://ck.uesp.net/wiki/Talk%3ABethesda_Tutorial_Dialogue
-
-If the travel-map prompt is missing after installation, save and reload once.
-This is a compatibility instruction, not a license to reset the service quest
-or discard serialized travel state.
-
-## Presentation lifecycle
-
-ASCII ` - ` replaced the prior em dash because that character rendered as `?`
-through the UI font/string path; the corrected footer is live-proven.
-
-The first native HUD revision saved and toggled only the vanilla `HUD Menu`
-movie's visibility. Runtime logs proved both calls executed, but a screenshot
-still showed LoreRim's bottom-left player bars and widgets. Local configuration
-inspection explains the result: Norden enables TrueHUD's custom player widget,
-and LoreRim's Ultimate Immersion Toggle manages separate `TrueHUD`,
-`lvlWidget`, `goldWidget`, STB, and related Scaleform movies by changing
-`_root._alpha`.
-
-The replacement treats those names as optional compatibility targets. For
-each present movie it saves both `GetVisible()` and numeric `_root._alpha`,
-hides it, and restores the exact values on all completion paths. Missing movies
-are skipped, and no installed-mod settings are changed. A monitored pass
-visually proved the hidden HUD and logged all 12 present layers restoring from
-the exact saved values before successful Markarth travel.
-
-The picker uses invisible hitboxes over the map's baked city crests. The first
-small-ring coordinates missed several crest centers and are rejected. The
-corrected five coordinates, exact crop, Winterhold origin, five spokes, and
-hover/selection behavior passed a 32:9 gameplay pass: the user confirmed that
-everything was in the right spot and successfully selected routes. The same
-pass found the subdued idle routes difficult to see and the yellow custom
-pointer unlike the rest of LoreRim's UI.
-
-The live-tested visibility revision enlarges each visible ring to 46% of its hitbox, uses
-strong gold for every idle ring and route, and changes only the hovered or
-controller-focused destination and route to red. Mouse activation remains
-release-inside, so a press-drag outside safely cancels that activation.
-
-Local inspection identifies LoreRim's active cursor as Norden's
-`Interface/cursormenu.swf`. It is a Scaleform movie rendered before Menu
-Framework's ImGui layer; the framework API can choose ImGui/Windows cursor
-shapes but cannot reuse that SWF above the parchment. The candidate therefore
-draws a matching monochrome arrow silhouette and palette with framework
-polyline and concave-fill primitives. No cursor file is copied or shipped. The
-monitored pass visually approved the gold/red presentation and confirmed
-the new monochrome cursor. It logged one clean cancel followed by a successful
-Markarth selection/trip, restored all 12 HUD layers exactly, and emitted no DNT
-error or warning.
-
-The apparent initial Whiterun highlight came from an explicit
-`SetItemDefaultFocus` call and did not represent a selected destination. The
-current candidate removes that call and gates visible navigation focus until a
-keyboard/gamepad button is actually pressed, while mouse hover remains
-immediate. It also changes the cursor's dark-center alpha from 245 to 150 so
-more parchment shows through. The native/Papyrus/xEdit/asset/test suite passes,
-and all six deployed runtime payloads match the workspace. Its non-launching
-`UltraDiegeticTravel` preflight passes after switching back from the parallel
-profile. In the monitored pass, the user confirmed the no-default startup and
-translucent cursor looked good. Markarth parchment travel and Calcelmo's direct
-College return completed, then separate parchment opens proved Escape and
-close-button cancellation. Every completion restored all 12 HUD layers exactly
-and no DNT error/warning appeared.
-
-The formal-map selection ring follows the same input-ownership rule. Any mouse
-input now clears retained ImGui keyboard/controller focus, so leaving a marker
-produces no active selection instead of snapping the ring back to the first
-focusable item. Keyboard/gamepad input may explicitly re-engage navigation
-focus later. The ring extent is a separately calibrated presentation value;
-the current offline follow-up increases it from `1.52` to `2.00` and exposes it
-in the map-coordinate calibrator without resizing destination icons.
-
-The calibrator now has a separate **Icon alignment** workspace for the remaining
-optical-centering problem. It renders each exact Norden or vanilla marker on a
-fixed map anchor and independently changes the marker art and round-trip ring.
-Manual drag/nudge controls are augmented by visible alpha bounds and
-alpha-weighted centroid seeds. Exports use icon-half-extent offsets plus
-per-icon ring and marker multipliers in
-`modules/parchment-picker/config/icon-optics.json`. The native request boundary
-now validates `SetDestinationMarkerScale`, `SetSelectionRingScale`, and
-`SetDestinationSelectionRingStyle`. Marker scale changes only rendered art;
-ring style changes only ring geometry. Destination coordinates and clickboxes
-remain unchanged. The approved marker-size pass uses `0.93`-`0.96` for supplied
-capital profiles, `0.80` for towns/settlements, `0.73` for mills, and `0.78`
-for mines/farms. Dawnstar was absent from the changed export and therefore
-retains its checked-in `1.0` baseline pending gameplay review.
-
-The next offline polish candidate replaces the target-like hovered `X` with a
-provider-neutral ferry symbol. Local FFDec inspection proved that Norden's
-active `PlayerSet` asset is itself the red `X`; `Shipwreck` is a small boat,
-`Docks` is an anchor, and CoMAP adds `ActualShipwreck` and `FishingSpot`.
-BOOBIES/Immersive Icons is an inventory icon library and exposes no reusable
-helmet marker. Because all of those candidates are embedded SWF vectors, the
-ImGui picker cannot address an individual symbol directly without copying art
-or adding a Scaleform bridge. The picker instead draws fixed-size original
-resolution-independent sailboats in parchment ivory at every destination,
-independent of their collision-safe hover-box sizes. The active destination
-switches to an original high-sided shipwreck silhouette at the same scale,
-with a crimson outline and diffuse route glow; the former sharp bright-red
-route core is deliberately absent. A compact traveler medallion marks the
-route origin.
-
-North Coast Dawnstar presentation is positioned at `(0.562012,0.130000)`, a
-small northward move toward the shoreline. Its explicit graph endpoint and
-source-origin coordinate use the same value so the visual route remains
-connected in either travel direction.
-
-Requests now carry a validated source label before `Show`. The hover footer is
-formatted as `Source to Destination    Fare gold` and moved from the screen
-edge to the parchment's lower-left writing area. The native DLL, wizard
-adapter, all four boat providers, future carriage provider, Papyrus compiles,
-xEdit audits, and core tests pass offline. This visual/placement revision is
-deployed to the owned test mods but remains pending gameplay proof.
-
-Controller input now has an explicit native owner instead of depending on
-SKSE Menu Framework's retained ImGui focus. The implementation does not remove,
-replace, or mutate LoreRim's controller object:
-
-- preserve no-default-focus behavior until the first navigation input;
-- move focus spatially among provider destinations with either the D-pad or a
-  thresholded/latching left stick, without synthesizing mouse hover;
-- confirm only the explicitly controller-focused destination with A;
-- map B to the same inert cancel result as Escape/close;
-- clear controller focus as soon as mouse input resumes;
-- never remove or replace LoreRim's controller object;
-- retain the existing mouse release-inside activation path unchanged.
-
-The directional-selection algorithm is covered by the offline native suite.
-Gameplay proof of focus, A-confirm, B-cancel, dialogue fallback, and exact HUD
-restoration remains required with the intended `No Delete Controller`
-compatibility stack enabled.
-
-## Presentation layer
-
-The parchment itself and Mirabelle's spoken/subtitled lead-in are proven
-independently. The current offline candidate exposes a provider-neutral
-presentation API and returns a measured voice window before entering the same
-picker. This keeps a future vanilla showing idle or custom folded-map prop
-separate from selection and travel authority. See
-`docs/PRESENTATION_CONTRACT.md` for the exact boundary and remaining live test.
+The native core has offline tests for request validation, layout, hitbox
+separation, controller navigation, presentations, catalogue loading, quotes,
+and stable destination enumeration. Provider and package audits additionally
+enforce exact script/plugin inventories and asset provenance.

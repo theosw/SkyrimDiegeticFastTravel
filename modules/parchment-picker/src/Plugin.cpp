@@ -28,8 +28,8 @@ namespace
             }
         }
         if (a_message->type == SKSE::MessagingInterface::kDataLoaded) {
-            if (!DNT::TravelRuntime::InitializeShadowCatalog()) {
-                logger::warn("TRAVEL_SHADOW_INIT_FAILED behavior=legacy_unchanged");
+            if (!DNT::TravelRuntime::InitializeCatalog()) {
+                logger::error("TRAVEL_CATALOG_INIT_FAILED behavior=carriage_disabled");
             }
         }
     }

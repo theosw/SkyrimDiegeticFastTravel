@@ -8,7 +8,6 @@ $compilerRoot = Join-Path $LoreRimRoot `
     "mods\Project New Reign - Nemesis Unlimited Behavior Engine\Nemesis_Engine\Papyrus Compiler"
 $compiler = Join-Path $compilerRoot "PapyrusCompiler.exe"
 $flags = Join-Path $compilerRoot "scripts\TESV_Papyrus_Flags.flg"
-$jcontainersSource = Join-Path $LoreRimRoot "mods\JContainers SE\scripts\source"
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $moduleRoot = Join-Path $projectRoot "modules\carriage-parchment"
 $source = Join-Path $moduleRoot "mod\Scripts\Source"
@@ -21,7 +20,6 @@ $output = Join-Path $moduleRoot "mod\Scripts"
 foreach ($requiredPath in @(
     $compiler,
     $flags,
-    $jcontainersSource,
     $source,
     $coreSource,
     $parchmentSource,
@@ -33,7 +31,7 @@ foreach ($requiredPath in @(
 }
 
 New-Item -ItemType Directory -Force -Path $output | Out-Null
-$imports = "$source;$coreSource;$parchmentSource;$stubs;$jcontainersSource"
+$imports = "$source;$coreSource;$parchmentSource;$stubs"
 $scripts = Get-ChildItem -LiteralPath $source -File `
     -Filter "DNT_CarriageParchment*.psc" | Sort-Object Name
 if ($scripts.Count -ne 2) {

@@ -23,9 +23,6 @@ namespace DNT::ParchmentMenu
         float a_textureUvMinY,
         float a_textureUvMaxX,
         float a_textureUvMaxY);
-    [[nodiscard]] bool SetOverlayTexture(
-        std::string_view a_requestId,
-        std::string_view a_texturePath);
     [[nodiscard]] bool SetMarkerTextures(
         std::string_view a_requestId,
         std::string_view a_idleTexturePath,
@@ -50,12 +47,6 @@ namespace DNT::ParchmentMenu
         std::string_view a_requestId,
         float a_normalizedX,
         float a_normalizedY);
-    [[nodiscard]] bool AddRouteSegment(
-        std::string_view a_requestId,
-        float a_startNormalizedX,
-        float a_startNormalizedY,
-        float a_endNormalizedX,
-        float a_endNormalizedY);
     [[nodiscard]] bool AddRouteLandmark(
         std::string_view a_requestId,
         float a_normalizedX,

@@ -362,7 +362,7 @@ namespace
         Require(trimmedRequest.destinations[0].label == "Whiterun", "native boundary must trim presentation labels");
     }
 
-    void TestExplicitRouteNetwork()
+    void TestRouteMarkers()
     {
         DNT::Parchment::Request request{
             .requestId = "boat-1",
@@ -377,14 +377,6 @@ namespace
             "West Ferry",
             error), "boat source label should validate");
         Require(DNT::Parchment::SetRouteOrigin(request, { 0.1F, 0.5F }, error), "boat origin should validate");
-        Require(DNT::Parchment::SetOverlayTexture(
-            request,
-            "Data/textures/DiegeticTravel/boat-route-chalk-overlay.dds",
-            error), "boat route overlay should validate");
-        Require(!DNT::Parchment::SetOverlayTexture(
-            request,
-            "Data/textures/DiegeticTravel/second-overlay.dds",
-            error), "a request may only define one route overlay");
         Require(DNT::Parchment::AddDestination(
             request,
             { "east_port", "East Port", 50, 0.9F, 0.5F },
@@ -393,38 +385,8 @@ namespace
             request,
             { 0.2F, 0.8F },
             error), "inactive network landmark should validate");
-        Require(DNT::Parchment::AddRouteSegment(
-            request,
-            { { 0.1F, 0.5F }, { 0.4F, 0.2F } },
-            error), "first water lane should validate");
-        Require(DNT::Parchment::AddRouteSegment(
-            request,
-            { { 0.4F, 0.2F }, { 0.7F, 0.2F } },
-            error), "second water lane should validate");
-        Require(DNT::Parchment::AddRouteSegment(
-            request,
-            { { 0.7F, 0.2F }, { 0.9F, 0.5F } },
-            error), "third water lane should validate");
-        Require(DNT::Parchment::ValidateReadyRequest(request, error), "connected route network should be ready");
+        Require(DNT::Parchment::ValidateReadyRequest(request, error), "route markers should be ready");
         Require(request.routeLandmarks.size() == 1, "boat request should retain its inactive landmark");
-        const auto path = DNT::Parchment::FindRoutePath(request, request.destinations[0]);
-        Require(path.size() == 4, "water lane should resolve through its two bends");
-        RequireClose(path[1].normalizedX, 0.4F, 0.0001F, "first bend should be preserved");
-
-        Require(!DNT::Parchment::AddRouteSegment(
-            request,
-            { { 0.4F, 0.2F }, { 0.1F, 0.5F } },
-            error), "reversed duplicate route segment must fail");
-        Require(!DNT::Parchment::AddRouteSegment(
-            request,
-            { { 0.3F, 0.3F }, { 0.3F, 0.3F } },
-            error), "zero-length route segment must fail");
-
-        auto disconnected = request;
-        disconnected.destinations.push_back({ "island", "Island", 50, 0.8F, 0.8F });
-        Require(!DNT::Parchment::ValidateReadyRequest(
-            disconnected,
-            error), "disconnected destination must fail ready validation");
     }
 
     void CheckLayout(const float a_width, const float a_height, const float a_aspect)
@@ -613,7 +575,7 @@ namespace
 int main()
 {
     TestRequestValidation();
-    TestExplicitRouteNetwork();
+    TestRouteMarkers();
     TestAspectSafeLayouts();
     TestMarkerCentersRemainOnArt();
     TestDestinationHitAreasDoNotOverlap();

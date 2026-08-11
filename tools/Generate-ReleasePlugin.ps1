@@ -1,7 +1,7 @@
 param(
     [string]$LoreRimRoot = "D:\Lorerim",
     [string]$XEdit = "build\xedit-patched\SSEEdit64.exe",
-    [string]$Manifest = "build\dialogue_manifest.json"
+    [string]$Manifest = "config\carriage_provider.json"
 )
 
 $ErrorActionPreference = "Stop"
@@ -14,8 +14,6 @@ $stagingData = Join-Path $generationRoot "data"
 $pluginsList = Join-Path $generationRoot "plugins.txt"
 $releasePlugin = Join-Path $releaseRoot "DiegeticTravel.esp"
 $releaseSeq = Join-Path $releaseRoot "SEQ\DiegeticTravel.seq"
-$releaseDialogueRuntime = Join-Path $releaseRoot `
-    "SKSE\Plugins\DiegeticTravel\dialogue_runtime.json"
 $releaseMode = Join-Path $buildRoot "consolidated-release.mode"
 $generatorConfigPath = Join-Path $buildRoot "xedit_generator_config.json"
 $coreSeqManifest = Join-Path $buildRoot "release-core-seq-formids.txt"
@@ -158,8 +156,6 @@ try {
     New-Item -ItemType Directory -Force -Path $releaseRoot | Out-Null
     New-Item -ItemType Directory -Force `
         -Path (Split-Path -Parent $releaseSeq) | Out-Null
-    New-Item -ItemType Directory -Force `
-        -Path (Split-Path -Parent $releaseDialogueRuntime) | Out-Null
 
     foreach ($master in @(
         "Skyrim.esm",
@@ -193,7 +189,6 @@ try {
     )
     $generatorConfig = @{
         manifest = $manifestPath
-        dialogue_runtime = $releaseDialogueRuntime
         plugin_output = $releasePlugin
         seq_formids = $coreSeqManifest
         append_existing = $true
@@ -270,8 +265,8 @@ try {
             ForEach-Object { $_.Trim() } |
             Where-Object { $_ -ne "" }
     )
-    if ($seqFormIds.Count -ne 18) {
-        throw "Expected 18 combined SEQ FormIDs, found $($seqFormIds.Count)"
+    if ($seqFormIds.Count -ne 17) {
+        throw "Expected 17 combined SEQ FormIDs, found $($seqFormIds.Count)"
     }
     $seqBytes = [byte[]]::new($seqFormIds.Count * 4)
     for ($index = 0; $index -lt $seqFormIds.Count; $index++) {
@@ -302,7 +297,7 @@ try {
     }
 
     Write-Host "Generated consolidated ESP-FE: $releasePlugin"
-    Write-Host "Generated combined SEQ:       $releaseSeq (18 quests)"
+    Write-Host "Generated combined SEQ:       $releaseSeq (17 quests)"
     Write-Host ("Next local FormID:             0x{0:X}" -f $nextObjectId)
     Write-Host "ESP SHA-256: $((Get-FileHash $releasePlugin -Algorithm SHA256).Hash)"
 } finally {

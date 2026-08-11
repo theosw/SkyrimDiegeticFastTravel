@@ -1,16 +1,11 @@
 Scriptname DNT_OriginService extends Quest
 
-DNT_RouteService Property RouteService Auto
-Quest Property KmodFastTravelQuest Auto
 GlobalVariable Property KmodCarriageDestination Auto
 Faction Property KmodCarriageFreeFaction Auto
 Actor Property PlayerRef Auto
 MiscObject Property Gold001 Auto
 
 String Property OriginId Auto
-String Property DialoguePath = "Data/SKSE/Plugins/DiegeticTravel/dialogue_runtime.json" Auto
-
-Int _dialogue
 
 Bool Function IsFreeRideForSpeaker(Actor speaker)
     Return KmodCarriageFreeFaction && speaker && speaker.IsInFaction(KmodCarriageFreeFaction)
@@ -114,165 +109,6 @@ Function ExecuteDirectCarriageTravel(ObjectReference destinationMarker)
     EndIf
 EndFunction
 
-Bool Function LoadDialogue()
-    If _dialogue != 0
-        JValue.release(_dialogue)
-        _dialogue = 0
-    EndIf
-
-    _dialogue = JValue.readFromFile(DialoguePath)
-    If _dialogue == 0
-        Debug.Trace("[DNT] Could not load dialogue data: " + DialoguePath, 2)
-        Return False
-    EndIf
-
-    JValue.retain(_dialogue)
-    Return True
-EndFunction
-
-Bool Function EnsureDialogue()
-    If _dialogue != 0
-        Return True
-    EndIf
-    Return LoadDialogue()
-EndFunction
-
-Int Function GetEntries()
-    If !EnsureDialogue()
-        Return 0
-    EndIf
-
-    Int origins = JMap.getObj(_dialogue, "origins")
-    Int origin = JMap.getObj(origins, OriginId)
-    If origin == 0
-        Debug.Trace("[DNT] Dialogue data has no origin: " + OriginId, 2)
-        Return 0
-    EndIf
-    Return JMap.getObj(origin, "entries")
-EndFunction
-
-Int Function RefreshQuotes(Bool freeRide = False)
-    Float refreshStartedAt = DNT_ParchmentNative.GetMonotonicSeconds()
-    Int entries = GetEntries()
-    If entries == 0
-        Return 0
-    EndIf
-
-    RouteService.BeginQuoteBatch()
-    Int index = 0
-    Int availableCount = 0
-    While index < JArray.count(entries)
-        If RefreshQuote(index, freeRide)
-            availableCount += 1
-        EndIf
-        index += 1
-    EndWhile
-    RouteService.EndQuoteBatch()
-    Float refreshMs = (DNT_ParchmentNative.GetMonotonicSeconds() - refreshStartedAt) * 1000.0
-    Debug.Trace("[DNT] QUOTE_BATCH_COMPLETE origin=" + OriginId + " entries=" + JArray.count(entries) + " available=" + availableCount + " free=" + freeRide + " duration_ms=" + refreshMs)
-    Return availableCount
-EndFunction
-
-Int Function FindEntryIndex(String destinationId)
-    Int entries = GetEntries()
-    If entries == 0 || destinationId == ""
-        Return -1
-    EndIf
-
-    Int index = 0
-    While index < JArray.count(entries)
-        Int entry = JArray.getObj(entries, index)
-        If JMap.getStr(entry, "destination") == destinationId
-            Return index
-        EndIf
-        index += 1
-    EndWhile
-    Return -1
-EndFunction
-
-Bool Function RefreshDestinationQuote(String destinationId, Actor speaker)
-    Int index = FindEntryIndex(destinationId)
-    If index < 0 || !speaker
-        Return False
-    EndIf
-
-    Bool freeRide = KmodCarriageFreeFaction && speaker.IsInFaction(KmodCarriageFreeFaction)
-    Return RefreshQuote(index, freeRide)
-EndFunction
-
-Int Function GetPublishedFare(String destinationId)
-    Int index = FindEntryIndex(destinationId)
-    Int entries = GetEntries()
-    If entries == 0 || index < 0
-        Return -1
-    EndIf
-
-    Int entry = JArray.getObj(entries, index)
-    GlobalVariable availableGlobal = JMap.getForm(entry, "available_global") as GlobalVariable
-    GlobalVariable costGlobal = JMap.getForm(entry, "cost_global") as GlobalVariable
-    If !availableGlobal || !costGlobal || availableGlobal.GetValueInt() != 1
-        Return -1
-    EndIf
-    Return costGlobal.GetValueInt()
-EndFunction
-
-Float Function GetPublishedHours(String destinationId)
-    Int index = FindEntryIndex(destinationId)
-    Int entries = GetEntries()
-    If entries == 0 || index < 0
-        Return -1.0
-    EndIf
-
-    Int entry = JArray.getObj(entries, index)
-    GlobalVariable availableGlobal = JMap.getForm(entry, "available_global") as GlobalVariable
-    GlobalVariable hoursGlobal = JMap.getForm(entry, "hours_global") as GlobalVariable
-    If !availableGlobal || !hoursGlobal || availableGlobal.GetValueInt() != 1
-        Return -1.0
-    EndIf
-    Return hoursGlobal.GetValue()
-EndFunction
-
-Bool Function RefreshQuote(Int index, Bool freeRide = False)
-    Int entries = GetEntries()
-    If entries == 0 || index < 0 || index >= JArray.count(entries)
-        Return False
-    EndIf
-
-    Int entry = JArray.getObj(entries, index)
-    GlobalVariable availableGlobal = JMap.getForm(entry, "available_global") as GlobalVariable
-    GlobalVariable costGlobal = JMap.getForm(entry, "cost_global") as GlobalVariable
-    GlobalVariable hoursGlobal = JMap.getForm(entry, "hours_global") as GlobalVariable
-    If !availableGlobal || !costGlobal || !hoursGlobal
-        Debug.Trace("[DNT] Dialogue globals are missing for " + OriginId + " index " + index, 2)
-        Return False
-    EndIf
-
-    String destinationId = JMap.getStr(entry, "destination")
-    Int nativeFare = DNT_ParchmentNative.GetCarriageFare(OriginId, destinationId, freeRide)
-    Float nativeHours = DNT_ParchmentNative.GetCarriageHours(OriginId, destinationId)
-    Bool available = nativeFare >= 0 && nativeHours >= 0.0
-
-    If available
-        availableGlobal.SetValueInt(1)
-        costGlobal.SetValueInt(nativeFare)
-        hoursGlobal.SetValue(nativeHours)
-        Debug.Trace("[DNT] NATIVE_QUOTE_PUBLISHED origin=" + OriginId + " destination=" + destinationId + " fare=" + nativeFare + " hours=" + nativeHours + " free=" + freeRide)
-    Else
-        availableGlobal.SetValueInt(0)
-        costGlobal.SetValueInt(0)
-        hoursGlobal.SetValue(0.0)
-    EndIf
-
-    KmodFastTravelQuest.UpdateCurrentInstanceGlobal(costGlobal)
-    KmodFastTravelQuest.UpdateCurrentInstanceGlobal(hoursGlobal)
-    Return available
-EndFunction
-
-Int Function RefreshQuotesForSpeaker(Actor speaker)
-    Bool freeRide = KmodCarriageFreeFaction && speaker && speaker.IsInFaction(KmodCarriageFreeFaction)
-    Return RefreshQuotes(freeRide)
-EndFunction
-
 Bool Function CommitDestination(String destinationId, Actor speaker, Int cftoDestination = 0)
     If !speaker
         Debug.Trace("[DNT] PURCHASE_BLOCKED origin=" + OriginId + " reason=speaker_none", 2)
@@ -314,20 +150,6 @@ Bool Function CommitDestination(String destinationId, Actor speaker, Int cftoDes
     ExecuteDirectCarriageTravel(destinationMarker)
     Debug.Trace("[DNT] CARRIAGE_TRAVEL_COMPLETE origin=" + OriginId + " destination=" + destinationId + " fare=" + fare + " free=" + freeRide + " marker=" + destinationMarker)
     Return True
-EndFunction
-
-Bool Function Purchase(Int index, Actor speaker)
-    Int entries = GetEntries()
-    If entries == 0 || index < 0 || index >= JArray.count(entries)
-        Debug.Trace("[DNT] PURCHASE_BLOCKED origin=" + OriginId + " reason=entry index=" + index, 2)
-        Debug.Notification("Carriage travel to that destination is unavailable.")
-        Return False
-    EndIf
-
-    Int entry = JArray.getObj(entries, index)
-    String destinationId = JMap.getStr(entry, "destination")
-    Int cftoDestination = JMap.getInt(entry, "cfto_destination")
-    Return CommitDestination(destinationId, speaker, cftoDestination)
 EndFunction
 
 Bool Function PurchaseDestination(String destinationId, Actor speaker)

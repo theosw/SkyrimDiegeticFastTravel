@@ -9,7 +9,9 @@ Bool Function IsApparitionTravelActive(Actor PlayerRef) Global
     Bool HasHolder = ApparitionHolder != None && PlayerRef.HasMagicEffect(ApparitionHolder)
     Float TravelSpeed = Game.GetGameSettingFloat("fFastTravelSpeedMult")
     Bool HasSpeedOverride = TravelSpeed >= 99999.0
-    Bool IsActive = HasHolder || HasSpeedOverride
+    ; Apparition leaves its holder effect behind after the travel spell is
+    ; removed. The speed override is the authoritative live-state signal.
+    Bool IsActive = HasSpeedOverride
     Debug.Trace("[DNT] APPARITION_CHECK holder=" + ApparitionHolder + " hasHolder=" + HasHolder + " speed=" + TravelSpeed + " active=" + IsActive)
     Return IsActive
 EndFunction

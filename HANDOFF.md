@@ -1,6 +1,21 @@
 # Diegetic Travel handoff
 
-Updated: 2026-08-08
+Updated: 2026-08-11
+
+## Release-code cleanup checkpoint
+
+The release runtime has been reduced to the paths proven by the current
+integration tests. Carriages use one native catalogue, one coordinator, and
+nine small origin-service quests. The JContainers/dialogue-JSON pipeline,
+compiled graph model, cached and shadow quote systems, dormant route geometry,
+presentation probes, and obsolete split-plugin test tooling have been removed.
+The release generator now creates 17 quests in one ESL-tagged ESP, and the
+package audit enforces an exact 22-script PSC/PEX inventory plus one native DLL.
+
+Static route artwork and calibration sources remain only as development assets;
+they are not runtime dependencies or release-package contents. Historical
+sections below describe experiments and should not be read as the current
+architecture. The authoritative review is `docs/CODEBASE_AUDIT.md`.
 
 ## Mirabelle presentation and parchment handoff
 
@@ -1100,9 +1115,9 @@ stable artifact checks.
   geometry remain in the repository as post-release authoring sources. The DDS
   is absent from the runtime tree and package, and deployment removes any stale
   installed copy from the owned parchment test mod.
-- The provider audits reject calls that reactivate `SetOverlayTexture` or the
-  dormant route-network functions. Optional native overlay/segment APIs remain
-  tested so future artwork can return without an architectural rewrite.
+- The release runtime no longer exposes `SetOverlayTexture` or dynamic route
+  segments. The artwork and calibration sources remain available for a future
+  deliberately designed presentation pass.
 - Honrich and North-coast Papyrus compile with zero errors/warnings. The shared
   parchment audit, native CTest, and both isolated xEdit/SEQ audits pass.
 - Candidate package SHA-256 values: parchment picker

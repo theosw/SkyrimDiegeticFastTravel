@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "plugin": "DiegeticTravel.esp",
+  "cfto": {
+    "destination_global": "CFTO.esp|0x0A7B36",
+    "free_faction": "CFTO.esp|0x0DA68B"
+  },
+  "origins": {
+    "dawnstar": { "driver": "CFTO.esp|0x0BBF91" },
+    "falkreath": { "driver": "CFTO.esp|0x0BBF90" },
+    "markarth": { "driver": "CFTO.esp|0x09D8BF" },
+    "morthal": { "driver": "CFTO.esp|0x0BBF8E" },
+    "riften": { "driver": "CFTO.esp|0x0BBF7F" },
+    "solitude": { "driver": "CFTO.esp|0x0BBF76" },
+    "whiterun": { "driver": "CFTO.esp|0x0BBF6D" },
+    "windhelm": { "driver": "CFTO.esp|0x0BBF6E" },
+    "winterhold": { "driver": "CFTO.esp|0x1C355D" }
+  }
+}

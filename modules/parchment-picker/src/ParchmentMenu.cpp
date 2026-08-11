@@ -208,115 +208,6 @@ namespace
             2.6F);
     }
 
-    void DrawRouteConnection(
-        DNT::MenuFramework::API& a_framework,
-        const DNT::MenuFramework::DrawList a_drawList,
-        const DNT::MenuFramework::Vec2 a_origin,
-        const DNT::MenuFramework::Vec2 a_destination,
-        const bool a_highlighted)
-    {
-        if (!a_drawList) {
-            return;
-        }
-
-        constexpr auto darkInk = MakeColor(35, 22, 13, 215);
-        constexpr auto gold = MakeColor(224, 184, 100, 220);
-        constexpr auto activeGlow = MakeColor(235, 35, 42, 14);
-        constexpr auto activeBody = MakeColor(218, 27, 39, 28);
-        constexpr auto activeCenter = MakeColor(198, 20, 38, 42);
-        if (a_highlighted) {
-            a_framework.AddLine(a_drawList, a_origin, a_destination, activeGlow, 22.0F);
-            a_framework.AddLine(a_drawList, a_origin, a_destination, activeBody, 13.0F);
-            a_framework.AddLine(a_drawList, a_origin, a_destination, activeCenter, 7.0F);
-        } else {
-            a_framework.AddLine(a_drawList, a_origin, a_destination, darkInk, 4.0F);
-            a_framework.AddLine(a_drawList, a_origin, a_destination, gold, 2.0F);
-        }
-    }
-
-    void DrawActiveRoutePath(
-        DNT::MenuFramework::API& a_framework,
-        const DNT::MenuFramework::DrawList a_drawList,
-        const std::vector<DNT::MenuFramework::Vec2>& a_points)
-    {
-        if (!a_drawList || a_points.size() < 2) {
-            return;
-        }
-
-        std::vector<DNT::MenuFramework::Vec2> roundedPoints;
-        roundedPoints.reserve(a_points.size() * 6);
-        roundedPoints.push_back(a_points.front());
-        for (std::size_t index = 1; index + 1 < a_points.size(); ++index) {
-            const auto previous = a_points[index - 1];
-            const auto corner = a_points[index];
-            const auto next = a_points[index + 1];
-            const auto incomingX = corner.x - previous.x;
-            const auto incomingY = corner.y - previous.y;
-            const auto outgoingX = next.x - corner.x;
-            const auto outgoingY = next.y - corner.y;
-            const auto incomingLength = std::hypot(incomingX, incomingY);
-            const auto outgoingLength = std::hypot(outgoingX, outgoingY);
-            if (incomingLength < 1.0F || outgoingLength < 1.0F) {
-                roundedPoints.push_back(corner);
-                continue;
-            }
-
-            const auto cornerRadius = std::min({
-                44.0F,
-                incomingLength * 0.42F,
-                outgoingLength * 0.42F
-            });
-            const DNT::MenuFramework::Vec2 entry{
-                corner.x - incomingX / incomingLength * cornerRadius,
-                corner.y - incomingY / incomingLength * cornerRadius
-            };
-            const DNT::MenuFramework::Vec2 exit{
-                corner.x + outgoingX / outgoingLength * cornerRadius,
-                corner.y + outgoingY / outgoingLength * cornerRadius
-            };
-            roundedPoints.push_back(entry);
-            constexpr std::size_t curveSteps = 10;
-            for (std::size_t step = 1; step <= curveSteps; ++step) {
-                const auto t = static_cast<float>(step) / static_cast<float>(curveSteps);
-                const auto inverseT = 1.0F - t;
-                roundedPoints.push_back({
-                    inverseT * inverseT * entry.x + 2.0F * inverseT * t * corner.x +
-                        t * t * exit.x,
-                    inverseT * inverseT * entry.y + 2.0F * inverseT * t * corner.y +
-                        t * t * exit.y
-                });
-            }
-        }
-        roundedPoints.push_back(a_points.back());
-
-        constexpr auto activeGlow = MakeColor(235, 35, 42, 14);
-        constexpr auto activeBody = MakeColor(218, 27, 39, 28);
-        constexpr auto activeCenter = MakeColor(198, 20, 38, 42);
-        constexpr std::int32_t openPolyline = 0;
-        const auto pointCount = static_cast<std::int32_t>(roundedPoints.size());
-        a_framework.AddPolyline(
-            a_drawList,
-            roundedPoints.data(),
-            pointCount,
-            activeGlow,
-            openPolyline,
-            22.0F);
-        a_framework.AddPolyline(
-            a_drawList,
-            roundedPoints.data(),
-            pointCount,
-            activeBody,
-            openPolyline,
-            13.0F);
-        a_framework.AddPolyline(
-            a_drawList,
-            roundedPoints.data(),
-            pointCount,
-            activeCenter,
-            openPolyline,
-            7.0F);
-    }
-
     void DrawRouteOrigin(
         DNT::MenuFramework::API& a_framework,
         const DNT::MenuFramework::DrawList a_drawList,
@@ -470,11 +361,8 @@ namespace
     std::int64_t inputRegistration{ -1 };
     DNT::MenuFramework::Texture loadedTexture{ nullptr };
     std::string loadedTexturePath;
-    DNT::MenuFramework::Texture loadedOverlayTexture{ nullptr };
-    std::string loadedOverlayTexturePath;
     std::string loadedRequestId;
     bool textureLoadAttempted{ false };
-    bool overlayTextureLoadAttempted{ false };
     constexpr std::string_view defaultSelectedMarkerTexturePath =
         "Data/textures/DiegeticTravel/shipwreck-marker.dds";
     constexpr std::string_view defaultIdleMarkerTexturePath =
@@ -743,7 +631,6 @@ namespace
                 destinationMarkerTextureLoadAttempts.clear();
                 loadedRequestId = snapshot.request.requestId;
                 textureLoadAttempted = false;
-                overlayTextureLoadAttempted = false;
             }
             if (snapshot.request.texturePath != loadedTexturePath) {
                 if (loadedTexture && !loadedTexturePath.empty()) {
@@ -758,24 +645,6 @@ namespace
                 loadedTexture = framework.LoadTexture(loadedTexturePath);
                 if (!loadedTexture) {
                     logger::warn("PARCHMENT_ART_MISSING path={}", loadedTexturePath);
-                }
-            }
-            if (snapshot.request.overlayTexturePath != loadedOverlayTexturePath) {
-                if (loadedOverlayTexture && !loadedOverlayTexturePath.empty()) {
-                    framework.DisposeTexture(loadedOverlayTexturePath);
-                }
-                loadedOverlayTexture = nullptr;
-                loadedOverlayTexturePath = snapshot.request.overlayTexturePath;
-                overlayTextureLoadAttempted = false;
-            }
-            if (!loadedOverlayTexture && !loadedOverlayTexturePath.empty() &&
-                !overlayTextureLoadAttempted) {
-                overlayTextureLoadAttempted = true;
-                loadedOverlayTexture = framework.LoadTexture(loadedOverlayTexturePath);
-                if (!loadedOverlayTexture) {
-                    logger::warn(
-                        "PARCHMENT_OVERLAY_MISSING path={}",
-                        loadedOverlayTexturePath);
                 }
             }
             const std::string desiredSelectedMarkerTexturePath =
@@ -936,16 +805,6 @@ namespace
                 framework.SetCursorScreenPos({ layout.left + 24.0F, layout.top + 24.0F });
                 framework.TextUnformatted("Map artwork dependency is missing; selection remains available for testing.");
             }
-            if (loadedOverlayTexture) {
-                framework.SetCursorScreenPos({ layout.left, layout.top });
-                framework.Image(
-                    loadedOverlayTexture,
-                    { layout.width, layout.height },
-                    { 0.0F, 0.0F },
-                    { 1.0F, 1.0F },
-                    { 1.0F, 1.0F, 1.0F, 0.40F });
-            }
-
             std::string focusedDescription;
             const auto drawList = framework.GetForegroundDrawList();
             std::vector<DestinationVisual> destinationVisuals;
@@ -1007,9 +866,6 @@ namespace
                     activeDestination.fare);
             }
 
-            const auto isBoatProvider = EqualsAsciiInsensitive(
-                snapshot.request.providerId,
-                "boat");
             const auto isCollegeProvider = EqualsAsciiInsensitive(
                 snapshot.request.providerId,
                 "college");
@@ -1017,58 +873,11 @@ namespace
                 snapshot.request.providerId,
                 "carriage");
             const auto isFormalMapProvider = isCollegeProvider || isCarriageProvider;
-            const auto showRouteLines = !isBoatProvider && !isCollegeProvider;
             if (snapshot.request.routeOrigin) {
                 const DNT::MenuFramework::Vec2 routeOrigin{
                     layout.left + snapshot.request.routeOrigin->normalizedX * layout.width,
                     layout.top + snapshot.request.routeOrigin->normalizedY * layout.height
                 };
-                if (showRouteLines) {
-                    if (!snapshot.request.routeSegments.empty()) {
-                        if (snapshot.request.overlayTexturePath.empty()) {
-                            for (const auto& segment : snapshot.request.routeSegments) {
-                                DrawRouteConnection(
-                                    framework,
-                                    drawList,
-                                    {
-                                        layout.left + segment.start.normalizedX * layout.width,
-                                        layout.top + segment.start.normalizedY * layout.height
-                                    },
-                                    {
-                                        layout.left + segment.end.normalizedX * layout.width,
-                                        layout.top + segment.end.normalizedY * layout.height
-                                    },
-                                    false);
-                            }
-                        }
-                        if (snapshot.request.overlayTexturePath.empty() &&
-                            activeIndex && *activeIndex < snapshot.request.destinations.size()) {
-                            const auto activePath = DNT::Parchment::FindRoutePath(
-                                snapshot.request,
-                                snapshot.request.destinations[*activeIndex]);
-                            std::vector<DNT::MenuFramework::Vec2> activeScreenPath;
-                            activeScreenPath.reserve(activePath.size());
-                            for (const auto& point : activePath) {
-                                activeScreenPath.push_back({
-                                    layout.left + point.normalizedX * layout.width,
-                                    layout.top + point.normalizedY * layout.height
-                                });
-                            }
-                            DrawActiveRoutePath(framework, drawList, activeScreenPath);
-                        }
-                    } else {
-                        for (const auto& visual : destinationVisuals) {
-                            if (snapshot.request.overlayTexturePath.empty()) {
-                                DrawRouteConnection(
-                                    framework,
-                                    drawList,
-                                    routeOrigin,
-                                    visual.center,
-                                    visual.highlighted);
-                            }
-                        }
-                    }
-                }
                 for (const auto& landmark : snapshot.request.routeLandmarks) {
                     DrawRouteLandmark(
                         framework,
@@ -1285,35 +1094,6 @@ bool DNT::ParchmentMenu::BeginRequest(
         a_textureUvMaxX,
         a_textureUvMaxY);
     return true;
-}
-
-bool DNT::ParchmentMenu::SetOverlayTexture(
-    const std::string_view a_requestId,
-    const std::string_view a_texturePath)
-{
-    std::scoped_lock lock(requestLock);
-    if (!activeRequest || activeRequest->request.requestId != a_requestId || activeRequest->visible) {
-        return false;
-    }
-
-    std::string error;
-    const auto added = Parchment::SetOverlayTexture(
-        activeRequest->request,
-        std::string(a_texturePath),
-        error);
-    if (!added) {
-        logger::warn(
-            "PARCHMENT_OVERLAY_REJECT request={} path={} reason={}",
-            a_requestId,
-            a_texturePath,
-            error);
-    } else {
-        logger::info(
-            "PARCHMENT_OVERLAY_SET request={} path={}",
-            a_requestId,
-            a_texturePath);
-    }
-    return added;
 }
 
 bool DNT::ParchmentMenu::SetMarkerTextures(
@@ -1759,39 +1539,6 @@ bool DNT::ParchmentMenu::SetPaymentLabelPosition(
     return added;
 }
 
-bool DNT::ParchmentMenu::AddRouteSegment(
-    const std::string_view a_requestId,
-    const float a_startNormalizedX,
-    const float a_startNormalizedY,
-    const float a_endNormalizedX,
-    const float a_endNormalizedY)
-{
-    std::scoped_lock lock(requestLock);
-    if (!activeRequest || activeRequest->request.requestId != a_requestId || activeRequest->visible) {
-        return false;
-    }
-
-    std::string error;
-    const auto added = Parchment::AddRouteSegment(
-        activeRequest->request,
-        Parchment::RouteSegment{
-            .start = { a_startNormalizedX, a_startNormalizedY },
-            .end = { a_endNormalizedX, a_endNormalizedY }
-        },
-        error);
-    if (!added) {
-        logger::warn(
-            "PARCHMENT_ROUTE_SEGMENT_REJECT request={} start=({:.3f},{:.3f}) end=({:.3f},{:.3f}) reason={}",
-            a_requestId,
-            a_startNormalizedX,
-            a_startNormalizedY,
-            a_endNormalizedX,
-            a_endNormalizedY,
-            error);
-    }
-    return added;
-}
-
 bool DNT::ParchmentMenu::AddRouteLandmark(
     const std::string_view a_requestId,
     const float a_normalizedX,
@@ -1872,16 +1619,13 @@ bool DNT::ParchmentMenu::Show(const std::string_view a_requestId)
     const auto requestBuildMs = std::chrono::duration<double, std::milli>(
         activeRequest->shownAt - activeRequest->beganAt).count();
     logger::info(
-        "PARCHMENT_OPEN request={} provider={} destinations={} routeSegments={} routeLandmarks={} request_build_ms={:.3f} texture={} overlay={} idleMarker={} selectedMarker={} originMarker={} selectionRing={}",
+        "PARCHMENT_OPEN request={} provider={} destinations={} routeLandmarks={} request_build_ms={:.3f} texture={} idleMarker={} selectedMarker={} originMarker={} selectionRing={}",
         activeRequest->request.requestId,
         activeRequest->request.providerId,
         activeRequest->request.destinations.size(),
-        activeRequest->request.routeSegments.size(),
         activeRequest->request.routeLandmarks.size(),
         requestBuildMs,
         activeRequest->request.texturePath.empty() ? "<none>" : activeRequest->request.texturePath,
-        activeRequest->request.overlayTexturePath.empty() ?
-            "<none>" : activeRequest->request.overlayTexturePath,
         activeRequest->request.idleMarkerTexturePath.empty() ?
             defaultIdleMarkerTexturePath : activeRequest->request.idleMarkerTexturePath,
         activeRequest->request.selectedMarkerTexturePath.empty() ?

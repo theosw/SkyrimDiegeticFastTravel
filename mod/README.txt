@@ -5,7 +5,6 @@ Requirements:
 - SKSE64 2.2.6
 - Address Library for SKSE Plugins
 - SKSE Menu Framework
-- JContainers SE
 - Carriage and Ferry Travel Overhaul (CFTO)
 - RUSTIC MAPS (physical carriage/ferry parchment artwork)
 - Skyrim Paper Map by Caro Tuts for FWMF (wizard parchment artwork)

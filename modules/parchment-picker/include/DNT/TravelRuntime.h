@@ -8,12 +8,12 @@
 
 namespace DNT::TravelRuntime
 {
-    [[nodiscard]] bool InitializeShadowCatalog();
-    [[nodiscard]] bool IsShadowCatalogReady();
-    [[nodiscard]] std::optional<Travel::Quote> EstimateShadowQuote(
+    [[nodiscard]] bool InitializeCatalog();
+    [[nodiscard]] bool IsCatalogReady();
+    [[nodiscard]] std::optional<Travel::Quote> EstimateQuote(
         std::string_view a_providerId,
         std::string_view a_originId,
         std::string_view a_destinationId,
         Travel::QuoteOptions a_options = {});
-    [[nodiscard]] std::vector<Travel::Location> GetShadowLocations();
+    [[nodiscard]] std::vector<Travel::Location> GetLocations();
 }

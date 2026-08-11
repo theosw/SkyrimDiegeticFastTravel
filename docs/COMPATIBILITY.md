@@ -59,8 +59,7 @@ in-world surface; BCD remains a proven optional adapter and comparison point.
 ## Wizarding Traversal: Apparition Travel
 
 `WizardingTraversal.esl` is an optional, soft-detected compatibility target.
-When its Apparition holder effect (local FormID `000808`) is active—or its own
-`fFastTravelSpeedMult=100000` override is present—Diegetic Travel completes
+When its own `fFastTravelSpeedMult=100000` override is present, Diegetic Travel completes
 direct carriage, wizard, and ferry trips with `MoveTo` instead of
 `Game.FastTravel`. The normal provider fare, state
 validation, fade, arrival marker, and companion handoff still apply, but no
@@ -68,14 +67,12 @@ travel time passes.
 
 This deliberately does not mutate Wizarding Traversal's game setting. The
 original plugin is not a master and is not required: compatibility is soft
-detected, and an absent holder/override falls through to normal time-passing
-fast travel. The Baan Malur adapter remains
+detected, and an absent override falls through to normal time-passing fast
+travel. The holder effect is logged for diagnostics but is not authoritative,
+because Wizarding Traversal can leave it present after Apparition is toggled
+off. The Baan Malur adapter remains
 an exception because it delegates movement to that source mod's quest stages.
 
-The release test must disable Apparition by casting its toggle a second time,
-not by removing the learned power through the console. Raw `removespell` can
-bypass Wizarding Traversal's effect-finish cleanup: the holder effect becomes
-absent while `fFastTravelSpeedMult` remains at `100000`. The current
-compatibility detector intentionally reports that speed override, so this
-artificial stale state is diagnostic-only and must be cleared by reloading the
-disposable pre-test save.
+The release test must verify both toggle directions. The speed override should
+be `100000` while Apparition is enabled and return to its ordinary value after
+the second cast; travel follows that live value on every trip.

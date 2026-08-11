@@ -154,43 +154,6 @@ String Function GetSourceLabel(String SourceId)
     Return ""
 EndFunction
 
-Bool Function AddLaneNetwork()
-    Bool AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.688477, 0.724801, 0.715820, 0.734085)
-    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.715820, 0.734085, 0.723145, 0.740716) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.723145, 0.740716, 0.737305, 0.748674) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.737305, 0.748674, 0.744141, 0.755968) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.744141, 0.755968, 0.750977, 0.783820) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.750977, 0.783820, 0.761719, 0.793767) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.761719, 0.793767, 0.771973, 0.793767) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.771973, 0.793767, 0.787109, 0.781830) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.787109, 0.781830, 0.796875, 0.783156) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.796875, 0.783156, 0.805664, 0.789788) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.805664, 0.789788, 0.812988, 0.805703) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.812988, 0.805703, 0.816895, 0.810345) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.816895, 0.810345, 0.822266, 0.828249) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.822266, 0.828249, 0.825195, 0.832228) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.825195, 0.832228, 0.833496, 0.834881) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.833496, 0.834881, 0.870605, 0.844164) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.870605, 0.844164, 0.882324, 0.844164) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.882324, 0.844164, 0.889648, 0.838859) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.889648, 0.838859, 0.895996, 0.832891) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.895996, 0.832891, 0.905132, 0.835295) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.895996, 0.832891, 0.886719, 0.842175) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.886719, 0.842175, 0.865723, 0.842838) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.865723, 0.842838, 0.834473, 0.836207) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.834473, 0.836207, 0.822754, 0.829576) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.822754, 0.829576, 0.816895, 0.810345) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.816895, 0.810345, 0.801758, 0.785809) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.801758, 0.785809, 0.787109, 0.781830) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.787109, 0.781830, 0.768555, 0.795093) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.768555, 0.795093, 0.754883, 0.789788) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.754883, 0.789788, 0.749512, 0.779841) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.749512, 0.779841, 0.745117, 0.757958) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.745117, 0.757958, 0.741211, 0.751989) && AddedAll
-    AddedAll = DNT_ParchmentNative.AddRouteSegment(ActiveRequest, 0.741211, 0.751989, 0.715820, 0.734085) && AddedAll
-    Return AddedAll
-EndFunction
-
 Function AbortOpen(String Reason)
     Debug.Trace("[DNT] BOAT_PARCHMENT_DENIED lane=lake_honrich source=" + ActiveSourceId + " request=" + ActiveRequest + " reason=" + Reason, 1)
     UnregisterForModEvent("DNT_ParchmentResult")

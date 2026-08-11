@@ -5,7 +5,7 @@ uses SysUtils, Classes;
 const
   TargetPluginName = 'DiegeticTravel.esp';
   ExpectedMasterCount = 6;
-  ExpectedStartGameQuestCount = 18;
+  ExpectedStartGameQuestCount = 17;
   ExpectedOriginQuestCount = 9;
 
 var
@@ -168,7 +168,6 @@ begin
   if OriginCount <> ExpectedOriginQuestCount then
     raise Exception.Create('Origin quest count mismatch: ' + IntToStr(OriginCount));
 
-  RequireQuestScript('DNT_RouteServiceQuest', 'DNT_RouteService');
   RequireQuestScript('DNT_TravelCoordinatorQuest', 'DNT_TravelCoordinator');
   RequireQuestScript('DNT_WizardTravelQuest', 'DNT_WizardTravelService');
   RequireQuestScript(
@@ -189,9 +188,9 @@ begin
     'DNT_BoatSolstheimQuest',
     'DNT_SolstheimBoatTravelService'
   );
-  ReportLines.Add('PASS start_game_quests=18');
+  ReportLines.Add('PASS start_game_quests=17');
   ReportLines.Add('PASS origin_services=9');
-  ReportLines.Add('PASS critical_quest_scripts=9');
+  ReportLines.Add('PASS critical_quest_scripts=8');
 end;
 
 function Initialize: Integer;

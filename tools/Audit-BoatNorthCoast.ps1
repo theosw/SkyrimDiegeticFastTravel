@@ -85,29 +85,9 @@ if ($pickerSource -match [regex]::Escape("Input.TapKey")) {
     throw "North-coast dialogue handoff must not synthesize keyboard input."
 }
 if ($nativeSource -notmatch [regex]::Escape(
-    "Bool Function AddRouteSegment("
-)) {
-    throw "Parchment native contract is missing route-segment support."
-}
-if ($nativeSource -notmatch [regex]::Escape(
     "Bool Function AddRouteLandmark("
 )) {
     throw "Parchment native contract is missing inactive-landmark support."
-}
-if ($nativeSource -notmatch [regex]::Escape("Bool Function SetOverlayTexture(")) {
-    throw "Parchment native contract is missing optional overlay support."
-}
-foreach ($deferredRuntimeToken in @(
-    "DNT_ParchmentNative.SetOverlayTexture",
-    "AddedAll = AddNorthCoastNetwork() && AddedAll"
-)) {
-    if ($pickerSource -match [regex]::Escape($deferredRuntimeToken)) {
-        throw "North-coast beta must not activate deferred route artwork: $deferredRuntimeToken"
-    }
-}
-if (($pickerSource | Select-String -Pattern "DNT_ParchmentNative.AddRouteSegment" -AllMatches).Matches.Count -ne 68 -or
-    $pickerSource -notmatch [regex]::Escape("Bool Function AddNorthCoastNetwork()")) {
-    throw "North-coast deferred authoring geometry must retain the audited 68-segment coastal network."
 }
 if (($pickerSource | Select-String -Pattern "DNT_ParchmentNative.AddRouteLandmark" -AllMatches).Matches.Count -ne 6 -or
     $pickerSource -notmatch [regex]::Escape("Bool Function AddInactiveMainlandLandmarks()")) {

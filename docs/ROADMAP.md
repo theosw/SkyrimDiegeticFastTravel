@@ -7,7 +7,8 @@
 - [x] Remove route-derived hours, hazards, and variable rates from beta UI/runtime.
 - [x] Author the ESP generator for dialogue overrides, cost/availability globals,
   quests, and VMAD properties.
-- [x] Compile Papyrus against Skyrim, SKSE, JContainers, and CFTO sources.
+- [x] Compile Papyrus against Skyrim, SKSE, and CFTO sources; JContainers is no
+  longer a runtime or build dependency.
 - [x] Smoke-test the unattended xEdit generator and inspect the resulting ESP.
 - [x] Verify the generated TES4 master order and expected generated-record counts.
 - [ ] Verify the nine CFTO driver actor identities in the target load order.

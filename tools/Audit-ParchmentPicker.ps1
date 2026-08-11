@@ -125,7 +125,7 @@ if ($unexpectedAssets.Count -gt 0 -or $shippedAssets.Count -ne $expectedAssets.C
 $nativeScript = Get-Content -Raw (Join-Path $modRoot "Scripts\Source\DNT_ParchmentNative.psc")
 $travelCompatibilityScript = Get-Content -Raw (Join-Path $modRoot "Scripts\Source\DNT_TravelCompatibility.psc")
 $providerScript = Get-Content -Raw (Join-Path $modRoot "Scripts\Source\DNT_WizardParchmentPicker.psc")
-foreach ($requiredToken in @("RequestDialogueClose", "BeginRequest", "SetSourceLabel", "SetPaymentLabelPosition", "SetOverlayTexture", "SetMarkerTextures", "SetOriginMarkerTexture", "SetSelectionRingTexture", "SetRouteOrigin", "AddRouteSegment", "AddRouteLandmark", "AddDestination", "AddStyledDestination", "SetDestinationMarkerTexture", "SetDestinationMarkerScale", "SetDestinationSelectionRingStyle", "SetDestinationSelectionRingTexture", "Show", "Cancel", "PlayPresentation", "PlayVoiceProbe", "DNT_ParchmentResult")) {
+foreach ($requiredToken in @("RequestDialogueClose", "BeginRequest", "SetSourceLabel", "SetPaymentLabelPosition", "SetMarkerTextures", "SetOriginMarkerTexture", "SetSelectionRingTexture", "SetRouteOrigin", "AddRouteLandmark", "AddDestination", "SetDestinationMarkerTexture", "SetDestinationMarkerScale", "SetDestinationSelectionRingStyle", "SetDestinationSelectionRingTexture", "Show", "Cancel", "PlayPresentation", "DNT_ParchmentResult")) {
     if ($nativeScript -notmatch [regex]::Escape($requiredToken) -and
         $providerScript -notmatch [regex]::Escape($requiredToken)) {
         throw "Parchment Papyrus contract is missing token: $requiredToken"
@@ -199,9 +199,6 @@ foreach ($voiceToken in @(
     "ExpectedRuntime{ 1, 6, 1170, 0 }",
     "ModernCompileAndRunId = 441582",
     "ExpectedCompileAndRunOffset = 0x33D6A0",
-    "MirabelleReferenceId = 0x0001C1B9",
-    "MirabelleProbeSubtitle",
-    "MirabelleProbeDurationSeconds = 2.147846F",
     "ValidatePresentation",
     "PresentationWindowSeconds",
     "CompileAndRunWithRuntimeRelocation",
@@ -211,7 +208,6 @@ foreach ($voiceToken in @(
     "subtitleManager->subtitles.push_back",
     "subtitle.forceDisplay = true",
     "REL::ID(a_relocationId)",
-    "PARCHMENT_VOICE_PROBE_QUEUED",
     "PARCHMENT_PRESENTATION_QUEUED",
     "PARCHMENT_PRESENTATION_DISPATCH",
     "PARCHMENT_PRESENTATION_REJECT",
@@ -220,7 +216,7 @@ foreach ($voiceToken in @(
     'std::format("SpeakSound \"{}\"", presentation.voicePath)'
 )) {
     if ($papyrusSource -notmatch [regex]::Escape($voiceToken)) {
-        throw "Runtime-gated Mirabelle voice probe is missing token: $voiceToken"
+        throw "Native presentation support is missing token: $voiceToken"
     }
 }
 if ($providerScript -match "ConsoleUtil" -or
@@ -252,27 +248,17 @@ foreach ($presentationToken in @(
     "ImDrawList_AddTriangleFilled",
     "ImDrawList_AddPolyline",
     "ImDrawList_AddConcavePolyFilled",
-    "DrawRouteConnection",
-    "DrawActiveRoutePath",
     "DrawRouteOrigin",
     "DrawRouteLandmark",
     "DrawFerryDestinationMarker",
     "ComputeDestinationHitSizes",
-    "FindRoutePath",
-    "routeSegments",
     "routeLandmarks",
-    "overlayTexturePath",
-    "loadedOverlayTexture",
-    "PARCHMENT_OVERLAY_MISSING",
-    "snapshot.request.overlayTexturePath.empty()",
     "MakeColor(238, 229, 207, 245)",
     "const auto baseExtent = std::clamp(a_radius, 17.0F, 34.0F)",
     "a_scaleOnlyHighlight",
     "EqualsAsciiInsensitive",
-    "isBoatProvider",
     "isCollegeProvider",
     "isCarriageProvider",
-    "showRouteLines = !isBoatProvider && !isCollegeProvider",
     'destinationTexturePath.find("-capital.dds")',
     "1.25F : 0.84F",
     "markerArtScale",
@@ -296,15 +282,6 @@ foreach ($presentationToken in @(
     "PARCHMENT_ORIGIN_MARKER_SET",
     "PARCHMENT_MARKERS_SET",
     "MakeColor(170, 174, 178, 168)",
-    "{ 1.0F, 1.0F, 1.0F, 0.40F }",
-    "roundedPoints",
-    "curveSteps = 10",
-    "incomingLength * 0.42F",
-    "outgoingLength * 0.42F",
-    "MakeColor(235, 35, 42, 14)",
-    "MakeColor(218, 27, 39, 28)",
-    "MakeColor(198, 20, 38, 42)",
-    "activeScreenPath.reserve(activePath.size())",
     "navigationFocusEngaged.store(false",
     "navigationFocusEngaged.load",
     "MakeColor(18, 18, 18, 150)",
@@ -332,9 +309,6 @@ if ($menuSource -match [regex]::Escape("originRing")) {
 }
 if ($menuSource -notmatch "loadedOriginMarkerTexture\s*\?\s*loadedOriginMarkerTexture\s*:\s*loadedSelectedMarkerTexture") {
     throw "The route origin must use its provider texture with selected-marker fallback."
-}
-if ($menuSource -notmatch "snapshot\.request\.overlayTexturePath\.empty\(\)\s*&&\s*activeIndex") {
-    throw "Painted overlays must suppress dynamic active-route strokes."
 }
 if ($menuSource -match [regex]::Escape("MakeColor(255, 137, 82, 238)")) {
     throw "The sharp bright-red route core must not remain in the parchment presentation."

@@ -105,7 +105,7 @@ namespace
         Require(catalog.LoadFile(path, error), error);
         Require(catalog.SchemaVersion() == 1, "shipped schema mismatch");
         Require(catalog.LocationCount() == 27, "shipped carriage catalogue must have 27 locations");
-        Require(catalog.PolicyCount() == 1, "shipped catalogue must have one shadow policy");
+        Require(catalog.PolicyCount() == 1, "shipped catalogue must have one carriage policy");
         Require(catalog.Locations().size() == 27, "enumerable location view must expose every stop");
         Require(catalog.Locations().front().id == "windhelm", "enumeration must preserve authored selection order");
         Require(catalog.Locations().back().id == "winstad_manor", "enumeration tail must preserve authored selection order");

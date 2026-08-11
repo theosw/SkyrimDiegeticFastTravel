@@ -85,32 +85,12 @@ if ($pickerSource -match [regex]::Escape("Input.TapKey")) {
     throw "Lake Honrich dialogue handoff must not synthesize keyboard input."
 }
 if ($nativeSource -notmatch [regex]::Escape(
-    "Bool Function AddRouteSegment("
-)) {
-    throw "Parchment native contract is missing route-segment support."
-}
-if ($nativeSource -notmatch [regex]::Escape(
     "Bool Function AddRouteLandmark("
 )) {
     throw "Parchment native contract is missing inactive-landmark support."
 }
-if ($nativeSource -notmatch [regex]::Escape("Bool Function SetOverlayTexture(")) {
-    throw "Parchment native contract is missing optional overlay support."
-}
-foreach ($deferredRuntimeToken in @(
-    "DNT_ParchmentNative.SetOverlayTexture",
-    "AddedAll = AddLaneNetwork() && AddedAll"
-)) {
-    if ($pickerSource -match [regex]::Escape($deferredRuntimeToken)) {
-        throw "Lake Honrich beta must not activate deferred route artwork: $deferredRuntimeToken"
-    }
-}
 if ($network.map.PSObject.Properties.Name -contains "overlay_texture") {
     throw "Lake Honrich beta config must not activate deferred route artwork."
-}
-if (($pickerSource | Select-String -Pattern "DNT_ParchmentNative.AddRouteSegment" -AllMatches).Matches.Count -ne 33 -or
-    $pickerSource -notmatch [regex]::Escape("Bool Function AddLaneNetwork()")) {
-    throw "Lake Honrich deferred authoring geometry must retain the audited 33-segment water ring."
 }
 if (($pickerSource | Select-String -Pattern "DNT_ParchmentNative.AddRouteLandmark" -AllMatches).Matches.Count -ne 10 -or
     $pickerSource -notmatch [regex]::Escape("Bool Function AddInactiveMainlandLandmarks()")) {

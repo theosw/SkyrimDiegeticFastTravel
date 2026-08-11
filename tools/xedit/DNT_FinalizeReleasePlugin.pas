@@ -5,7 +5,7 @@ uses SysUtils, Classes;
 const
   OutputPluginName = 'DiegeticTravel.esp';
   ExpectedMasterCount = 6;
-  ExpectedStartGameQuestCount = 18;
+  ExpectedStartGameQuestCount = 17;
 
 var
   OutputFile: IInterface;

@@ -21,13 +21,6 @@ namespace
     constexpr std::uint64_t LegacyCompileAndRunId = 21890;
     constexpr std::uint64_t ModernCompileAndRunId = 441582;
     constexpr std::uintptr_t ExpectedCompileAndRunOffset = 0x33D6A0;
-    constexpr RE::FormID MirabelleReferenceId = 0x0001C1B9;
-    constexpr std::string_view MirabelleProbeVoicePath =
-        "Voice/Skyrim.esm/FemaleUniqueMirabelleErvine/mg01__000d67d1_1.fuz";
-    constexpr std::string_view MirabelleProbeSubtitle =
-        "Very good. Then we're done here.";
-    constexpr float MirabelleProbeDurationSeconds = 2.147846F;
-
     std::mutex carriageRequestLock;
     std::unordered_map<std::string, std::vector<std::string>> carriageRequestDestinations;
 
@@ -128,14 +121,14 @@ namespace
     {
         const auto originId = NormalizeTravelId(a_originId);
         const auto destinationId = NormalizeTravelId(a_destinationId);
-        const auto locations = DNT::TravelRuntime::GetShadowLocations();
+        const auto locations = DNT::TravelRuntime::GetLocations();
         const auto location = std::ranges::find_if(locations, [&](const auto& candidate) {
             return candidate.id == destinationId;
         });
         if (location == locations.end() || !IsCarriageLocationAvailable(*location)) {
             return std::nullopt;
         }
-        return DNT::TravelRuntime::EstimateShadowQuote(
+        return DNT::TravelRuntime::EstimateQuote(
             "carriage",
             originId,
             destinationId,
@@ -202,40 +195,6 @@ namespace
             std::chrono::steady_clock::now() - processEpoch).count();
     }
 
-    bool LogShadowQuote(
-        RE::StaticFunctionTag*,
-        const RE::BSFixedString a_providerId,
-        const RE::BSFixedString a_originId,
-        const RE::BSFixedString a_destinationId,
-        const std::int32_t a_legacyFare,
-        const float a_legacyHours)
-    {
-        const auto quote = DNT::TravelRuntime::EstimateShadowQuote(
-            a_providerId.c_str(),
-            a_originId.c_str(),
-            a_destinationId.c_str());
-        if (!quote) {
-            logger::warn(
-                "TRAVEL_SHADOW_QUOTE_MISSING provider={} origin={} destination={}",
-                a_providerId.c_str(),
-                a_originId.c_str(),
-                a_destinationId.c_str());
-            return false;
-        }
-        logger::info(
-            "TRAVEL_SHADOW_QUOTE provider={} origin={} destination={} legacy_fare={} native_fare={} fare_delta={} legacy_hours={:.3f} native_hours={:.3f} hours_delta={:.3f}",
-            a_providerId.c_str(),
-            a_originId.c_str(),
-            a_destinationId.c_str(),
-            a_legacyFare,
-            quote->fare,
-            quote->fare - a_legacyFare,
-            a_legacyHours,
-            quote->hours,
-            quote->hours - a_legacyHours);
-        return true;
-    }
-
     std::int32_t BuildCarriageRequest(
         RE::StaticFunctionTag*,
         const RE::BSFixedString a_requestId,
@@ -248,14 +207,14 @@ namespace
         const auto originId = NormalizeTravelId(a_originId.c_str());
         if (requestId.empty() || originId.empty() || !a_source ||
             !DNT::ParchmentMenu::IsAvailable() ||
-            !DNT::TravelRuntime::IsShadowCatalogReady()) {
+            !DNT::TravelRuntime::IsCatalogReady()) {
             logger::warn(
                 "CARRIAGE_NATIVE_REQUEST_REJECT request={} origin={} source={} menu_ready={} catalog_ready={}",
                 requestId,
                 originId,
                 a_source ? a_source->GetFormID() : 0,
                 DNT::ParchmentMenu::IsAvailable(),
-                DNT::TravelRuntime::IsShadowCatalogReady());
+                DNT::TravelRuntime::IsCatalogReady());
             return -1;
         }
 
@@ -285,13 +244,13 @@ namespace
                          "Data/textures/DiegeticTravel/thin-circle-selection-ring.dds") && configured;
 
         std::vector<std::string> destinationIds;
-        const auto locations = DNT::TravelRuntime::GetShadowLocations();
+        const auto locations = DNT::TravelRuntime::GetLocations();
         destinationIds.reserve(locations.size());
         for (const auto& location : locations) {
             if (location.id == originId || !IsCarriageLocationAvailable(location)) {
                 continue;
             }
-            const auto quote = DNT::TravelRuntime::EstimateShadowQuote(
+            const auto quote = DNT::TravelRuntime::EstimateQuote(
                 "carriage",
                 originId,
                 location.id,
@@ -474,34 +433,6 @@ namespace
             a_normalizedY);
     }
 
-    bool AddStyledDestination(
-        RE::StaticFunctionTag*,
-        const RE::BSFixedString a_requestId,
-        const RE::BSFixedString a_destinationId,
-        const RE::BSFixedString a_label,
-        const std::int32_t a_fare,
-        const float a_normalizedX,
-        const float a_normalizedY,
-        const RE::BSFixedString a_markerTexturePath,
-        const float a_markerScale,
-        const float a_ringOffsetX,
-        const float a_ringOffsetY,
-        const float a_ringScale)
-    {
-        return DNT::ParchmentMenu::AddStyledDestination(
-            a_requestId.c_str(),
-            a_destinationId.c_str(),
-            a_label.c_str(),
-            a_fare,
-            a_normalizedX,
-            a_normalizedY,
-            a_markerTexturePath.c_str(),
-            a_markerScale,
-            a_ringOffsetX,
-            a_ringOffsetY,
-            a_ringScale);
-    }
-
     bool SetDestinationMarkerTexture(
         RE::StaticFunctionTag*,
         const RE::BSFixedString a_requestId,
@@ -562,16 +493,6 @@ namespace
         return DNT::ParchmentMenu::SetSourceLabel(
             a_requestId.c_str(),
             a_sourceLabel.c_str());
-    }
-
-    bool SetOverlayTexture(
-        RE::StaticFunctionTag*,
-        const RE::BSFixedString a_requestId,
-        const RE::BSFixedString a_texturePath)
-    {
-        return DNT::ParchmentMenu::SetOverlayTexture(
-            a_requestId.c_str(),
-            a_texturePath.c_str());
     }
 
     bool SetMarkerTextures(
@@ -638,22 +559,6 @@ namespace
             a_requestId.c_str(),
             a_normalizedX,
             a_normalizedY);
-    }
-
-    bool AddRouteSegment(
-        RE::StaticFunctionTag*,
-        const RE::BSFixedString a_requestId,
-        const float a_startNormalizedX,
-        const float a_startNormalizedY,
-        const float a_endNormalizedX,
-        const float a_endNormalizedY)
-    {
-        return DNT::ParchmentMenu::AddRouteSegment(
-            a_requestId.c_str(),
-            a_startNormalizedX,
-            a_startNormalizedY,
-            a_endNormalizedX,
-            a_endNormalizedY);
     }
 
     bool AddRouteLandmark(
@@ -803,45 +708,12 @@ namespace
                 a_voiceDurationSeconds });
     }
 
-    bool PlayVoiceProbe(
-        RE::StaticFunctionTag*,
-        RE::TESObjectREFR* a_speaker,
-        const RE::BSFixedString a_voicePath)
-    {
-        const std::string voicePath = a_voicePath.c_str();
-        const auto speakerFormId = a_speaker ? a_speaker->GetFormID() : 0;
-        if (speakerFormId != MirabelleReferenceId ||
-            voicePath != MirabelleProbeVoicePath) {
-            logger::error(
-                "PARCHMENT_VOICE_PROBE_REJECT speaker={:08X} path={} reason=invalid_probe_contract",
-                speakerFormId,
-                voicePath);
-            return false;
-        }
-
-        const auto presentationWindow = QueuePresentation(
-            a_speaker,
-            DNT::Parchment::Presentation{
-                voicePath,
-                std::string(MirabelleProbeSubtitle),
-                MirabelleProbeDurationSeconds });
-        if (presentationWindow > 0.0F) {
-            logger::info(
-                "PARCHMENT_VOICE_PROBE_QUEUED speaker={:08X} compatibility=1 presentationSeconds={}",
-                speakerFormId,
-                presentationWindow);
-            return true;
-        }
-        return false;
-    }
-
 }
 
 bool DNT::Papyrus::Register(RE::BSScript::IVirtualMachine* a_vm)
 {
     a_vm->RegisterFunction("IsAvailable", PapyrusClass, IsAvailable);
     a_vm->RegisterFunction("GetMonotonicSeconds", PapyrusClass, GetMonotonicSeconds);
-    a_vm->RegisterFunction("LogShadowQuote", PapyrusClass, LogShadowQuote);
     a_vm->RegisterFunction("BuildCarriageRequest", PapyrusClass, BuildCarriageRequest);
     a_vm->RegisterFunction("ConsumeCarriageSelectionId", PapyrusClass, ConsumeCarriageSelectionId);
     a_vm->RegisterFunction("GetCarriageFare", PapyrusClass, GetCarriageFare);
@@ -849,17 +721,14 @@ bool DNT::Papyrus::Register(RE::BSScript::IVirtualMachine* a_vm)
     a_vm->RegisterFunction("RequestDialogueClose", PapyrusClass, RequestDialogueClose);
     a_vm->RegisterFunction("BeginRequest", PapyrusClass, BeginRequest);
     a_vm->RegisterFunction("SetSourceLabel", PapyrusClass, SetSourceLabel);
-    a_vm->RegisterFunction("SetOverlayTexture", PapyrusClass, SetOverlayTexture);
     a_vm->RegisterFunction("SetMarkerTextures", PapyrusClass, SetMarkerTextures);
     a_vm->RegisterFunction("SetOriginMarkerTexture", PapyrusClass, SetOriginMarkerTexture);
     a_vm->RegisterFunction("SetSelectionRingTexture", PapyrusClass, SetSelectionRingTexture);
     a_vm->RegisterFunction("SetSelectionRingScale", PapyrusClass, SetSelectionRingScale);
     a_vm->RegisterFunction("SetPaymentLabelPosition", PapyrusClass, SetPaymentLabelPosition);
     a_vm->RegisterFunction("SetRouteOrigin", PapyrusClass, SetRouteOrigin);
-    a_vm->RegisterFunction("AddRouteSegment", PapyrusClass, AddRouteSegment);
     a_vm->RegisterFunction("AddRouteLandmark", PapyrusClass, AddRouteLandmark);
     a_vm->RegisterFunction("AddDestination", PapyrusClass, AddDestination);
-    a_vm->RegisterFunction("AddStyledDestination", PapyrusClass, AddStyledDestination);
     a_vm->RegisterFunction("SetDestinationMarkerTexture", PapyrusClass, SetDestinationMarkerTexture);
     a_vm->RegisterFunction("SetDestinationSelectionRingTexture", PapyrusClass, SetDestinationSelectionRingTexture);
     a_vm->RegisterFunction("SetDestinationMarkerScale", PapyrusClass, SetDestinationMarkerScale);
@@ -867,6 +736,5 @@ bool DNT::Papyrus::Register(RE::BSScript::IVirtualMachine* a_vm)
     a_vm->RegisterFunction("Show", PapyrusClass, Show);
     a_vm->RegisterFunction("Cancel", PapyrusClass, Cancel);
     a_vm->RegisterFunction("PlayPresentation", PapyrusClass, PlayPresentation);
-    a_vm->RegisterFunction("PlayVoiceProbe", PapyrusClass, PlayVoiceProbe);
     return true;
 }

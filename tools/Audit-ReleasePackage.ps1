@@ -46,8 +46,8 @@ $sequences = @(Get-ChildItem -LiteralPath $package -Recurse -File -Filter "*.seq
 if ($sequences.Count -ne 1 -or $sequences[0].Name -ne "DiegeticTravel.seq") {
     throw "Release must contain exactly one combined SEQ: DiegeticTravel.seq"
 }
-if ((Get-Item -LiteralPath $seq).Length -ne (18 * 4)) {
-    throw "Combined SEQ must contain exactly 18 FormIDs"
+if ((Get-Item -LiteralPath $seq).Length -ne (17 * 4)) {
+    throw "Combined SEQ must contain exactly 17 FormIDs"
 }
 
 $forbiddenNames = @(
@@ -124,8 +124,8 @@ $sourceRoots = @(
 $expectedScripts = @($sourceRoots | ForEach-Object {
     Get-ChildItem -LiteralPath (Join-Path $projectRoot $_) -File -Filter "DNT_*.psc"
 } | Select-Object -ExpandProperty BaseName -Unique | Sort-Object)
-if ($expectedScripts.Count -ne 26) {
-    throw "Release source inventory changed; expected 26 scripts, found $($expectedScripts.Count)"
+if ($expectedScripts.Count -ne 22) {
+    throw "Release source inventory changed; expected 22 scripts, found $($expectedScripts.Count)"
 }
 foreach ($scriptName in $expectedScripts) {
     foreach ($extension in @("psc", "pex")) {
@@ -139,13 +139,19 @@ foreach ($scriptName in $expectedScripts) {
         }
     }
 }
+$packagedSources = @(Get-ChildItem -LiteralPath (Join-Path $package "Scripts\Source") `
+    -File -Filter "DNT_*.psc" | Select-Object -ExpandProperty BaseName | Sort-Object)
+$packagedScripts = @(Get-ChildItem -LiteralPath (Join-Path $package "Scripts") `
+    -File -Filter "DNT_*.pex" | Select-Object -ExpandProperty BaseName | Sort-Object)
+if (($packagedSources -join "`n") -ne ($expectedScripts -join "`n") -or
+    ($packagedScripts -join "`n") -ne ($expectedScripts -join "`n")) {
+    throw "Release contains an unexpected or stale DNT script"
+}
 
 $dlls = @(Get-ChildItem -LiteralPath $package -Recurse -File -Filter "*.dll")
 if ($dlls.Count -ne 1 -or $dlls[0].Name -ne "DNTParchmentPicker.dll") {
     throw "Release must contain only DNTParchmentPicker.dll"
 }
-$dialogueRuntimePath = Join-Path $package `
-    "SKSE\Plugins\DiegeticTravel\dialogue_runtime.json"
 $travelCatalogPath = Join-Path $package `
     "SKSE\Plugins\DiegeticTravel\travel_catalog.tsv"
 if (-not (Test-Path -LiteralPath $travelCatalogPath -PathType Leaf)) {
@@ -162,44 +168,11 @@ $travelCatalogLocations = @($travelCatalogLines | Where-Object { $_.StartsWith("
 if ($travelCatalogPolicies.Count -ne 1 -or $travelCatalogLocations.Count -ne 27) {
     throw "travel_catalog.tsv must contain one policy and 27 carriage locations"
 }
-foreach ($jsonName in @("runtime.json", "dialogue_runtime.json")) {
-    $jsonPath = Join-Path $package "SKSE\Plugins\DiegeticTravel\$jsonName"
-    if (-not (Test-Path -LiteralPath $jsonPath -PathType Leaf)) {
-        throw "Release is missing $jsonName"
+foreach ($obsolete in @("runtime.json", "dialogue_runtime.json")) {
+    $obsoletePath = Join-Path $package "SKSE\Plugins\DiegeticTravel\$obsolete"
+    if (Test-Path -LiteralPath $obsoletePath -PathType Leaf) {
+        throw "Release contains obsolete graph artifact: $obsolete"
     }
-    $null = Get-Content -LiteralPath $jsonPath -Raw | ConvertFrom-Json
-}
-
-# The consolidated core generator reserves 0x900-0x9FF for every form that is
-# embedded in dialogue_runtime.json. A stale xEdit load-order mapping once
-# emitted otherwise-plausible 0x800-range references; the ESP passed Check for
-# Errors, but JContainers resolved those references to None at runtime and the
-# carriage parchment could not open. Keep this a package-level invariant.
-$dialogueRuntimeRaw = Get-Content -LiteralPath $dialogueRuntimePath -Raw
-$dialogueRuntime = $dialogueRuntimeRaw | ConvertFrom-Json
-$selfFormMatches = [regex]::Matches(
-    $dialogueRuntimeRaw,
-    '__formData\|DiegeticTravel\.esp\|0x([0-9A-Fa-f]{6})'
-)
-if ($selfFormMatches.Count -eq 0) {
-    throw "dialogue_runtime.json contains no DiegeticTravel form references"
-}
-foreach ($match in $selfFormMatches) {
-    $objectId = [Convert]::ToUInt32($match.Groups[1].Value, 16)
-    if ($objectId -lt 0x900 -or $objectId -ge 0xA00) {
-        throw (
-            "dialogue_runtime.json contains a stale core FormID: 0x{0:X6}" -f `
-                $objectId
-        )
-    }
-}
-$originServices = @($dialogueRuntime.origin_services)
-if ($originServices.Count -ne 9) {
-    throw "dialogue_runtime.json must contain exactly 9 carriage origin services"
-}
-$serviceRefs = @($originServices | Select-Object -ExpandProperty service -Unique)
-if ($serviceRefs.Count -ne $originServices.Count) {
-    throw "dialogue_runtime.json contains duplicate carriage service references"
 }
 
 $auditRoot = Join-Path $buildRoot "release-check-for-errors"
@@ -284,9 +257,9 @@ $xeditReport = @(Get-Content -LiteralPath $xeditReportPath)
 foreach ($expectedLine in @(
     "PASS masters=6",
     "PASS esl=true",
-    "PASS start_game_quests=18",
+    "PASS start_game_quests=17",
     "PASS origin_services=9",
-    "PASS critical_quest_scripts=9"
+    "PASS critical_quest_scripts=8"
 )) {
     if ($expectedLine -notin $xeditReport) {
         throw "Consolidated xEdit audit omitted: $expectedLine"
@@ -298,7 +271,7 @@ $lines = @(
     "PASS esl_flag=true",
     ("PASS next_object_id=0x{0:X}" -f $nextObjectId),
     "PASS masters=$($masters -join ',')",
-    "PASS seq_quests=18",
+    "PASS seq_quests=17",
     "PASS papyrus_scripts=$($expectedScripts.Count)",
     "PASS native_dll=DNTParchmentPicker.dll",
     "PASS xedit_semantic_audit=true"
