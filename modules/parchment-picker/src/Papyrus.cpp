@@ -2,6 +2,17 @@
 
 #include "DNT/ParchmentCore.h"
 #include "DNT/ParchmentMenu.h"
+#include "DNT/TravelRuntime.h"
+
+#include <algorithm>
+#include <chrono>
+#include <cctype>
+#include <format>
+#include <mutex>
+#include <string>
+#include <string_view>
+#include <unordered_map>
+#include <vector>
 
 namespace
 {
@@ -16,6 +27,120 @@ namespace
     constexpr std::string_view MirabelleProbeSubtitle =
         "Very good. Then we're done here.";
     constexpr float MirabelleProbeDurationSeconds = 2.147846F;
+
+    std::mutex carriageRequestLock;
+    std::unordered_map<std::string, std::vector<std::string>> carriageRequestDestinations;
+
+    [[nodiscard]] std::string NormalizeTravelId(const std::string_view a_id)
+    {
+        std::string normalized(a_id);
+        std::ranges::transform(normalized, normalized.begin(), [](const unsigned char a_character) {
+            return static_cast<char>(std::tolower(a_character));
+        });
+        return normalized;
+    }
+
+    struct CarriageMarkerStyle
+    {
+        std::string_view texture;
+        float markerScale{ 0.80F };
+        float ringOffsetX{ 0.0211F };
+        float ringOffsetY{ 0.1529F };
+        float ringScale{ 1.0F };
+    };
+
+    [[nodiscard]] bool IsOneWayCarriageDestination(const std::string_view a_destinationId)
+    {
+        return a_destinationId == "darkwater_crossing" ||
+               a_destinationId == "mixwater_mill" ||
+               a_destinationId == "halfmoon_mill" ||
+               a_destinationId == "karthwasten" ||
+               a_destinationId == "soljunds_sinkhole" ||
+               a_destinationId == "shors_stone" ||
+               a_destinationId == "heartwood_mill" ||
+               a_destinationId == "stonehills";
+    }
+
+    [[nodiscard]] std::string_view GetCarriageSourceLabel(const std::string_view a_originId)
+    {
+        if (a_originId == "dawnstar") return "Dawnstar";
+        if (a_originId == "falkreath") return "Falkreath";
+        if (a_originId == "markarth") return "Markarth";
+        if (a_originId == "morthal") return "Morthal";
+        if (a_originId == "riften") return "Riften";
+        if (a_originId == "solitude") return "Solitude";
+        if (a_originId == "whiterun") return "Whiterun";
+        if (a_originId == "windhelm") return "Windhelm";
+        if (a_originId == "winterhold") return "Winterhold";
+        return {};
+    }
+
+    [[nodiscard]] CarriageMarkerStyle GetCarriageMarkerStyle(const std::string_view a_id)
+    {
+        if (a_id == "dawnstar") return { "Data/textures/DiegeticTravel/norden-dawnstar-capital.dds", 1.01F, 0.0F, -0.0474F, 0.86F };
+        if (a_id == "falkreath") return { "Data/textures/DiegeticTravel/norden-falkreath-capital.dds", 0.96F, 0.0316F, -0.1107F, 0.89F };
+        if (a_id == "markarth") return { "Data/textures/DiegeticTravel/norden-markarth-capital.dds", 0.95F, 0.0F, -0.1107F, 0.89F };
+        if (a_id == "morthal") return { "Data/textures/DiegeticTravel/norden-morthal-capital.dds", 0.95F, 0.0F, -0.0896F, 0.92F };
+        if (a_id == "riften") return { "Data/textures/DiegeticTravel/norden-riften-capital.dds", 0.99F, 0.0F, -0.0580F, 0.88F };
+        if (a_id == "solitude") return { "Data/textures/DiegeticTravel/norden-solitude-capital.dds", 1.0F, 0.0F, -0.0474F, 0.85F };
+        if (a_id == "whiterun") return { "Data/textures/DiegeticTravel/norden-whiterun-capital.dds", 1.0F, 0.0316F, -0.0474F, 0.88F };
+        if (a_id == "windhelm") return { "Data/textures/DiegeticTravel/norden-windhelm-capital.dds", 0.93F, 0.0316F, -0.1001F, 0.89F };
+        if (a_id == "winterhold") return { "Data/textures/DiegeticTravel/norden-winterhold-capital.dds", 0.96F, 0.0211F, -0.0580F, 0.89F };
+        if (a_id == "mixwater_mill" || a_id == "halfmoon_mill" || a_id == "heartwood_mill") {
+            return { "Data/textures/DiegeticTravel/norden-wood-mill.dds", 0.73F, -0.0105F, 0.0791F, 1.09F };
+        }
+        if (a_id == "soljunds_sinkhole") {
+            return { "Data/textures/DiegeticTravel/norden-mine.dds", 0.78F, -0.0105F, 0.0791F, 1.02F };
+        }
+        if (a_id == "lakeview_manor" || a_id == "heljarchen_hall" || a_id == "winstad_manor") {
+            return { "Data/textures/DiegeticTravel/norden-farm.dds", 0.78F, -0.0422F, -0.0158F, 1.04F };
+        }
+        if (a_id == "darkwater_crossing" || a_id == "kynesgrove" || a_id == "karthwasten" || a_id == "shors_stone" || a_id == "stonehills") {
+            return { "Data/textures/DiegeticTravel/norden-settlement.dds", 0.80F, 0.0105F, 0.1107F, 1.0F };
+        }
+        return { "Data/textures/DiegeticTravel/norden-town.dds", 0.80F, 0.0211F, 0.1529F, 1.0F };
+    }
+
+    [[nodiscard]] RE::TESObjectREFR* ResolveArrivalMarker(const DNT::Travel::Location& a_location)
+    {
+        auto* const dataHandler = RE::TESDataHandler::GetSingleton();
+        if (!dataHandler || a_location.arrivalMarker.plugin.empty()) {
+            return nullptr;
+        }
+        return dataHandler->LookupForm<RE::TESObjectREFR>(
+            a_location.arrivalMarker.localFormId,
+            a_location.arrivalMarker.plugin);
+    }
+
+    [[nodiscard]] bool IsCarriageLocationAvailable(const DNT::Travel::Location& a_location)
+    {
+        auto* const marker = ResolveArrivalMarker(a_location);
+        if (!marker) {
+            return false;
+        }
+        return a_location.availability != DNT::Travel::Availability::kQuestLocked || !marker->IsDisabled();
+    }
+
+    [[nodiscard]] std::optional<DNT::Travel::Quote> GetAvailableCarriageQuote(
+        const std::string_view a_originId,
+        const std::string_view a_destinationId,
+        const bool a_freeRide)
+    {
+        const auto originId = NormalizeTravelId(a_originId);
+        const auto destinationId = NormalizeTravelId(a_destinationId);
+        const auto locations = DNT::TravelRuntime::GetShadowLocations();
+        const auto location = std::ranges::find_if(locations, [&](const auto& candidate) {
+            return candidate.id == destinationId;
+        });
+        if (location == locations.end() || !IsCarriageLocationAvailable(*location)) {
+            return std::nullopt;
+        }
+        return DNT::TravelRuntime::EstimateShadowQuote(
+            "carriage",
+            originId,
+            destinationId,
+            DNT::Travel::QuoteOptions{ .freeRide = a_freeRide });
+    }
 
     constexpr std::uint64_t SelectCompileAndRunId(const REL::Version& a_version)
     {
@@ -68,6 +193,216 @@ namespace
     bool IsAvailable(RE::StaticFunctionTag*)
     {
         return DNT::ParchmentMenu::IsAvailable();
+    }
+
+    float GetMonotonicSeconds(RE::StaticFunctionTag*)
+    {
+        static const auto processEpoch = std::chrono::steady_clock::now();
+        return std::chrono::duration<float>(
+            std::chrono::steady_clock::now() - processEpoch).count();
+    }
+
+    bool LogShadowQuote(
+        RE::StaticFunctionTag*,
+        const RE::BSFixedString a_providerId,
+        const RE::BSFixedString a_originId,
+        const RE::BSFixedString a_destinationId,
+        const std::int32_t a_legacyFare,
+        const float a_legacyHours)
+    {
+        const auto quote = DNT::TravelRuntime::EstimateShadowQuote(
+            a_providerId.c_str(),
+            a_originId.c_str(),
+            a_destinationId.c_str());
+        if (!quote) {
+            logger::warn(
+                "TRAVEL_SHADOW_QUOTE_MISSING provider={} origin={} destination={}",
+                a_providerId.c_str(),
+                a_originId.c_str(),
+                a_destinationId.c_str());
+            return false;
+        }
+        logger::info(
+            "TRAVEL_SHADOW_QUOTE provider={} origin={} destination={} legacy_fare={} native_fare={} fare_delta={} legacy_hours={:.3f} native_hours={:.3f} hours_delta={:.3f}",
+            a_providerId.c_str(),
+            a_originId.c_str(),
+            a_destinationId.c_str(),
+            a_legacyFare,
+            quote->fare,
+            quote->fare - a_legacyFare,
+            a_legacyHours,
+            quote->hours,
+            quote->hours - a_legacyHours);
+        return true;
+    }
+
+    std::int32_t BuildCarriageRequest(
+        RE::StaticFunctionTag*,
+        const RE::BSFixedString a_requestId,
+        const RE::BSFixedString a_originId,
+        RE::TESObjectREFR* a_source,
+        const bool a_freeRide)
+    {
+        const auto startedAt = std::chrono::steady_clock::now();
+        const std::string requestId = a_requestId.c_str();
+        const auto originId = NormalizeTravelId(a_originId.c_str());
+        if (requestId.empty() || originId.empty() || !a_source ||
+            !DNT::ParchmentMenu::IsAvailable() ||
+            !DNT::TravelRuntime::IsShadowCatalogReady()) {
+            logger::warn(
+                "CARRIAGE_NATIVE_REQUEST_REJECT request={} origin={} source={} menu_ready={} catalog_ready={}",
+                requestId,
+                originId,
+                a_source ? a_source->GetFormID() : 0,
+                DNT::ParchmentMenu::IsAvailable(),
+                DNT::TravelRuntime::IsShadowCatalogReady());
+            return -1;
+        }
+
+        if (!DNT::ParchmentMenu::BeginRequest(
+                requestId,
+                "carriage",
+                a_source,
+                "Data/textures/terrain/tamriel/skyrim.dds",
+                1.414075F,
+                0.088379F,
+                0.187012F,
+                0.932129F,
+                0.783691F)) {
+            logger::warn("CARRIAGE_NATIVE_REQUEST_REJECT request={} origin={} reason=begin_failed", requestId, originId);
+            return -1;
+        }
+
+        bool configured = true;
+        configured = DNT::ParchmentMenu::SetSourceLabel(requestId, GetCarriageSourceLabel(originId)) && configured;
+        configured = DNT::ParchmentMenu::SetPaymentLabelPosition(requestId, 0.615551F, 0.922189F) && configured;
+        configured = DNT::ParchmentMenu::SetMarkerTextures(
+                         requestId,
+                         "Data/textures/DiegeticTravel/norden-town.dds",
+                         "Data/textures/DiegeticTravel/norden-town.dds") && configured;
+        configured = DNT::ParchmentMenu::SetSelectionRingTexture(
+                         requestId,
+                         "Data/textures/DiegeticTravel/thin-circle-selection-ring.dds") && configured;
+
+        std::vector<std::string> destinationIds;
+        const auto locations = DNT::TravelRuntime::GetShadowLocations();
+        destinationIds.reserve(locations.size());
+        for (const auto& location : locations) {
+            if (location.id == originId || !IsCarriageLocationAvailable(location)) {
+                continue;
+            }
+            const auto quote = DNT::TravelRuntime::EstimateShadowQuote(
+                "carriage",
+                originId,
+                location.id,
+                DNT::Travel::QuoteOptions{ .freeRide = a_freeRide });
+            if (!quote) {
+                logger::warn(
+                    "CARRIAGE_NATIVE_DESTINATION_SKIPPED request={} origin={} destination={} reason=quote_missing",
+                    requestId,
+                    originId,
+                    location.id);
+                continue;
+            }
+
+            const auto style = GetCarriageMarkerStyle(location.id);
+            const auto label = std::format("{} ({:.1f} hours) ", location.name, quote->hours);
+            bool added = DNT::ParchmentMenu::AddStyledDestination(
+                requestId,
+                location.id,
+                label,
+                quote->fare,
+                location.normalizedX,
+                location.normalizedY,
+                style.texture,
+                style.markerScale,
+                style.ringOffsetX,
+                style.ringOffsetY,
+                style.ringScale);
+            if (added && location.availability == DNT::Travel::Availability::kOneWay) {
+                added = DNT::ParchmentMenu::SetDestinationSelectionRingTexture(
+                    requestId,
+                    location.id,
+                    "Data/textures/DiegeticTravel/thin-circle-oneway-selection-ring.dds");
+            }
+            configured = added && configured;
+            if (added) {
+                destinationIds.push_back(location.id);
+            }
+        }
+
+        if (!configured || destinationIds.empty()) {
+            const bool cancelled = DNT::ParchmentMenu::Cancel(requestId);
+            logger::warn(
+                "CARRIAGE_NATIVE_REQUEST_REJECT request={} origin={} reason=destination_setup configured={} destinations={} cancelled={}",
+                requestId,
+                originId,
+                configured,
+                destinationIds.size(),
+                cancelled);
+            return -1;
+        }
+
+        const auto destinationCount = static_cast<std::int32_t>(destinationIds.size());
+        {
+            std::scoped_lock lock(carriageRequestLock);
+            carriageRequestDestinations.insert_or_assign(requestId, std::move(destinationIds));
+        }
+        const auto buildMs = std::chrono::duration<double, std::milli>(
+            std::chrono::steady_clock::now() - startedAt).count();
+        logger::info(
+            "CARRIAGE_NATIVE_REQUEST_READY request={} origin={} destinations={} free={} build_ms={:.3f}",
+            requestId,
+            originId,
+            destinationCount,
+            a_freeRide,
+            buildMs);
+        return destinationCount;
+    }
+
+    RE::BSFixedString ConsumeCarriageSelectionId(
+        RE::StaticFunctionTag*,
+        const RE::BSFixedString a_requestId,
+        const std::int32_t a_selectionIndex)
+    {
+        std::string destinationId;
+        {
+            std::scoped_lock lock(carriageRequestLock);
+            const auto request = carriageRequestDestinations.find(a_requestId.c_str());
+            if (request != carriageRequestDestinations.end()) {
+                if (a_selectionIndex >= 0 &&
+                    static_cast<std::size_t>(a_selectionIndex) < request->second.size()) {
+                    destinationId = request->second[static_cast<std::size_t>(a_selectionIndex)];
+                }
+                carriageRequestDestinations.erase(request);
+            }
+        }
+        return RE::BSFixedString(destinationId.c_str());
+    }
+
+    std::int32_t GetCarriageFare(
+        RE::StaticFunctionTag*,
+        const RE::BSFixedString a_originId,
+        const RE::BSFixedString a_destinationId,
+        const bool a_freeRide)
+    {
+        const auto quote = GetAvailableCarriageQuote(
+            a_originId.c_str(),
+            a_destinationId.c_str(),
+            a_freeRide);
+        return quote ? quote->fare : -1;
+    }
+
+    float GetCarriageHours(
+        RE::StaticFunctionTag*,
+        const RE::BSFixedString a_originId,
+        const RE::BSFixedString a_destinationId)
+    {
+        const auto quote = GetAvailableCarriageQuote(
+            a_originId.c_str(),
+            a_destinationId.c_str(),
+            false);
+        return quote ? quote->hours : -1.0F;
     }
 
     bool RequestDialogueClose(RE::StaticFunctionTag*)
@@ -505,6 +840,12 @@ namespace
 bool DNT::Papyrus::Register(RE::BSScript::IVirtualMachine* a_vm)
 {
     a_vm->RegisterFunction("IsAvailable", PapyrusClass, IsAvailable);
+    a_vm->RegisterFunction("GetMonotonicSeconds", PapyrusClass, GetMonotonicSeconds);
+    a_vm->RegisterFunction("LogShadowQuote", PapyrusClass, LogShadowQuote);
+    a_vm->RegisterFunction("BuildCarriageRequest", PapyrusClass, BuildCarriageRequest);
+    a_vm->RegisterFunction("ConsumeCarriageSelectionId", PapyrusClass, ConsumeCarriageSelectionId);
+    a_vm->RegisterFunction("GetCarriageFare", PapyrusClass, GetCarriageFare);
+    a_vm->RegisterFunction("GetCarriageHours", PapyrusClass, GetCarriageHours);
     a_vm->RegisterFunction("RequestDialogueClose", PapyrusClass, RequestDialogueClose);
     a_vm->RegisterFunction("BeginRequest", PapyrusClass, BeginRequest);
     a_vm->RegisterFunction("SetSourceLabel", PapyrusClass, SetSourceLabel);

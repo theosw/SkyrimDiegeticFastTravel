@@ -12,6 +12,10 @@ String Property DialoguePath = "Data/SKSE/Plugins/DiegeticTravel/dialogue_runtim
 
 Int _dialogue
 
+Bool Function IsFreeRideForSpeaker(Actor speaker)
+    Return KmodCarriageFreeFaction && speaker && speaker.IsInFaction(KmodCarriageFreeFaction)
+EndFunction
+
 ObjectReference Function GetCarriageDestinationMarker(String destinationId)
     ; These are CFTO's own ground-level XMarkerHeading arrival references.
     ; Resolve them dynamically so the beta does not serialize 27 new quest
@@ -148,6 +152,7 @@ Int Function GetEntries()
 EndFunction
 
 Int Function RefreshQuotes(Bool freeRide = False)
+    Float refreshStartedAt = DNT_ParchmentNative.GetMonotonicSeconds()
     Int entries = GetEntries()
     If entries == 0
         Return 0
@@ -163,6 +168,8 @@ Int Function RefreshQuotes(Bool freeRide = False)
         index += 1
     EndWhile
     RouteService.EndQuoteBatch()
+    Float refreshMs = (DNT_ParchmentNative.GetMonotonicSeconds() - refreshStartedAt) * 1000.0
+    Debug.Trace("[DNT] QUOTE_BATCH_COMPLETE origin=" + OriginId + " entries=" + JArray.count(entries) + " available=" + availableCount + " free=" + freeRide + " duration_ms=" + refreshMs)
     Return availableCount
 EndFunction
 
@@ -240,19 +247,16 @@ Bool Function RefreshQuote(Int index, Bool freeRide = False)
         Return False
     EndIf
 
-    Bool available = RouteService.IsDestinationAvailable(JMap.getStr(entry, "destination"))
-    If available
-        available = RouteService.QuoteCarriageRoute(JMap.getStr(entry, "route"))
-    EndIf
+    String destinationId = JMap.getStr(entry, "destination")
+    Int nativeFare = DNT_ParchmentNative.GetCarriageFare(OriginId, destinationId, freeRide)
+    Float nativeHours = DNT_ParchmentNative.GetCarriageHours(OriginId, destinationId)
+    Bool available = nativeFare >= 0 && nativeHours >= 0.0
 
     If available
         availableGlobal.SetValueInt(1)
-        If freeRide
-            costGlobal.SetValueInt(0)
-        Else
-            costGlobal.SetValueInt(RouteService.GetLastFare())
-        EndIf
-        hoursGlobal.SetValue(RouteService.GetLastHours())
+        costGlobal.SetValueInt(nativeFare)
+        hoursGlobal.SetValue(nativeHours)
+        Debug.Trace("[DNT] NATIVE_QUOTE_PUBLISHED origin=" + OriginId + " destination=" + destinationId + " fare=" + nativeFare + " hours=" + nativeHours + " free=" + freeRide)
     Else
         availableGlobal.SetValueInt(0)
         costGlobal.SetValueInt(0)
@@ -269,22 +273,21 @@ Int Function RefreshQuotesForSpeaker(Actor speaker)
     Return RefreshQuotes(freeRide)
 EndFunction
 
-Bool Function Purchase(Int index, Actor speaker)
+Bool Function CommitDestination(String destinationId, Actor speaker, Int cftoDestination = 0)
     If !speaker
         Debug.Trace("[DNT] PURCHASE_BLOCKED origin=" + OriginId + " reason=speaker_none", 2)
         Return False
     EndIf
 
     Bool freeRide = KmodCarriageFreeFaction && speaker.IsInFaction(KmodCarriageFreeFaction)
-    If !RefreshQuote(index, freeRide)
-        Debug.Trace("[DNT] PURCHASE_BLOCKED origin=" + OriginId + " reason=route index=" + index, 2)
-        Debug.Notification("That route is not safe enough to run right now.")
+    Int fare = DNT_ParchmentNative.GetCarriageFare(OriginId, destinationId, freeRide)
+    Float hours = DNT_ParchmentNative.GetCarriageHours(OriginId, destinationId)
+    If fare < 0 || hours < 0.0
+        Debug.Trace("[DNT] PURCHASE_BLOCKED origin=" + OriginId + " destination=" + destinationId + " reason=native_quote", 2)
+        Debug.Notification("Carriage travel to that destination is unavailable.")
         Return False
     EndIf
 
-    Int entries = GetEntries()
-    Int entry = JArray.getObj(entries, index)
-    String destinationId = JMap.getStr(entry, "destination")
     ObjectReference destinationMarker = GetCarriageDestinationMarker(destinationId)
     If !destinationMarker
         Debug.Trace("[DNT] PURCHASE_BLOCKED origin=" + OriginId + " destination=" + destinationId + " reason=destination_marker", 2)
@@ -292,8 +295,6 @@ Bool Function Purchase(Int index, Actor speaker)
         Return False
     EndIf
 
-    GlobalVariable costGlobal = JMap.getForm(entry, "cost_global") as GlobalVariable
-    Int fare = costGlobal.GetValueInt()
     If !freeRide && PlayerRef.GetItemCount(Gold001) < fare
         Debug.Trace("[DNT] PURCHASE_BLOCKED origin=" + OriginId + " destination=" + destinationId + " reason=gold fare=" + fare)
         Debug.Notification("You do not have enough gold.")
@@ -308,7 +309,6 @@ Bool Function Purchase(Int index, Actor speaker)
         EndIf
     EndIf
 
-    Int cftoDestination = JMap.getInt(entry, "cfto_destination")
     KmodCarriageDestination.SetValueInt(0)
     Debug.Trace("[DNT] PURCHASE_COMMITTED origin=" + OriginId + " destination=" + destinationId + " fare=" + fare + " free=" + freeRide + " cfto_destination=" + cftoDestination + " execution=direct speaker=" + speaker)
     ExecuteDirectCarriageTravel(destinationMarker)
@@ -316,12 +316,22 @@ Bool Function Purchase(Int index, Actor speaker)
     Return True
 EndFunction
 
-Bool Function PurchaseDestination(String destinationId, Actor speaker)
-    Int index = FindEntryIndex(destinationId)
-    If index >= 0
-        Return Purchase(index, speaker)
+Bool Function Purchase(Int index, Actor speaker)
+    Int entries = GetEntries()
+    If entries == 0 || index < 0 || index >= JArray.count(entries)
+        Debug.Trace("[DNT] PURCHASE_BLOCKED origin=" + OriginId + " reason=entry index=" + index, 2)
+        Debug.Notification("Carriage travel to that destination is unavailable.")
+        Return False
     EndIf
 
-    Debug.Trace("[DNT] Destination is not available from " + OriginId + ": " + destinationId, 2)
-    Return False
+    Int entry = JArray.getObj(entries, index)
+    String destinationId = JMap.getStr(entry, "destination")
+    Int cftoDestination = JMap.getInt(entry, "cfto_destination")
+    Return CommitDestination(destinationId, speaker, cftoDestination)
+EndFunction
+
+Bool Function PurchaseDestination(String destinationId, Actor speaker)
+    ; The parchment picker already returns a validated native-catalogue ID.
+    ; Do not route it back through the legacy dialogue manifest/index layer.
+    Return CommitDestination(destinationId, speaker)
 EndFunction

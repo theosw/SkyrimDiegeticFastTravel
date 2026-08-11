@@ -518,6 +518,48 @@ namespace
         Require(error == "destination limit exceeded", "capacity rejection should explain the limit");
     }
 
+    void TestDirectionalDestinationNavigation()
+    {
+        DNT::Parchment::Request request{
+            .requestId = "controller-navigation",
+            .providerId = "carriage",
+            .sourceLabel = "Dawnstar",
+            .texturePath = "Data/textures/DiegeticTravel/map.dds",
+            .artAspectRatio = 1.5F,
+            .destinations = {
+                { "left", "Left", 50, 0.10F, 0.50F },
+                { "center", "Center", 50, 0.50F, 0.50F },
+                { "right", "Right", 50, 0.90F, 0.50F },
+                { "upper", "Upper", 50, 0.50F, 0.10F },
+                { "lower", "Lower", 50, 0.50F, 0.90F }
+            }
+        };
+
+        const auto enterFromLeft = DNT::Parchment::FindDirectionalDestination(
+            request, std::nullopt, 1.0F, 0.0F);
+        Require(enterFromLeft && *enterFromLeft == 0,
+            "first right press should enter from the left edge without a default focus");
+
+        const auto moveRight = DNT::Parchment::FindDirectionalDestination(
+            request, enterFromLeft, 1.0F, 0.0F);
+        Require(moveRight && *moveRight == 1,
+            "right navigation should choose the nearest aligned destination");
+
+        const auto moveDown = DNT::Parchment::FindDirectionalDestination(
+            request, moveRight, 0.0F, 1.0F);
+        Require(moveDown && *moveDown == 4,
+            "down navigation should follow normalized map coordinates");
+
+        const auto noDestinationBelow = DNT::Parchment::FindDirectionalDestination(
+            request, moveDown, 0.0F, 1.0F);
+        Require(!noDestinationBelow,
+            "directional navigation should stop at a map edge instead of wrapping unexpectedly");
+
+        Require(!DNT::Parchment::FindDirectionalDestination(
+            request, std::nullopt, 0.0F, 0.0F),
+            "zero-length navigation input must be ignored");
+    }
+
     void TestPresentationValidation()
     {
         constexpr float mirabelleDuration = 2.147846F;
@@ -576,6 +618,7 @@ int main()
     TestMarkerCentersRemainOnArt();
     TestDestinationHitAreasDoNotOverlap();
     TestDestinationCapacitySupportsFullCarriageSheet();
+    TestDirectionalDestinationNavigation();
     TestPresentationValidation();
     std::cout << "DNTParchmentCoreTests: all checks passed\n";
     return EXIT_SUCCESS;

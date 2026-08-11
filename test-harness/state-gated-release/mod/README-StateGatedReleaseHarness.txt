@@ -23,4 +23,7 @@ Apparition Travel setup:
   bat dnt_apparition_remove
 
 The add batch teaches the lesser power. Activate Apparition Travel in game to
-turn instant travel on; use the power again to turn it off.
+turn instant travel on; use the power again to turn it off. Wait for the
+"Apparition Travel dispelled!" message before running dnt_apparition_remove.
+The remove batch only unlearns the power and does not perform the toggle's
+cleanup. Removing it while active can leave fFastTravelSpeedMult at 100000.

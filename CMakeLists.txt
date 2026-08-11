@@ -7,6 +7,7 @@ option(DNT_PARCHMENT_BUILD_TESTS "Build offline parchment-picker tests" ON)
 
 add_library(DNTParchmentCore STATIC
     modules/parchment-picker/src/ParchmentCore.cpp
+    modules/parchment-picker/src/TravelCatalog.cpp
 )
 target_compile_features(DNTParchmentCore PUBLIC cxx_std_23)
 target_include_directories(DNTParchmentCore PUBLIC
@@ -50,6 +51,7 @@ if(DNT_PARCHMENT_BUILD_PLUGIN)
             modules/parchment-picker/src/Papyrus.cpp
             modules/parchment-picker/src/ParchmentMenu.cpp
             modules/parchment-picker/src/Plugin.cpp
+            modules/parchment-picker/src/TravelRuntime.cpp
     )
     target_compile_features(DNTParchmentPicker PRIVATE cxx_std_23)
     target_compile_options(DNTParchmentPicker PRIVATE /W4 /permissive- /Zc:preprocessor)
@@ -67,9 +69,10 @@ if(DNT_PARCHMENT_BUILD_PLUGIN)
         COMMAND "${CMAKE_COMMAND}" -E copy_if_different
             "$<TARGET_FILE:DNTParchmentPicker>"
             "${CMAKE_CURRENT_SOURCE_DIR}/modules/parchment-picker/mod/SKSE/Plugins/$<TARGET_FILE_NAME:DNTParchmentPicker>"
-        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-            "$<TARGET_PDB_FILE:DNTParchmentPicker>"
-            "${CMAKE_CURRENT_SOURCE_DIR}/modules/parchment-picker/mod/SKSE/Plugins/$<TARGET_PDB_FILE_NAME:DNTParchmentPicker>"
+        COMMAND "${CMAKE_COMMAND}"
+            "-DSOURCE=$<TARGET_PDB_FILE:DNTParchmentPicker>"
+            "-DDESTINATION=${CMAKE_CURRENT_SOURCE_DIR}/modules/parchment-picker/mod/SKSE/Plugins/$<TARGET_PDB_FILE_NAME:DNTParchmentPicker>"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CopyOptionalBuildArtifact.cmake"
         VERBATIM
     )
 endif()
@@ -82,4 +85,14 @@ if(DNT_PARCHMENT_BUILD_TESTS)
     target_compile_features(DNTParchmentCoreTests PRIVATE cxx_std_23)
     target_link_libraries(DNTParchmentCoreTests PRIVATE DNTParchmentCore)
     add_test(NAME DNTParchmentCoreTests COMMAND DNTParchmentCoreTests)
+
+    add_executable(DNTTravelCatalogTests
+        modules/parchment-picker/tests/TravelCatalogTests.cpp
+    )
+    target_compile_features(DNTTravelCatalogTests PRIVATE cxx_std_23)
+    target_link_libraries(DNTTravelCatalogTests PRIVATE DNTParchmentCore)
+    target_compile_definitions(DNTTravelCatalogTests PRIVATE
+        DNT_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
+    )
+    add_test(NAME DNTTravelCatalogTests COMMAND DNTTravelCatalogTests)
 endif()

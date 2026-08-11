@@ -1,0 +1,32 @@
+# DNT native travel catalogue. Tabs are significant.
+# policy: id, hours per normalized map unit, fare per unit, minimum fare, fare step
+# location: id, display name, map x, map y, marker plugin, local form ID, availability
+schema	1
+policy	carriage	10.0	1600.0	100	50
+location	windhelm	Windhelm	0.793249	0.410699	CFTO.esp	0x0A7B39	open
+location	darkwater_crossing	Darkwater Crossing	0.759376	0.633099	CFTO.esp	0x0B6E4B	one_way
+location	kynesgrove	Kynesgrove	0.794486	0.488185	CFTO.esp	0x0B6E4C	open
+location	mixwater_mill	Mixwater Mill	0.735146	0.545280	CFTO.esp	0x0B6E4D	one_way
+location	falkreath	Falkreath	0.417011	0.800385	CFTO.esp	0x0B6E43	open
+location	riverwood	Riverwood	0.536900	0.667780	CFTO.esp	0x0B6E4E	open
+location	halfmoon_mill	Half-Moon Mill	0.390284	0.710628	CFTO.esp	0x0B6E4F	one_way
+location	lakeview_manor	Lakeview Manor	0.464420	0.746222	CFTO.esp	0x0CB326	quest_locked
+location	markarth	Markarth	0.094238	0.507741	CFTO.esp	0x0B6E44	open
+location	karthwasten	Karthwasten	0.192772	0.401553	CFTO.esp	0x0B6E50	one_way
+location	soljunds_sinkhole	Soljund's Sinkhole	0.225058	0.504729	CFTO.esp	0x0B6E51	one_way
+location	old_hroldan	Old Hroldan	0.231397	0.546434	CFTO.esp	0x0B6E52	open
+location	solitude	Solitude	0.365471	0.191247	CFTO.esp	0x0B6E45	open
+location	dragon_bridge	Dragon Bridge	0.264061	0.259819	CFTO.esp	0x0B6E53	open
+location	whiterun	Whiterun	0.532756	0.548290	CFTO.esp	0x0B6E46	open
+location	rorikstead	Rorikstead	0.300256	0.502491	CFTO.esp	0x0B6E55	open
+location	winterhold	Winterhold	0.741325	0.195923	CFTO.esp	0x0B6E47	open
+location	riften	Riften	0.880078	0.833512	CFTO.esp	0x0B6E48	open
+location	ivarstead	Ivarstead	0.658517	0.729967	CFTO.esp	0x0B6E56	open
+location	shors_stone	Shor's Stone	0.853720	0.717995	CFTO.esp	0x0B6E57	one_way
+location	heartwood_mill	Heartwood Mill	0.784775	0.830702	CFTO.esp	0x0B6E58	one_way
+location	dawnstar	Dawnstar	0.557529	0.185081	CFTO.esp	0x0B6E49	open
+location	nightgate_inn	Nightgate Inn	0.658606	0.377530	CFTO.esp	0x0B6E59	open
+location	heljarchen_hall	Heljarchen Hall	0.562709	0.401255	CFTO.esp	0x0CB328	quest_locked
+location	morthal	Morthal	0.400452	0.311110	CFTO.esp	0x0B6E4A	open
+location	stonehills	Stonehills	0.476818	0.319312	CFTO.esp	0x0B6E5A	one_way
+location	winstad_manor	Windstad Manor	0.441794	0.206062	CFTO.esp	0x0CB327	quest_locked

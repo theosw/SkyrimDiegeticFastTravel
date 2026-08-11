@@ -683,6 +683,71 @@ std::vector<DNT::Parchment::RoutePoint> DNT::Parchment::FindRoutePath(
     return path;
 }
 
+std::optional<std::size_t> DNT::Parchment::FindDirectionalDestination(
+    const Request& a_request,
+    const std::optional<std::size_t> a_currentIndex,
+    const float a_directionX,
+    const float a_directionY)
+{
+    if (a_request.destinations.empty() ||
+        !std::isfinite(a_directionX) || !std::isfinite(a_directionY)) {
+        return std::nullopt;
+    }
+
+    const auto directionLength = std::hypot(a_directionX, a_directionY);
+    if (directionLength <= 0.0001F) {
+        return std::nullopt;
+    }
+    const auto directionX = a_directionX / directionLength;
+    const auto directionY = a_directionY / directionLength;
+
+    std::optional<std::size_t> bestIndex;
+    auto bestScore = std::numeric_limits<float>::max();
+
+    if (!a_currentIndex || *a_currentIndex >= a_request.destinations.size()) {
+        // There is deliberately no default selection. The first navigation
+        // press enters the map from the opposite edge of the requested
+        // direction, preferring a marker near the perpendicular center line.
+        for (std::size_t index = 0; index < a_request.destinations.size(); ++index) {
+            const auto& destination = a_request.destinations[index];
+            const auto projection =
+                destination.normalizedX * directionX + destination.normalizedY * directionY;
+            const auto perpendicularFromCenter = std::abs(
+                (destination.normalizedX - 0.5F) * -directionY +
+                (destination.normalizedY - 0.5F) * directionX);
+            const auto score = projection + perpendicularFromCenter * 0.25F;
+            if (score < bestScore) {
+                bestScore = score;
+                bestIndex = index;
+            }
+        }
+        return bestIndex;
+    }
+
+    const auto& current = a_request.destinations[*a_currentIndex];
+    for (std::size_t index = 0; index < a_request.destinations.size(); ++index) {
+        if (index == *a_currentIndex) {
+            continue;
+        }
+        const auto& destination = a_request.destinations[index];
+        const auto deltaX = destination.normalizedX - current.normalizedX;
+        const auto deltaY = destination.normalizedY - current.normalizedY;
+        const auto forward = deltaX * directionX + deltaY * directionY;
+        if (forward <= 0.0001F) {
+            continue;
+        }
+        const auto lateral = std::abs(deltaX * -directionY + deltaY * directionX);
+        // Prefer a nearby marker in the intended direction, with enough
+        // lateral penalty that a more aligned row/column wins naturally.
+        const auto score = forward + lateral * 2.0F;
+        if (score < bestScore) {
+            bestScore = score;
+            bestIndex = index;
+        }
+    }
+    return bestIndex;
+}
+
 bool DNT::Parchment::ValidatePresentation(
     const Presentation& a_presentation,
     std::string& a_error)

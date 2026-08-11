@@ -99,8 +99,12 @@ end;
 
 function JsonFormRef(FormRecord: IInterface): string;
 begin
+  // Records appended to the release seed are allocated from a deliberately
+  // reserved local-ID block. FixedFormID reflects the record identity that
+  // xEdit writes to disk; GetLoadOrderFormID retained the seed's earlier
+  // mapping here and serialized every core reference $100 too low.
   Result := '__formData|' + OutputPluginName + '|0x' +
-    IntToHex(GetLoadOrderFormID(FormRecord) and $00FFFFFF, 6);
+    IntToHex(FixedFormID(FormRecord) and $00FFFFFF, 6);
 end;
 
 function EditorToken(const Value: string): string;
@@ -133,6 +137,33 @@ begin
     raise Exception.Create(
       'Could not create top-level group: ' + RecordSignature
     );
+end;
+
+procedure ReserveNextObjectID(StartObjectID: Cardinal);
+var
+  FileHeader: IInterface;
+  CurrentObjectID: Cardinal;
+begin
+  FileHeader := ElementByIndex(OutputFile, 0);
+  if not Assigned(FileHeader) then
+    raise Exception.Create('Output plugin has no file header');
+  CurrentObjectID := GetElementNativeValues(
+    FileHeader,
+    'HEDR\Next Object ID'
+  );
+  if CurrentObjectID > StartObjectID then
+    raise Exception.Create(
+      'Core FormID range starts at ' + IntToHex(StartObjectID, 6) +
+      ', but the seed already reached ' + IntToHex(CurrentObjectID, 6)
+    );
+  SetElementNativeValues(
+    FileHeader,
+    'HEDR\Next Object ID',
+    StartObjectID
+  );
+  if GetElementNativeValues(FileHeader, 'HEDR\Next Object ID') <>
+    StartObjectID then
+    raise Exception.Create('Could not reserve the core FormID range');
 end;
 
 function ListRecord(List: TStringList; const Key: string): IInterface;
@@ -886,11 +917,20 @@ begin
     Manifest.LoadFromFile(ManifestPath);
     OutputPluginName := Manifest.S['plugin'];
 
-    OutputFile := AddNewFileName(OutputPluginName);
-    if not Assigned(OutputFile) then
-      raise Exception.Create(
-        'Could not create output plugin: ' + OutputPluginName
-      );
+    if GeneratorConfig.B['append_existing'] then begin
+      OutputFile := FileByPluginName(OutputPluginName);
+      if not Assigned(OutputFile) then
+        raise Exception.Create(
+          'Could not find release seed plugin: ' + OutputPluginName
+        );
+      ReserveNextObjectID($000900);
+    end else begin
+      OutputFile := AddNewFileName(OutputPluginName);
+      if not Assigned(OutputFile) then
+        raise Exception.Create(
+          'Could not create output plugin: ' + OutputPluginName
+        );
+    end;
     AddMasterIfMissing(OutputFile, 'Skyrim.esm');
     AddMasterIfMissing(OutputFile, 'Update.esm');
     AddMasterIfMissing(OutputFile, 'Dawnguard.esm');

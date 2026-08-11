@@ -13,7 +13,7 @@ verifies it without launching Skyrim.
 - RUSTIC MAPS `2.0.0.0` for the boat/carriage `battlemap01.dds`
 - Skyrim Paper Map by Caro Tuts for FWMF `1.72.0.0` for the wizard
   `textures/terrain/tamriel/skyrim.dds`
-- `DiegeticTravelWizardGuides.esp` as the travel authority
+- `DiegeticTravel.esp` as the consolidated ESL-flagged travel authority
 
 Every installed payload above is pinned by SHA-256. The lock describes the
 isolated `UltraDiegeticTravel` test profile, not the complete LoreRim modlist.

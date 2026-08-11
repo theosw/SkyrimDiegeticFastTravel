@@ -29,10 +29,21 @@ if ($scripts.Count -ne 4) {
 }
 
 foreach ($script in $scripts) {
-    Write-Host "Compiling $($script.Name)"
-    & $compiler $script.FullName "-f=$flags" "-i=$imports" "-o=$output"
-    if ($LASTEXITCODE -ne 0) {
-        throw "Papyrus compilation failed for $($script.Name)"
+    $attempt = 1
+    while ($true) {
+        Write-Host "Compiling $($script.Name) (attempt $attempt of 3)"
+        & $compiler $script.FullName "-f=$flags" "-i=$imports" "-o=$output"
+        if ($LASTEXITCODE -eq 0) {
+            break
+        }
+        if ($attempt -ge 3) {
+            throw "Papyrus compilation failed for $($script.Name)"
+        }
+        # Windows Defender can briefly retain a newly emitted PEX while the
+        # preceding script is scanned. A bounded retry keeps release builds
+        # deterministic without deleting or replacing the last good output.
+        Start-Sleep -Milliseconds 750
+        $attempt += 1
     }
 }
 

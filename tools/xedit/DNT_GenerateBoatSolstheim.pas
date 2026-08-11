@@ -12,6 +12,7 @@ const
 var
   OutputFile, SkyrimFile, DawnguardFile, CftoFile: IInterface;
   StatusPath, ErrorPath, PluginOutputPath, SeqFormIDsPath: string;
+  ReleaseMode: Boolean;
 
 procedure WriteTextFile(const Path, TextValue: string);
 var
@@ -76,6 +77,28 @@ begin
     raise Exception.Create(
       'Could not create top-level group: ' + RecordSignature
     );
+end;
+
+procedure ReserveNextObjectID(StartObjectID: Cardinal);
+var
+  FileHeader: IInterface;
+  CurrentObjectID: Cardinal;
+begin
+  FileHeader := ElementByIndex(OutputFile, 0);
+  CurrentObjectID := GetElementNativeValues(
+    FileHeader,
+    'HEDR\Next Object ID'
+  );
+  if CurrentObjectID > StartObjectID then
+    raise Exception.Create(
+      'Solstheim FormID range is already occupied: ' +
+      IntToHex(CurrentObjectID, 6)
+    );
+  SetElementNativeValues(
+    FileHeader,
+    'HEDR\Next Object ID',
+    StartObjectID
+  );
 end;
 
 function AddScript(
@@ -350,12 +373,22 @@ var
   BoatQuest, ServiceScript, PickerScript: IInterface;
 begin
   Result := 1;
+  ReleaseMode := FileExists(
+    ScriptsPath + '..\..\build\consolidated-release.mode'
+  );
   StatusPath := ScriptsPath + '..\..\build\boat-solstheim.status';
   ErrorPath := ScriptsPath + '..\..\build\boat-solstheim.error';
-  PluginOutputPath := ScriptsPath +
-    '..\..\modules\boat-solstheim\mod\DiegeticTravelBoatSolstheim.esp';
-  SeqFormIDsPath := ScriptsPath +
-    '..\..\build\boat-solstheim-seq-formids.txt';
+  if ReleaseMode then begin
+    PluginOutputPath := ScriptsPath +
+      '..\..\build\release\DiegeticTravel.esp';
+    SeqFormIDsPath := ScriptsPath +
+      '..\..\build\release-boat-solstheim-seq-formids.txt';
+  end else begin
+    PluginOutputPath := ScriptsPath +
+      '..\..\modules\boat-solstheim\mod\DiegeticTravelBoatSolstheim.esp';
+    SeqFormIDsPath := ScriptsPath +
+      '..\..\build\boat-solstheim-seq-formids.txt';
+  end;
   WriteTextFile(StatusPath, 'running');
 
   try
@@ -366,15 +399,22 @@ begin
       not Assigned(CftoFile) then
       raise Exception.Create('Required Skyrim, Dawnguard, or CFTO file is missing');
 
-    OutputFile := AddNewFileName(OutputPluginName);
-    if not Assigned(OutputFile) then
-      raise Exception.Create('Could not create ' + OutputPluginName);
-    AddMasterIfMissing(OutputFile, 'Skyrim.esm');
-    AddMasterIfMissing(OutputFile, 'Update.esm');
-    AddMasterIfMissing(OutputFile, 'Dawnguard.esm');
-    AddMasterIfMissing(OutputFile, 'HearthFires.esm');
-    AddMasterIfMissing(OutputFile, 'Dragonborn.esm');
-    AddMasterIfMissing(OutputFile, 'CFTO.esp');
+    if ReleaseMode then begin
+      OutputFile := FileByPluginName('DiegeticTravel.esp');
+      if not Assigned(OutputFile) then
+        raise Exception.Create('Consolidated release plugin is missing');
+      ReserveNextObjectID($000AA0);
+    end else begin
+      OutputFile := AddNewFileName(OutputPluginName);
+      if not Assigned(OutputFile) then
+        raise Exception.Create('Could not create ' + OutputPluginName);
+      AddMasterIfMissing(OutputFile, 'Skyrim.esm');
+      AddMasterIfMissing(OutputFile, 'Update.esm');
+      AddMasterIfMissing(OutputFile, 'Dawnguard.esm');
+      AddMasterIfMissing(OutputFile, 'HearthFires.esm');
+      AddMasterIfMissing(OutputFile, 'Dragonborn.esm');
+      AddMasterIfMissing(OutputFile, 'CFTO.esp');
+    end;
 
     BoatQuest := NewQuest('DNT_BoatSolstheimQuest');
     ServiceScript := AddScript(BoatQuest, 'DNT_SolstheimBoatTravelService');

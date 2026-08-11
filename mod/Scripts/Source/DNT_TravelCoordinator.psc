@@ -91,6 +91,7 @@ Function ClearDestinationGlobals()
 EndFunction
 
 Bool Function PreloadForSpeaker(ObjectReference speakerRef)
+    Float preloadStartedAt = DNT_ParchmentNative.GetMonotonicSeconds()
     Actor speaker = speakerRef as Actor
     DNT_OriginService service = GetOriginService(speaker, False)
     If !service
@@ -107,7 +108,8 @@ Bool Function PreloadForSpeaker(ObjectReference speakerRef)
             waitTicks += 1
         EndWhile
         If _quotesReady && _preparedSpeaker == speaker
-            Debug.Trace("[DNT] MENU_QUOTES_COALESCED speaker=" + speaker + " waitTicks=" + waitTicks)
+            Float coalescedMs = (DNT_ParchmentNative.GetMonotonicSeconds() - preloadStartedAt) * 1000.0
+            Debug.Trace("[DNT] MENU_QUOTES_COALESCED speaker=" + speaker + " waitTicks=" + waitTicks + " duration_ms=" + coalescedMs)
             Return True
         EndIf
         If _quotesPreparing
@@ -123,7 +125,8 @@ Bool Function PreloadForSpeaker(ObjectReference speakerRef)
     Int availableCount = service.RefreshQuotesForSpeaker(speaker)
     _quotesReady = True
     _quotesPreparing = False
-    Debug.Trace("[DNT] MENU_QUOTES_READY origin=" + service.OriginId + " available=" + availableCount + " speaker=" + speaker)
+    Float preloadMs = (DNT_ParchmentNative.GetMonotonicSeconds() - preloadStartedAt) * 1000.0
+    Debug.Trace("[DNT] MENU_QUOTES_READY origin=" + service.OriginId + " available=" + availableCount + " speaker=" + speaker + " duration_ms=" + preloadMs)
     Return True
 EndFunction
 

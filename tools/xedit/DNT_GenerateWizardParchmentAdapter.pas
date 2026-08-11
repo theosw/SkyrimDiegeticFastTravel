@@ -16,6 +16,7 @@ const
 var
   OutputFile, SkyrimFile, WizardFile: IInterface;
   StatusPath, ErrorPath, PluginOutputPath, SeqFormIDsPath: string;
+  ReleaseMode: Boolean;
 
 procedure WriteTextFile(const Path, TextValue: string);
 var
@@ -108,6 +109,28 @@ begin
     raise Exception.Create(
       'Could not create top-level group: ' + RecordSignature
     );
+end;
+
+procedure ReserveNextObjectID(StartObjectID: Cardinal);
+var
+  FileHeader: IInterface;
+  CurrentObjectID: Cardinal;
+begin
+  FileHeader := ElementByIndex(OutputFile, 0);
+  CurrentObjectID := GetElementNativeValues(
+    FileHeader,
+    'HEDR\Next Object ID'
+  );
+  if CurrentObjectID > StartObjectID then
+    raise Exception.Create(
+      'Wizard parchment FormID range is already occupied: ' +
+      IntToHex(CurrentObjectID, 6)
+    );
+  SetElementNativeValues(
+    FileHeader,
+    'HEDR\Next Object ID',
+    StartObjectID
+  );
 end;
 
 function AddScript(
@@ -497,29 +520,47 @@ var
   PickerQuest, PickerScript, WizardService, MirabelleBase: IInterface;
 begin
   Result := 1;
+  ReleaseMode := FileExists(
+    ScriptsPath + '..\..\build\consolidated-release.mode'
+  );
   StatusPath := ScriptsPath + '..\..\build\wizard-parchment.status';
   ErrorPath := ScriptsPath + '..\..\build\wizard-parchment.error';
-  PluginOutputPath := ScriptsPath +
-    '..\..\modules\parchment-picker\mod\DiegeticTravelWizardParchment.esp';
-  SeqFormIDsPath := ScriptsPath +
-    '..\..\build\wizard-parchment-seq-formids.txt';
+  if ReleaseMode then begin
+    PluginOutputPath := ScriptsPath +
+      '..\..\build\release\DiegeticTravel.esp';
+    SeqFormIDsPath := ScriptsPath +
+      '..\..\build\release-wizard-parchment-seq-formids.txt';
+  end else begin
+    PluginOutputPath := ScriptsPath +
+      '..\..\modules\parchment-picker\mod\DiegeticTravelWizardParchment.esp';
+    SeqFormIDsPath := ScriptsPath +
+      '..\..\build\wizard-parchment-seq-formids.txt';
+  end;
   WriteTextFile(StatusPath, 'running');
 
   try
     SkyrimFile := FileByPluginName('Skyrim.esm');
-    WizardFile := FileByPluginName('DiegeticTravelWizardGuides.esp');
+    if ReleaseMode then
+      WizardFile := FileByPluginName('DiegeticTravel.esp')
+    else
+      WizardFile := FileByPluginName('DiegeticTravelWizardGuides.esp');
     if not Assigned(SkyrimFile) or not Assigned(WizardFile) then
       raise Exception.Create('Required Skyrim or wizard plugin is missing');
 
-    OutputFile := AddNewFileName(OutputPluginName);
-    if not Assigned(OutputFile) then
-      raise Exception.Create('Could not create ' + OutputPluginName);
-    AddMasterIfMissing(OutputFile, 'Skyrim.esm');
-    AddMasterIfMissing(OutputFile, 'Update.esm');
-    AddMasterIfMissing(OutputFile, 'Dawnguard.esm');
-    AddMasterIfMissing(OutputFile, 'HearthFires.esm');
-    AddMasterIfMissing(OutputFile, 'Dragonborn.esm');
-    AddMasterIfMissing(OutputFile, 'DiegeticTravelWizardGuides.esp');
+    if ReleaseMode then begin
+      OutputFile := WizardFile;
+      ReserveNextObjectID($000A00);
+    end else begin
+      OutputFile := AddNewFileName(OutputPluginName);
+      if not Assigned(OutputFile) then
+        raise Exception.Create('Could not create ' + OutputPluginName);
+      AddMasterIfMissing(OutputFile, 'Skyrim.esm');
+      AddMasterIfMissing(OutputFile, 'Update.esm');
+      AddMasterIfMissing(OutputFile, 'Dawnguard.esm');
+      AddMasterIfMissing(OutputFile, 'HearthFires.esm');
+      AddMasterIfMissing(OutputFile, 'Dragonborn.esm');
+      AddMasterIfMissing(OutputFile, 'DiegeticTravelWizardGuides.esp');
+    end;
 
     WizardService := RequireRecord(
       WizardFile,

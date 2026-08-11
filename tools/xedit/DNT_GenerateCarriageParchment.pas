@@ -11,6 +11,7 @@ const
 var
   OutputFile, CftoFile, CoreFile: IInterface;
   StatusPath, ErrorPath, PluginOutputPath, SeqFormIDsPath: string;
+  ReleaseMode: Boolean;
 
 procedure WriteTextFile(const Path, TextValue: string);
 var
@@ -80,6 +81,28 @@ begin
   Result := GroupBySignature(OutputFile, RecordSignature);
   if not Assigned(Result) then
     Result := Add(OutputFile, RecordSignature, True);
+end;
+
+procedure ReserveNextObjectID(StartObjectID: Cardinal);
+var
+  FileHeader: IInterface;
+  CurrentObjectID: Cardinal;
+begin
+  FileHeader := ElementByIndex(OutputFile, 0);
+  CurrentObjectID := GetElementNativeValues(
+    FileHeader,
+    'HEDR\Next Object ID'
+  );
+  if CurrentObjectID > StartObjectID then
+    raise Exception.Create(
+      'Carriage parchment FormID range is already occupied: ' +
+      IntToHex(CurrentObjectID, 6)
+    );
+  SetElementNativeValues(
+    FileHeader,
+    'HEDR\Next Object ID',
+    StartObjectID
+  );
 end;
 
 function AddScript(RecordElement: IInterface; const ScriptName: string): IInterface;
@@ -300,12 +323,22 @@ var
   PickerQuest, PickerScript, CoordinatorQuest: IInterface;
 begin
   Result := 1;
+  ReleaseMode := FileExists(
+    ScriptsPath + '..\..\build\consolidated-release.mode'
+  );
   StatusPath := ScriptsPath + '..\..\build\carriage-parchment.status';
   ErrorPath := ScriptsPath + '..\..\build\carriage-parchment.error';
-  PluginOutputPath := ScriptsPath +
-    '..\..\modules\carriage-parchment\mod\DiegeticTravelCarriageParchment.esp';
-  SeqFormIDsPath := ScriptsPath +
-    '..\..\build\carriage-parchment-seq-formids.txt';
+  if ReleaseMode then begin
+    PluginOutputPath := ScriptsPath +
+      '..\..\build\release\DiegeticTravel.esp';
+    SeqFormIDsPath := ScriptsPath +
+      '..\..\build\release-carriage-parchment-seq-formids.txt';
+  end else begin
+    PluginOutputPath := ScriptsPath +
+      '..\..\modules\carriage-parchment\mod\DiegeticTravelCarriageParchment.esp';
+    SeqFormIDsPath := ScriptsPath +
+      '..\..\build\carriage-parchment-seq-formids.txt';
+  end;
   WriteTextFile(StatusPath, 'running');
   try
     CftoFile := FileByPluginName('CFTO.esp');
@@ -318,14 +351,19 @@ begin
       'QUST',
       'DNT_TravelCoordinatorQuest'
     );
-    OutputFile := AddNewFileName(OutputPluginName);
-    AddMasterIfMissing(OutputFile, 'Skyrim.esm');
-    AddMasterIfMissing(OutputFile, 'Update.esm');
-    AddMasterIfMissing(OutputFile, 'Dawnguard.esm');
-    AddMasterIfMissing(OutputFile, 'HearthFires.esm');
-    AddMasterIfMissing(OutputFile, 'Dragonborn.esm');
-    AddMasterIfMissing(OutputFile, 'CFTO.esp');
-    AddMasterIfMissing(OutputFile, 'DiegeticTravel.esp');
+    if ReleaseMode then begin
+      OutputFile := CoreFile;
+      ReserveNextObjectID($000A20);
+    end else begin
+      OutputFile := AddNewFileName(OutputPluginName);
+      AddMasterIfMissing(OutputFile, 'Skyrim.esm');
+      AddMasterIfMissing(OutputFile, 'Update.esm');
+      AddMasterIfMissing(OutputFile, 'Dawnguard.esm');
+      AddMasterIfMissing(OutputFile, 'HearthFires.esm');
+      AddMasterIfMissing(OutputFile, 'Dragonborn.esm');
+      AddMasterIfMissing(OutputFile, 'CFTO.esp');
+      AddMasterIfMissing(OutputFile, 'DiegeticTravel.esp');
+    end;
 
     PickerQuest := NewQuest('DNT_CarriageParchmentQuest');
     PickerScript := AddScript(PickerQuest, 'DNT_CarriageParchmentPicker');

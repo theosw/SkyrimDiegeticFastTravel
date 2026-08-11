@@ -141,6 +141,11 @@ namespace DNT::Parchment
         std::string a_texturePath,
         std::string& a_error);
     [[nodiscard]] std::vector<RoutePoint> FindRoutePath(const Request& a_request, const Destination& a_destination);
+    [[nodiscard]] std::optional<std::size_t> FindDirectionalDestination(
+        const Request& a_request,
+        std::optional<std::size_t> a_currentIndex,
+        float a_directionX,
+        float a_directionY);
     [[nodiscard]] bool ValidateReadyRequest(const Request& a_request, std::string& a_error);
     [[nodiscard]] bool ValidatePresentation(const Presentation& a_presentation, std::string& a_error);
     [[nodiscard]] float PresentationWindowSeconds(float a_voiceDurationSeconds);

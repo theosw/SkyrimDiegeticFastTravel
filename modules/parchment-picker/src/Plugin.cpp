@@ -1,5 +1,6 @@
 #include "DNT/Papyrus.h"
 #include "DNT/ParchmentMenu.h"
+#include "DNT/TravelRuntime.h"
 
 namespace
 {
@@ -24,6 +25,11 @@ namespace
             a_message->type == SKSE::MessagingInterface::kDataLoaded) {
             if (!DNT::ParchmentMenu::IsAvailable() && !DNT::ParchmentMenu::Initialize()) {
                 logger::warn("PARCHMENT_INIT_RETRY_FAILED messageType={}", a_message->type);
+            }
+        }
+        if (a_message->type == SKSE::MessagingInterface::kDataLoaded) {
+            if (!DNT::TravelRuntime::InitializeShadowCatalog()) {
+                logger::warn("TRAVEL_SHADOW_INIT_FAILED behavior=legacy_unchanged");
             }
         }
     }

@@ -1,6 +1,12 @@
 Scriptname DNT_ParchmentNative Hidden
 
 Bool Function IsAvailable() Global Native
+Float Function GetMonotonicSeconds() Global Native
+Bool Function LogShadowQuote(String ProviderId, String OriginId, String DestinationId, Int LegacyFare, Float LegacyHours) Global Native
+Int Function BuildCarriageRequest(String RequestId, String OriginId, ObjectReference SourceRef, Bool FreeRide) Global Native
+String Function ConsumeCarriageSelectionId(String RequestId, Int SelectionIndex) Global Native
+Int Function GetCarriageFare(String OriginId, String DestinationId, Bool FreeRide) Global Native
+Float Function GetCarriageHours(String OriginId, String DestinationId) Global Native
 
 Bool Function RequestDialogueClose() Global Native
 

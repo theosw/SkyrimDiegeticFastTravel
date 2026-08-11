@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <chrono>
 #include <cmath>
 #include <unordered_map>
 #include <unordered_set>
@@ -26,6 +27,9 @@ namespace
         DNT::Parchment::Request request;
         RE::FormID sourceFormId{ 0 };
         bool visible{ false };
+        bool firstFrameReported{ false };
+        std::chrono::steady_clock::time_point beganAt;
+        std::chrono::steady_clock::time_point shownAt;
         std::vector<HiddenHudLayer> hiddenHudLayers;
     };
 
@@ -460,6 +464,8 @@ namespace
     std::mutex requestLock;
     std::optional<ActiveRequest> activeRequest;
     std::atomic_bool navigationFocusEngaged{ false };
+    std::atomic_int32_t controllerFocusedIndex{ -1 };
+    std::atomic_bool leftStickNavigationLatched{ false };
     DNT::MenuFramework::Window* pickerWindow{ nullptr };
     std::int64_t inputRegistration{ -1 };
     DNT::MenuFramework::Texture loadedTexture{ nullptr };
@@ -504,6 +510,9 @@ namespace
                 pickerWindow->isOpen = false;
             }
         }
+        navigationFocusEngaged.store(false, std::memory_order_relaxed);
+        controllerFocusedIndex.store(-1, std::memory_order_relaxed);
+        leftStickNavigationLatched.store(false, std::memory_order_relaxed);
 
         for (auto& layer : finished.hiddenHudLayers) {
             if (layer.rootAlpha) {
@@ -525,11 +534,12 @@ namespace
         if (a_selectionIndex >= 0 &&
             static_cast<std::size_t>(a_selectionIndex) < finished.request.destinations.size()) {
             logger::info(
-                "PARCHMENT_SELECT request={} provider={} destination={} index={}",
+                "PARCHMENT_SELECT request={} provider={} destination={} index={} reason={}",
                 finished.request.requestId,
                 finished.request.providerId,
                 finished.request.destinations[static_cast<std::size_t>(a_selectionIndex)].id,
-                a_selectionIndex);
+                a_selectionIndex,
+                a_reason);
         } else {
             a_selectionIndex = -1;
             logger::info(
@@ -553,6 +563,59 @@ namespace
         });
     }
 
+    bool MoveControllerFocus(
+        const float a_directionX,
+        const float a_directionY,
+        const std::string_view a_reason)
+    {
+        std::scoped_lock lock(requestLock);
+        if (!activeRequest || !activeRequest->visible) {
+            return false;
+        }
+
+        const auto currentValue = controllerFocusedIndex.load(std::memory_order_relaxed);
+        const auto currentIndex = currentValue >= 0 ?
+            std::optional<std::size_t>(static_cast<std::size_t>(currentValue)) :
+            std::nullopt;
+        const auto nextIndex = DNT::Parchment::FindDirectionalDestination(
+            activeRequest->request,
+            currentIndex,
+            a_directionX,
+            a_directionY);
+        if (!nextIndex) {
+            return false;
+        }
+
+        controllerFocusedIndex.store(
+            static_cast<std::int32_t>(*nextIndex),
+            std::memory_order_relaxed);
+        navigationFocusEngaged.store(true, std::memory_order_relaxed);
+        logger::info(
+            "PARCHMENT_CONTROLLER_FOCUS request={} destination={} index={} reason={}",
+            activeRequest->request.requestId,
+            activeRequest->request.destinations[*nextIndex].id,
+            *nextIndex,
+            a_reason);
+        return true;
+    }
+
+    bool ConfirmControllerFocus()
+    {
+        const auto selectionIndex = controllerFocusedIndex.load(std::memory_order_relaxed);
+        if (selectionIndex < 0) {
+            return false;
+        }
+        {
+            std::scoped_lock lock(requestLock);
+            if (!activeRequest || !activeRequest->visible ||
+                static_cast<std::size_t>(selectionIndex) >= activeRequest->request.destinations.size()) {
+                return false;
+            }
+        }
+        FinishRequest(selectionIndex, "gamepad_a");
+        return true;
+    }
+
     bool __stdcall OnInput(RE::InputEvent* a_event)
     {
         {
@@ -567,7 +630,33 @@ namespace
             // returns to keyboard/gamepad navigation. Otherwise ImGui's retained
             // first-item focus reappears as soon as the cursor leaves a marker.
             navigationFocusEngaged.store(false, std::memory_order_relaxed);
+            controllerFocusedIndex.store(-1, std::memory_order_relaxed);
+            leftStickNavigationLatched.store(false, std::memory_order_relaxed);
             return false;
+        }
+
+        if (const auto* thumbstick = a_event ? a_event->AsThumbstickEvent() : nullptr;
+            thumbstick && thumbstick->IsLeft()) {
+            constexpr float releaseThreshold = 0.35F;
+            constexpr float engageThreshold = 0.65F;
+            const auto absoluteX = std::abs(thumbstick->xValue);
+            const auto absoluteY = std::abs(thumbstick->yValue);
+            if (absoluteX <= releaseThreshold && absoluteY <= releaseThreshold) {
+                leftStickNavigationLatched.store(false, std::memory_order_relaxed);
+                return true;
+            }
+            if (leftStickNavigationLatched.load(std::memory_order_relaxed) ||
+                std::max(absoluteX, absoluteY) < engageThreshold) {
+                return true;
+            }
+            leftStickNavigationLatched.store(true, std::memory_order_relaxed);
+            if (absoluteX >= absoluteY) {
+                MoveControllerFocus(thumbstick->xValue > 0.0F ? 1.0F : -1.0F, 0.0F, "left_stick");
+            } else {
+                // Gamepad Y is positive upward; parchment normalized Y grows downward.
+                MoveControllerFocus(0.0F, thumbstick->yValue > 0.0F ? -1.0F : 1.0F, "left_stick");
+            }
+            return true;
         }
 
         const auto* button = a_event ? a_event->AsButtonEvent() : nullptr;
@@ -586,8 +675,24 @@ namespace
             FinishRequest(-1, keyboardCancel ? "escape" : "gamepad_b");
             return true;
         }
-        if (a_event->device == RE::INPUT_DEVICE::kKeyboard ||
-            a_event->device == RE::INPUT_DEVICE::kGamepad) {
+        if (a_event->device == RE::INPUT_DEVICE::kGamepad) {
+            switch (key) {
+            case RE::BSWin32GamepadDevice::Key::kUp:
+                return MoveControllerFocus(0.0F, -1.0F, "dpad_up");
+            case RE::BSWin32GamepadDevice::Key::kDown:
+                return MoveControllerFocus(0.0F, 1.0F, "dpad_down");
+            case RE::BSWin32GamepadDevice::Key::kLeft:
+                return MoveControllerFocus(-1.0F, 0.0F, "dpad_left");
+            case RE::BSWin32GamepadDevice::Key::kRight:
+                return MoveControllerFocus(1.0F, 0.0F, "dpad_right");
+            case RE::BSWin32GamepadDevice::Key::kA:
+                return ConfirmControllerFocus();
+            default:
+                break;
+            }
+        }
+        if (a_event->device == RE::INPUT_DEVICE::kKeyboard) {
+            controllerFocusedIndex.store(-1, std::memory_order_relaxed);
             navigationFocusEngaged.store(true, std::memory_order_relaxed);
         }
         return false;
@@ -869,7 +974,13 @@ namespace
                 if (framework.IsItemHovered()) {
                     hoveredIndex = index;
                 }
-                if (navigationFocusEngaged.load(std::memory_order_relaxed) &&
+                const auto controllerIndex =
+                    controllerFocusedIndex.load(std::memory_order_relaxed);
+                if (controllerIndex >= 0 &&
+                    static_cast<std::size_t>(controllerIndex) == index) {
+                    focusedIndex = index;
+                } else if (controllerIndex < 0 &&
+                    navigationFocusEngaged.load(std::memory_order_relaxed) &&
                     framework.IsItemFocused()) {
                     focusedIndex = index;
                 }
@@ -1063,6 +1174,25 @@ namespace
         framework.End();
         DrawParchmentCursor(framework, viewportHeight);
 
+        if (!snapshot.firstFrameReported) {
+            const auto renderedAt = std::chrono::steady_clock::now();
+            std::scoped_lock lock(requestLock);
+            if (activeRequest &&
+                activeRequest->request.requestId == snapshot.request.requestId &&
+                !activeRequest->firstFrameReported) {
+                activeRequest->firstFrameReported = true;
+                const auto showToFrameMs = std::chrono::duration<double, std::milli>(
+                    renderedAt - activeRequest->shownAt).count();
+                const auto beginToFrameMs = std::chrono::duration<double, std::milli>(
+                    renderedAt - activeRequest->beganAt).count();
+                logger::info(
+                    "PARCHMENT_FIRST_FRAME request={} show_to_frame_ms={:.3f} begin_to_frame_ms={:.3f}",
+                    activeRequest->request.requestId,
+                    showToFrameMs,
+                    beginToFrameMs);
+            }
+        }
+
         if (selectedIndex) {
             FinishRequest(*selectedIndex, "selected");
         }
@@ -1127,7 +1257,8 @@ bool DNT::ParchmentMenu::BeginRequest(
             .destinations = {}
         },
         .sourceFormId = a_source->GetFormID(),
-        .visible = false
+        .visible = false,
+        .beganAt = std::chrono::steady_clock::now()
     };
     std::string error;
     if (!Parchment::ValidateRequestHeader(candidate.request, error)) {
@@ -1142,6 +1273,8 @@ bool DNT::ParchmentMenu::BeginRequest(
     }
     activeRequest = std::move(candidate);
     navigationFocusEngaged.store(false, std::memory_order_relaxed);
+    controllerFocusedIndex.store(-1, std::memory_order_relaxed);
+    leftStickNavigationLatched.store(false, std::memory_order_relaxed);
     logger::info(
         "PARCHMENT_BEGIN request={} provider={} source={:08X} uv=({:.3f},{:.3f})-({:.3f},{:.3f})",
         a_requestId,
@@ -1733,15 +1866,19 @@ bool DNT::ParchmentMenu::Show(const std::string_view a_requestId)
         "PARCHMENT_HUD_HIDDEN request={} layers={}",
         activeRequest->request.requestId,
         activeRequest->hiddenHudLayers.size());
+    activeRequest->shownAt = std::chrono::steady_clock::now();
     activeRequest->visible = true;
     pickerWindow->isOpen = true;
+    const auto requestBuildMs = std::chrono::duration<double, std::milli>(
+        activeRequest->shownAt - activeRequest->beganAt).count();
     logger::info(
-        "PARCHMENT_OPEN request={} provider={} destinations={} routeSegments={} routeLandmarks={} texture={} overlay={} idleMarker={} selectedMarker={} originMarker={} selectionRing={}",
+        "PARCHMENT_OPEN request={} provider={} destinations={} routeSegments={} routeLandmarks={} request_build_ms={:.3f} texture={} overlay={} idleMarker={} selectedMarker={} originMarker={} selectionRing={}",
         activeRequest->request.requestId,
         activeRequest->request.providerId,
         activeRequest->request.destinations.size(),
         activeRequest->request.routeSegments.size(),
         activeRequest->request.routeLandmarks.size(),
+        requestBuildMs,
         activeRequest->request.texturePath.empty() ? "<none>" : activeRequest->request.texturePath,
         activeRequest->request.overlayTexturePath.empty() ?
             "<none>" : activeRequest->request.overlayTexturePath,

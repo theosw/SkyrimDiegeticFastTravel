@@ -12,7 +12,9 @@
 - [x] Verify the generated TES4 master order and expected generated-record counts.
 - [ ] Verify the nine CFTO driver actor identities in the target load order.
 - [ ] Reverify CFTO-tier payment and free-carriage faction behavior in game.
-- [ ] Verify normal versus Apparition carriage travel time after the compatibility fix.
+- [ ] Verify the complete Apparition lifecycle in one monitored run: normal
+  travel, toggle on with zero elapsed time, toggle off through the power, and
+  restored normal elapsed time. Keep raw `removespell` as a diagnostic only.
 - [ ] Verify conditional endpoints (three Hearthfire manors and intact Helgen).
 - [ ] Eyeball all low-confidence roads in game.
 - [ ] Run the Valtheim reroute smoke test and save/load regression test.
@@ -42,7 +44,9 @@
   selection/cancel regression.
 - [x] Prove Mirabelle voice, subtitle, and lip sync before picker handoff.
 - [ ] Live-test the generalized presentation-then-picker handoff.
-- [ ] Add controller focus/confirm/cancel only with the intended No Delete
+- [x] Add explicit native D-pad/left-stick focus, A-confirm, and B-cancel
+  without replacing LoreRim's controller object or changing mouse activation.
+- [ ] Live-test controller focus/confirm/cancel with the intended No Delete
   Controller compatibility stack enabled.
 - [x] Decode CFTO's four ferryman route factions and destination records.
 - [x] Build and structurally audit a provider-neutral Lake Honrich boat slice

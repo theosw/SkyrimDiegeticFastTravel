@@ -71,3 +71,11 @@ original plugin is not a master and is not required: compatibility is soft
 detected, and an absent holder/override falls through to normal time-passing
 fast travel. The Baan Malur adapter remains
 an exception because it delegates movement to that source mod's quest stages.
+
+The release test must disable Apparition by casting its toggle a second time,
+not by removing the learned power through the console. Raw `removespell` can
+bypass Wizarding Traversal's effect-finish cleanup: the holder effect becomes
+absent while `fFastTravelSpeedMult` remains at `100000`. The current
+compatibility detector intentionally reports that speed override, so this
+artificial stale state is diagnostic-only and must be cleared by reloading the
+disposable pre-test save.

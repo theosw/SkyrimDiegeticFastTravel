@@ -245,21 +245,23 @@ adapter, all four boat providers, future carriage provider, Papyrus compiles,
 xEdit audits, and core tests pass offline. This visual/placement revision is
 deployed to the owned test mods but remains pending gameplay proof.
 
-Controller navigation and B cancellation are intentionally deferred while the
-two controller mods are disabled. Revisit them only with the intended
-`No Delete Controller` compatibility layer enabled so the result represents
-the actual release stack.
-
-The controller implementation checklist is intentionally recorded now without
-changing the proven mouse path:
+Controller input now has an explicit native owner instead of depending on
+SKSE Menu Framework's retained ImGui focus. The implementation does not remove,
+replace, or mutate LoreRim's controller object:
 
 - preserve no-default-focus behavior until the first navigation input;
-- move focus among provider destinations without synthesizing mouse hover;
-- confirm only the currently focused destination;
-- map controller B to the same inert cancel result as Escape/close;
+- move focus spatially among provider destinations with either the D-pad or a
+  thresholded/latching left stick, without synthesizing mouse hover;
+- confirm only the explicitly controller-focused destination with A;
+- map B to the same inert cancel result as Escape/close;
+- clear controller focus as soon as mouse input resumes;
 - never remove or replace LoreRim's controller object;
-- test focus, confirm, cancel, dialogue fallback, and HUD restoration with the
-  intended compatibility stack enabled.
+- retain the existing mouse release-inside activation path unchanged.
+
+The directional-selection algorithm is covered by the offline native suite.
+Gameplay proof of focus, A-confirm, B-cancel, dialogue fallback, and exact HUD
+restoration remains required with the intended `No Delete Controller`
+compatibility stack enabled.
 
 ## Presentation layer
 
