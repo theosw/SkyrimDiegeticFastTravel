@@ -1172,11 +1172,11 @@ These remain design goals, not implementation assumptions.
   carriage handoff: nine hold capitals, fifteen minor Skyrim stops, and three
   HearthFires homesteads. Helgen and Granite Hill are deferred because the
   installed plugin does not provide the same executable handoff for them.
-- `DNT_InventoryCarriageParchment.pas` records authoritative world coordinates
-  from each destination's Skyrim/HearthFires map marker. The reproducible
-  `Generate-CarriageParchmentConfig.py` affine projection produces
-  `modules/carriage-parchment/config/network.json`; its calibrated capital
-  residual is RMSE `(0.004614, 0.010628)` in parchment UV space.
+- The discovery-time xEdit inventory recorded authoritative world coordinates
+  from each destination's Skyrim/HearthFires map marker. Those results are
+  retained in `modules/carriage-parchment/config/network.json`; the obsolete
+  inventory script remains recoverable from Git history. Its calibrated
+  capital residual is RMSE `(0.004614, 0.010628)` in parchment UV space.
 - The beta intentionally omits `SetRouteOrigin` and `AddRouteSegment`. It shows
   selectable destinations without straight spokes or invented road geometry.
 - `DNT_RouteService` batches hazard-phase and war-multiplier reads;

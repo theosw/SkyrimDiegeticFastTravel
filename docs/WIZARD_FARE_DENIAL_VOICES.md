@@ -15,14 +15,13 @@ types. An ordinary INFO is not accepted merely because xEdit permits it in
 
 ## Authoritative inventory
 
-`tools\Inventory-WizardFareDenials.ps1` scans staged copies of Skyrim, Update,
-Dawnguard, HearthFires, and Dragonborn. It reports genuine Misc/SharedInfo
-records separately from ordinary quest dialogue. No deployed file is read or
-changed.
-
-`tools\Inventory-WizardFareDenialVoiceCoverage.ps1` scans the filename table in
-`Skyrim - Voices_en0.bsa`. Voice filenames use the plugin-local eight-digit
-object ID, not xEdit's staged load-order prefix.
+Discovery-time tools scanned staged copies of Skyrim, Update, Dawnguard,
+HearthFires, and Dragonborn and then checked the filename table in
+`Skyrim - Voices_en0.bsa`. They reported genuine Misc/SharedInfo records
+separately from ordinary quest dialogue. Their retained result is documented
+below; the one-off scanners remain recoverable from Git history. Voice
+filenames use the plugin-local eight-digit object ID, not xEdit's staged
+load-order prefix.
 
 The relevant roster contains 13 distinct voice types: the ten ordinary faculty
 types, Mirabelle's unique type, Farengar's accented type, and Wylandriah's

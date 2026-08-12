@@ -42,10 +42,11 @@ external RUSTIC MAPS texture or the deferred route artwork.
 
 ## Evidence
 
-The lane, actors, fare global, and markers are decoded by
-`tools/Inventory-CFTOFerryNetwork.ps1`. Bethesda's local Papyrus assembler was
-also used against copied PEX files to verify the exact six Lake Honrich travel
-fragments without altering LoreRim.
+The lane, actors, fare global, and markers were decoded during the discovery
+pass and captured in this module's source/configuration. The one-off xEdit
+inventory remains recoverable from Git history. Bethesda's local Papyrus
+assembler was also used against copied PEX files to verify the exact six Lake
+Honrich travel fragments without altering LoreRim.
 
 An independent voice audit resolves Heirmir, Thalldar, and Haennr to
 `MaleEvenToned` and verifies the exact Dawnguard shared-response FUZ in the

@@ -59,6 +59,21 @@
     "tools/Build-WizardParchmentMarker.ps1",
     "tools/Sync-CalibrationAssets.ps1"
   ],
+  "retained_evidence_tools": [
+    "tools/Audit-BoatHonrichVoiceAssets.ps1",
+    "tools/Audit-BoatIlinaltaVoiceAssets.ps1",
+    "tools/Audit-BoatNorthCoastVoiceAssets.ps1",
+    "tools/Audit-BoatSolstheimVoiceAssets.ps1",
+    "tools/Audit-WizardVoiceAssets.ps1",
+    "tools/Inventory-BoatHonrichVoice.ps1",
+    "tools/Inventory-BoatIlinalta.ps1",
+    "tools/Inventory-BoatNorthCoast.ps1",
+    "tools/Inventory-BoatSolstheim.ps1",
+    "tools/xedit/DNT_InventoryBoatHonrichVoice.pas",
+    "tools/xedit/DNT_InventoryBoatIlinalta.pas",
+    "tools/xedit/DNT_InventoryBoatNorthCoast.pas",
+    "tools/xedit/DNT_InventoryBoatSolstheim.pas"
+  ],
   "deferred_modules": [
     "modules/boat-baan-malur"
   ],
