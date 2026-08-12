@@ -32,7 +32,7 @@ remain development-only.
 | `0xAA0` | Solstheim |
 
 The finalizer refuses a next-object ID above `0x1000`, a non-ESL-capable
-plugin, an unexpected master, or a combined SEQ other than the expected 18
+plugin, an unexpected master, or a combined SEQ other than the expected 17
 start-game quests.
 
 ## Build and audit

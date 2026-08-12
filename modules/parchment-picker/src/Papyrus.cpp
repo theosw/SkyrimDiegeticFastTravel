@@ -54,20 +54,6 @@ namespace
                a_destinationId == "stonehills";
     }
 
-    [[nodiscard]] std::string_view GetCarriageSourceLabel(const std::string_view a_originId)
-    {
-        if (a_originId == "dawnstar") return "Dawnstar";
-        if (a_originId == "falkreath") return "Falkreath";
-        if (a_originId == "markarth") return "Markarth";
-        if (a_originId == "morthal") return "Morthal";
-        if (a_originId == "riften") return "Riften";
-        if (a_originId == "solitude") return "Solitude";
-        if (a_originId == "whiterun") return "Whiterun";
-        if (a_originId == "windhelm") return "Windhelm";
-        if (a_originId == "winterhold") return "Winterhold";
-        return {};
-    }
-
     [[nodiscard]] CarriageMarkerStyle GetCarriageMarkerStyle(const std::string_view a_id)
     {
         if (a_id == "dawnstar") return { "Data/textures/DiegeticTravel/norden-dawnstar-capital.dds", 1.01F, 0.0F, -0.0474F, 0.86F };
@@ -218,6 +204,18 @@ namespace
             return -1;
         }
 
+        const auto locations = DNT::TravelRuntime::GetLocations();
+        const auto originLocation = std::ranges::find_if(locations, [&](const auto& location) {
+            return location.id == originId;
+        });
+        if (originLocation == locations.end()) {
+            logger::warn(
+                "CARRIAGE_NATIVE_REQUEST_REJECT request={} origin={} reason=origin_missing",
+                requestId,
+                originId);
+            return -1;
+        }
+
         if (!DNT::ParchmentMenu::BeginRequest(
                 requestId,
                 "carriage",
@@ -233,7 +231,7 @@ namespace
         }
 
         bool configured = true;
-        configured = DNT::ParchmentMenu::SetSourceLabel(requestId, GetCarriageSourceLabel(originId)) && configured;
+        configured = DNT::ParchmentMenu::SetSourceLabel(requestId, originLocation->name) && configured;
         configured = DNT::ParchmentMenu::SetPaymentLabelPosition(requestId, 0.615551F, 0.922189F) && configured;
         configured = DNT::ParchmentMenu::SetMarkerTextures(
                          requestId,
@@ -244,7 +242,6 @@ namespace
                          "Data/textures/DiegeticTravel/thin-circle-selection-ring.dds") && configured;
 
         std::vector<std::string> destinationIds;
-        const auto locations = DNT::TravelRuntime::GetLocations();
         destinationIds.reserve(locations.size());
         for (const auto& location : locations) {
             if (location.id == originId || !IsCarriageLocationAvailable(location)) {

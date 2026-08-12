@@ -86,8 +86,8 @@ function Assert-ConsolidatedReleaseReady {
     if (([BitConverter]::ToUInt32($header, 8) -band 0x200) -eq 0) {
         throw "Installed DiegeticTravel.esp is not ESL-flagged"
     }
-    if ((Get-Item -LiteralPath $seqPath).Length -ne 72) {
-        throw "Installed consolidated SEQ does not contain 18 quests"
+    if ((Get-Item -LiteralPath $seqPath).Length -ne 68) {
+        throw "Installed consolidated SEQ does not contain 17 quests"
     }
     if (Get-Process SkyrimSE -ErrorAction SilentlyContinue) {
         if (-not $NoLaunch) {

@@ -9,10 +9,11 @@ $coordinatorPath = Join-Path $projectRoot "mod\Scripts\Source\DNT_TravelCoordina
 $networkPath = Join-Path $projectRoot "modules\carriage-parchment\config\network.json"
 $providerPath = Join-Path $projectRoot "config\carriage_provider.json"
 $generatorPath = Join-Path $projectRoot "tools\xedit\DNT_GeneratePlugin.pas"
+$nativePath = Join-Path $projectRoot "modules\parchment-picker\src\Papyrus.cpp"
 
 foreach ($path in @(
     $pickerPath, $originPath, $coordinatorPath, $networkPath,
-    $providerPath, $generatorPath
+    $providerPath, $generatorPath, $nativePath
 )) {
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
         throw "Required carriage source input not found: $path"
@@ -39,6 +40,7 @@ $picker = Get-Content -LiteralPath $pickerPath -Raw
 $origin = Get-Content -LiteralPath $originPath -Raw
 $coordinator = Get-Content -LiteralPath $coordinatorPath -Raw
 $generator = Get-Content -LiteralPath $generatorPath -Raw
+$native = Get-Content -LiteralPath $nativePath -Raw
 $network = Get-Content -LiteralPath $networkPath -Raw | ConvertFrom-Json
 $provider = Get-Content -LiteralPath $providerPath -Raw | ConvertFrom-Json
 
@@ -92,6 +94,13 @@ Assert-Excludes $coordinator @(
     "JValue", "JMap", "JArray", "DialoguePath", "Preload"
 ) "Travel coordinator"
 
+Assert-Contains $native @(
+    "const auto originLocation = std::ranges::find_if(locations",
+    "SetSourceLabel(requestId, originLocation->name)",
+    "reason=origin_missing"
+) "Native carriage request builder"
+Assert-Excludes $native @("GetCarriageSourceLabel") "Native carriage request builder"
+
 Assert-Contains $generator @(
     "Manifest.O['origins']", "Token + 'Driver'", "Token + 'Service'"
 ) "Plugin generator"
@@ -112,4 +121,5 @@ foreach ($source in $productSources) {
 }
 
 Write-Host "PASS carriage source -> native 27-stop request, nine scalar origin services"
+Write-Host "PASS catalogue source labels -> nine city and seven WCI inn origins"
 Write-Host "PASS obsolete runtime -> no graph, JContainers, cached quote, or route geometry path"

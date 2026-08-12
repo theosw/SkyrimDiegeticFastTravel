@@ -241,6 +241,12 @@ try {
             Script = Join-Path $PSScriptRoot "xedit\DNT_GenerateBoatSolstheim.pas"
             Status = Join-Path $buildRoot "boat-solstheim.status"
             Error = Join-Path $buildRoot "boat-solstheim.error"
+        },
+        @{
+            Name = "legacy-dialogue-gate"
+            Script = Join-Path $PSScriptRoot "xedit\DNT_GateLegacyDialogue.pas"
+            Status = Join-Path $buildRoot "legacy-dialogue-gate.status"
+            Error = Join-Path $buildRoot "legacy-dialogue-gate.error"
         }
     )
 

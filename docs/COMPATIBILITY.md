@@ -1,5 +1,44 @@
 # Compatibility
 
+## Legacy request dialogue
+
+The consolidated release keeps CFTO's original carriage/ferry request INFOs
+and the old College destination-list hub as overrides rather than deleting
+them. Each is conditioned on `DNT_ShowLegacyTravelDialogue == 1`; the global
+defaults to `0`, leaving one parchment-map prompt per provider. Court-wizard
+spokes back to the College are not gated because they remain part of the
+shipped star topology.
+
+For conflict diagnosis or compatibility-patch development, the original
+requests can be restored for the current game with:
+
+```text
+set DNT_ShowLegacyTravelDialogue to 1
+```
+
+This switch changes only dialogue visibility. It does not change fares,
+destination gates, map contents, or the travel implementation.
+
+## Wait Carriage in Inns
+
+Wait Carriage in Inns support is part of the consolidated runtime and requires
+no compatibility ESP. WCI continues to own its innkeeper request, chair
+sequence, temporary driver, and location-change cleanup. Diegetic Travel
+recognizes WCI's four driver bases, resolves the player's exact inn Location,
+and opens the normal carriage parchment path at Riverwood, Old Hroldan,
+Rorikstead, Dragon Bridge, Nightgate Inn, Kynesgrove, and Ivarstead.
+
+The native request builder resolves the source label from the same travel
+catalogue used for destinations and quotes. This keeps all nine city origins
+and all seven inn origins on one validated path. Selection, fare, hours,
+availability, Apparition handling, payment, and travel therefore behave like
+ordinary Diegetic Travel carriage service.
+
+WCI's own destination prompt remains available as its independent fallback.
+Only one Diegetic Travel route-map prompt should be present. The retired
+`DiegeticTravelWciInnCarriages.esp` must not be installed because it adds a
+second, redundant route-map dialogue entry.
+
 ## Better Carriage Destinations
 
 Better Carriage Destinations (BCD) is a strong candidate for a future map-based

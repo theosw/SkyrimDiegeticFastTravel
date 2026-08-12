@@ -180,7 +180,17 @@ Carriage dialogue closes into one native request built from
 `travel_catalog.tsv`. The selected stable destination ID is returned to a small
 Papyrus service, which revalidates fare and availability, charges the player,
 and performs the final world mutation. There is no dialogue listener, quote
-cache, generated global set, or Papyrus destination array.
+cache, runtime-generated global set, or Papyrus destination array. The release
+ESP does contain the default-off `DNT_ShowLegacyTravelDialogue` compatibility
+global, which hides only the superseded CFTO request prompts and obsolete
+College destination-list hub; it is not part of fare, availability, or travel
+execution.
+
+Wait Carriage in Inns support is built into the consolidated runtime. WCI
+continues to own its innkeeper request, sit/wait sequence, temporary driver,
+and cleanup; Diegetic Travel recognizes that driver and uses the exact inn as
+the catalogue origin. No compatibility ESP or load-order patch is required.
+See [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md).
 
 The standalone wizard-guide Phase 1 package is built separately:
 

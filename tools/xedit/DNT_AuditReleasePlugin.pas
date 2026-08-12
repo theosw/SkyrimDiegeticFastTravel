@@ -9,7 +9,7 @@ const
   ExpectedOriginQuestCount = 9;
 
 var
-  TargetFile: IInterface;
+  TargetFile, CftoFile: IInterface;
   ReportLines: TStringList;
   StatusPath, ErrorPath, ReportPath, AuditStage: string;
 
@@ -57,6 +57,65 @@ begin
       end;
     end;
   raise Exception.Create('Could not resolve ' + EditorIDValue);
+end;
+
+function DefinedRecordByObjectID(
+  PluginFile: IInterface;
+  ObjectID: Cardinal
+): IInterface;
+var
+  FileFormID, LoadOrderFormID: Cardinal;
+begin
+  FileFormID :=
+    (MasterCount(PluginFile) shl 24) or (ObjectID and $00FFFFFF);
+  LoadOrderFormID := FileFormIDtoLoadOrderFormID(PluginFile, FileFormID);
+  Result := RecordByFormID(PluginFile, LoadOrderFormID, True);
+end;
+
+function RequireRecord(
+  PluginFile: IInterface;
+  ObjectID: Cardinal;
+  const ExpectedSignature: string
+): IInterface;
+begin
+  Result := DefinedRecordByObjectID(PluginFile, ObjectID);
+  if not Assigned(Result) then
+    raise Exception.Create(
+      'Could not resolve ' + ExpectedSignature + ' object ' +
+      IntToHex(ObjectID, 6)
+    );
+  if Signature(Result) <> ExpectedSignature then
+    raise Exception.Create(
+      'Object ' + IntToHex(ObjectID, 6) + ' is not ' + ExpectedSignature
+    );
+end;
+
+function FindInfoByEditorID(
+  PluginFile: IInterface;
+  const EditorIDValue: string
+): IInterface;
+var
+  TopicGroup, TopicRecord, InfoGroup, Candidate: IInterface;
+  i, j: Integer;
+begin
+  Result := nil;
+  TopicGroup := GroupBySignature(PluginFile, 'DIAL');
+  if not Assigned(TopicGroup) then
+    Exit;
+  for i := 0 to Pred(ElementCount(TopicGroup)) do begin
+    TopicRecord := ElementByIndex(TopicGroup, i);
+    InfoGroup := ChildGroup(TopicRecord);
+    if not Assigned(InfoGroup) then
+      Continue;
+    for j := 0 to Pred(ElementCount(InfoGroup)) do begin
+      Candidate := ElementByIndex(InfoGroup, j);
+      if (Signature(Candidate) = 'INFO') and
+        (GetElementEditValues(Candidate, 'EDID') = EditorIDValue) then begin
+        Result := Candidate;
+        Exit;
+      end;
+    end;
+  end;
 end;
 
 function ScriptByName(RecordElement: IInterface; const Value: string): IInterface;
@@ -193,6 +252,168 @@ begin
   ReportLines.Add('PASS critical_quest_scripts=8');
 end;
 
+function GateConditionCount(
+  InfoRecord, GateGlobal: IInterface;
+  ValidateShape: Boolean
+): Integer;
+var
+  Conditions, Entry, ConditionData, ParameterRecord: IInterface;
+  i: Integer;
+begin
+  Result := 0;
+  Conditions := ElementByPath(InfoRecord, 'Conditions');
+  if not Assigned(Conditions) then
+    Exit;
+  for i := 0 to Pred(ElementCount(Conditions)) do begin
+    Entry := ElementByIndex(Conditions, i);
+    ConditionData := ElementByPath(Entry, 'CTDA');
+    if not Assigned(ConditionData) then
+      Continue;
+    if GetElementEditValues(ConditionData, 'Function') <> 'GetGlobalValue' then
+      Continue;
+    ParameterRecord := LinksTo(ElementByPath(ConditionData, 'Parameter #1'));
+    if not Assigned(ParameterRecord) or
+      (FormID(ParameterRecord) <> FormID(GateGlobal)) then
+      Continue;
+    Inc(Result);
+    if ValidateShape then begin
+      if GetElementNativeValues(ConditionData, 'Type') <> 0 then
+        raise Exception.Create('Legacy dialogue gate is not an equality test');
+      if Abs(GetElementNativeValues(
+        ConditionData,
+        'Comparison Value - Float'
+      ) - 1.0) > 0.001 then
+        raise Exception.Create('Legacy dialogue gate does not compare with one');
+      if GetElementNativeValues(ConditionData, 'Run On') <> 0 then
+        raise Exception.Create('Legacy dialogue gate is not subject-scoped');
+    end;
+  end;
+end;
+
+procedure AssertGatedInfo(
+  InfoRecord, GateGlobal: IInterface;
+  const LabelValue: string
+);
+var
+  Winner: IInterface;
+begin
+  Winner := WinningOverride(InfoRecord);
+  if not Assigned(Winner) then
+    raise Exception.Create(LabelValue + ' has no winning override');
+  if LowerCase(GetFileName(GetFile(Winner))) <>
+    LowerCase(TargetPluginName) then
+    raise Exception.Create(LabelValue + ' winner is not the consolidated plugin');
+  if GateConditionCount(Winner, GateGlobal, True) <> 1 then
+    raise Exception.Create(LabelValue + ' does not have exactly one gate');
+end;
+
+procedure AssertUngatedInfo(
+  GateGlobal: IInterface;
+  const EditorIDValue: string
+);
+var
+  InfoRecord: IInterface;
+begin
+  InfoRecord := FindInfoByEditorID(TargetFile, EditorIDValue);
+  if not Assigned(InfoRecord) then
+    raise Exception.Create('Could not resolve parchment INFO ' + EditorIDValue);
+  if GateConditionCount(InfoRecord, GateGlobal, False) <> 0 then
+    raise Exception.Create(EditorIDValue + ' was incorrectly gated');
+end;
+
+function AuditFerryTopic(
+  TopicObjectID: Cardinal;
+  GateGlobal: IInterface;
+  const LabelValue: string
+): Integer;
+var
+  SourceTopic, InfoGroup, SourceInfo: IInterface;
+  i: Integer;
+begin
+  Result := 0;
+  SourceTopic := RequireRecord(CftoFile, TopicObjectID, 'DIAL');
+  InfoGroup := ChildGroup(SourceTopic);
+  if not Assigned(InfoGroup) then
+    raise Exception.Create(LabelValue + ' has no INFO child group');
+  for i := 0 to Pred(ElementCount(InfoGroup)) do begin
+    SourceInfo := ElementByIndex(InfoGroup, i);
+    if Signature(SourceInfo) <> 'INFO' then
+      Continue;
+    AssertGatedInfo(SourceInfo, GateGlobal, LabelValue);
+    Inc(Result);
+  end;
+  if Result = 0 then
+    raise Exception.Create(LabelValue + ' contains no INFO records');
+end;
+
+procedure AuditLegacyDialogueGate;
+var
+  GateGlobal, WizardHub: IInterface;
+  FerryCount: Integer;
+begin
+  GateGlobal := ResolveRecordByEditorID(
+    TargetFile,
+    'GLOB',
+    'DNT_ShowLegacyTravelDialogue'
+  );
+  if GetFile(GateGlobal) <> TargetFile then
+    raise Exception.Create('Legacy dialogue global is not a local record');
+  if Abs(GetElementNativeValues(GateGlobal, 'FLTV')) > 0.001 then
+    raise Exception.Create('Legacy dialogue global does not default to zero');
+
+  WizardHub := FindInfoByEditorID(TargetFile, 'DNT_WG_Request_Phinis');
+  if not Assigned(WizardHub) then
+    raise Exception.Create('Could not resolve obsolete College wizard hub');
+  AssertGatedInfo(WizardHub, GateGlobal, 'obsolete College wizard hub');
+
+  AssertGatedInfo(
+    RequireRecord(CftoFile, $09D8C7, 'INFO'),
+    GateGlobal,
+    'CFTO paid carriage request'
+  );
+  AssertGatedInfo(
+    RequireRecord(CftoFile, $0DA634, 'INFO'),
+    GateGlobal,
+    'CFTO free carriage request'
+  );
+
+  FerryCount := 0;
+  FerryCount := FerryCount + AuditFerryTopic(
+    $019DC4,
+    GateGlobal,
+    'CFTO Lake Honrich request'
+  );
+  FerryCount := FerryCount + AuditFerryTopic(
+    $02E1DD,
+    GateGlobal,
+    'CFTO Lake Ilinalta request'
+  );
+  FerryCount := FerryCount + AuditFerryTopic(
+    $00AA0E,
+    GateGlobal,
+    'CFTO north-coast request'
+  );
+  FerryCount := FerryCount + AuditFerryTopic(
+    $0383FE,
+    GateGlobal,
+    'CFTO Solstheim request'
+  );
+
+  AssertUngatedInfo(GateGlobal, 'DNT_WG_OpenParchment_Faculty');
+  AssertUngatedInfo(GateGlobal, 'DNT_CarriageParchmentPaidInfo');
+  AssertUngatedInfo(GateGlobal, 'DNT_CarriageParchmentFreeInfo');
+  AssertUngatedInfo(GateGlobal, 'DNT_BoatHonrichParchmentInfo');
+  AssertUngatedInfo(GateGlobal, 'DNT_BoatIlinaltaParchmentInfo');
+  AssertUngatedInfo(GateGlobal, 'DNT_BoatNorthCoastParchmentInfo');
+  AssertUngatedInfo(GateGlobal, 'DNT_BoatSolstheimParchmentInfo');
+
+  ReportLines.Add('PASS legacy_dialogue_global_default=0');
+  ReportLines.Add('PASS legacy_wizard_infos=1');
+  ReportLines.Add('PASS legacy_carriage_infos=2');
+  ReportLines.Add('PASS legacy_ferry_infos=' + IntToStr(FerryCount));
+  ReportLines.Add('PASS parchment_infos_ungated=7');
+end;
+
 function Initialize: Integer;
 begin
   Result := 1;
@@ -213,6 +434,11 @@ begin
     AuditHeader;
     AuditStage := 'quests';
     AuditQuests;
+    AuditStage := 'legacy dialogue gate';
+    CftoFile := FileByPluginName('CFTO.esp');
+    if not Assigned(CftoFile) then
+      raise Exception.Create('CFTO is not loaded');
+    AuditLegacyDialogueGate;
     ReportLines.SaveToFile(ReportPath);
     WriteTextFile(StatusPath, 'success');
     AddMessage('[DNT] Consolidated release audit passed');

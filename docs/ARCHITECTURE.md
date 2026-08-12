@@ -30,16 +30,23 @@ Papyrus is deliberately a thin world-mutation bridge:
 - `DNT_CarriageParchmentPicker` coordinates dialogue close, native menu open,
   and the returned stable destination ID;
 - `DNT_TravelCoordinator` maps the nine CFTO drivers to nine scalar origin
-  service properties;
+  service properties. Its optional WCI integration validates one of WCI's four
+  spawned drivers, translates the player's exact inn Location into one of the
+  seven existing catalogue origin IDs, and passes that scalar origin onward;
 - `DNT_OriginService` revalidates the selected quote, charges gold, resolves
-  CFTO's arrival marker, and performs travel;
+  CFTO's arrival marker, and performs travel. Its explicit-origin entry point
+  lets compatible providers reuse this world-mutation path without adding
+  another persistent service quest;
 - each boat and wizard service owns only its provider-specific gates, fare,
   companion handoff, and arrival behavior;
 - `DNT_TravelCompatibility` chooses normal `Game.FastTravel` or zero-time
   Apparition `MoveTo` immediately before travel.
 
-There are no JContainers maps, generated dialogue globals, Papyrus route
-graphs, cached quote arrays, menu listeners, or background update loops.
+There are no JContainers maps, Papyrus route graphs, cached quote arrays, menu
+listeners, or background update loops. The ESP contains one static compatibility
+global, `DNT_ShowLegacyTravelDialogue`, used only as a default-off condition on
+the superseded CFTO request INFOs and the obsolete College list hub. It is not
+read or written by the runtime travel path.
 
 ## Carriage data
 
@@ -62,8 +69,18 @@ ZIP. Development-module builders are retained only for isolated provider work.
 
 The generator creates 17 start-game quests: nine carriage origin services and
 eight provider quests. The audit enforces one plugin, one SEQ, ESL local-ID
-limits, exact masters, exact script inventory, the catalogue schema, and the
-absence of obsolete graph artifacts.
+limits, exact masters, exact script inventory, the catalogue schema, the
+absence of obsolete graph artifacts, and the legacy-dialogue boundary: one
+wizard INFO, two carriage INFOs, and four ferry INFOs gated while all seven
+replacement parchment INFOs remain ungated.
+
+Wait Carriage in Inns uses the same consolidated carriage topology. The core
+picker recognizes WCI's temporary driver and translates the exact inn Location
+into an existing catalogue origin ID. The native request builder then obtains
+the source label, destinations, and quotes from the catalogue. WCI remains
+responsible for the innkeeper request, sit/wait sequence, spawned driver, and
+cleanup; no compatibility ESP, extra dialogue branch, quest, or script is
+required.
 
 ## Save behavior
 

@@ -1,11 +1,13 @@
 #include "DNT/TravelCatalog.h"
 
+#include <array>
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace
@@ -111,6 +113,20 @@ namespace
         Require(catalog.Locations().back().id == "winstad_manor", "enumeration tail must preserve authored selection order");
         Require(catalog.FindLocation("morthal") != nullptr, "morthal must be present");
         Require(catalog.FindLocation("winstad_manor") != nullptr, "Windstad Manor must be present");
+        const std::array innOrigins{
+            std::pair{ "riverwood", "Riverwood" },
+            std::pair{ "old_hroldan", "Old Hroldan" },
+            std::pair{ "rorikstead", "Rorikstead" },
+            std::pair{ "dragon_bridge", "Dragon Bridge" },
+            std::pair{ "nightgate_inn", "Nightgate Inn" },
+            std::pair{ "kynesgrove", "Kynesgrove" },
+            std::pair{ "ivarstead", "Ivarstead" }
+        };
+        for (const auto& [id, expectedName] : innOrigins) {
+            const auto* location = catalog.FindLocation(id);
+            Require(location != nullptr, std::string("WCI inn origin missing from shipped catalogue: ") + id);
+            Require(location->name == expectedName, std::string("WCI inn origin has wrong source label: ") + id);
+        }
         Require(catalog.EstimateQuote("carriage", "morthal", "falkreath").has_value(),
             "shipped catalogue must quote a representative route");
 

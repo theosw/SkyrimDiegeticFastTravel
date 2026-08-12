@@ -3,6 +3,7 @@ Scriptname DNT_CarriageParchmentPicker extends Quest
 DNT_TravelCoordinator Property Coordinator Auto
 
 ObjectReference CurrentSource
+String CurrentOrigin = ""
 String ActiveRequest = ""
 Int RequestSerial = 0
 
@@ -14,25 +15,36 @@ Function OpenMap(ObjectReference SourceRef)
     EndIf
 
     Actor Speaker = SourceRef as Actor
-    DNT_OriginService Service = Coordinator.GetOriginService(Speaker)
+    DNT_OriginService Service = Coordinator.GetOriginService(Speaker, False)
+    String SourceOrigin = ""
+    Bool FreeRide = False
     If Service == None
-        Debug.Trace("[DNT] CARRIAGE_PARCHMENT_DENIED source=" + SourceRef + " reason=invalid_provider", 1)
-        Return
+        SourceOrigin = Coordinator.GetWciInnOrigin(Speaker)
+        If SourceOrigin == ""
+            Debug.Trace("[DNT] CARRIAGE_PARCHMENT_DENIED source=" + SourceRef + " reason=invalid_provider", 1)
+            Return
+        EndIf
+        FreeRide = Coordinator.IsFreeRideForSpeaker(Speaker)
+        Debug.Trace("[DNT] CARRIAGE_WCI_ORIGIN_ACCEPTED source=" + SourceRef + " origin=" + SourceOrigin)
+    Else
+        SourceOrigin = Service.OriginId
+        FreeRide = Service.IsFreeRideForSpeaker(Speaker)
     EndIf
 
     ActiveRequest = "opening"
     CurrentSource = SourceRef
+    CurrentOrigin = SourceOrigin
     Utility.Wait(0.1)
 
     Bool DialogueWasOpen = UI.IsMenuOpen("Dialogue Menu")
     If DialogueWasOpen
-        Debug.Trace("[DNT] CARRIAGE_DIALOGUE_HANDOFF_CLOSE_REQUEST origin=" + Service.OriginId)
+        Debug.Trace("[DNT] CARRIAGE_DIALOGUE_HANDOFF_CLOSE_REQUEST origin=" + SourceOrigin)
         If !DNT_ParchmentNative.RequestDialogueClose()
             AbortOpen("dialogue_close_request_failed")
             Return
         EndIf
     Else
-        Debug.Trace("[DNT] CARRIAGE_DIALOGUE_HANDOFF_ALREADY_CLOSED origin=" + Service.OriginId)
+        Debug.Trace("[DNT] CARRIAGE_DIALOGUE_HANDOFF_ALREADY_CLOSED origin=" + SourceOrigin)
     EndIf
 
     Int DialogueWaitTicks = 0
@@ -41,13 +53,13 @@ Function OpenMap(ObjectReference SourceRef)
         DialogueWaitTicks += 1
     EndWhile
     If UI.IsMenuOpen("Dialogue Menu")
-        Debug.Trace("[DNT] CARRIAGE_DIALOGUE_HANDOFF_TIMEOUT origin=" + Service.OriginId + " waitTicks=" + DialogueWaitTicks, 1)
+        Debug.Trace("[DNT] CARRIAGE_DIALOGUE_HANDOFF_TIMEOUT origin=" + SourceOrigin + " waitTicks=" + DialogueWaitTicks, 1)
         AbortOpen("dialogue_timeout")
         Return
     EndIf
 
     Float HandoffCompletedAt = DNT_ParchmentNative.GetMonotonicSeconds()
-    Debug.Trace("[DNT] CARRIAGE_DIALOGUE_HANDOFF_COMPLETE origin=" + Service.OriginId + " closeRequested=" + DialogueWasOpen + " waitTicks=" + DialogueWaitTicks)
+    Debug.Trace("[DNT] CARRIAGE_DIALOGUE_HANDOFF_COMPLETE origin=" + SourceOrigin + " closeRequested=" + DialogueWasOpen + " waitTicks=" + DialogueWaitTicks)
     Utility.Wait(0.15)
 
     If !DNT_ParchmentNative.IsAvailable()
@@ -60,8 +72,7 @@ Function OpenMap(ObjectReference SourceRef)
     RegisterForModEvent("DNT_ParchmentResult", "OnParchmentResult")
 
     Float NativeBuildStartedAt = DNT_ParchmentNative.GetMonotonicSeconds()
-    Bool FreeRide = Service.IsFreeRideForSpeaker(Speaker)
-    Int DestinationCount = DNT_ParchmentNative.BuildCarriageRequest(ActiveRequest, Service.OriginId, SourceRef, FreeRide)
+    Int DestinationCount = DNT_ParchmentNative.BuildCarriageRequest(ActiveRequest, SourceOrigin, SourceRef, FreeRide)
     If DestinationCount <= 0
         AbortOpen("native_request_failed")
         Return
@@ -73,7 +84,7 @@ Function OpenMap(ObjectReference SourceRef)
     EndIf
 
     Float OpenCompletedAt = DNT_ParchmentNative.GetMonotonicSeconds()
-    Debug.Trace("[DNT] CARRIAGE_PARCHMENT_OPEN origin=" + Service.OriginId + " destinations=" + DestinationCount + " request=" + ActiveRequest + " total_ms=" + ((OpenCompletedAt - OpenStartedAt) * 1000.0) + " handoff_ms=" + ((HandoffCompletedAt - OpenStartedAt) * 1000.0) + " native_build_ms=" + ((OpenCompletedAt - NativeBuildStartedAt) * 1000.0))
+    Debug.Trace("[DNT] CARRIAGE_PARCHMENT_OPEN origin=" + SourceOrigin + " destinations=" + DestinationCount + " request=" + ActiveRequest + " total_ms=" + ((OpenCompletedAt - OpenStartedAt) * 1000.0) + " handoff_ms=" + ((HandoffCompletedAt - OpenStartedAt) * 1000.0) + " native_build_ms=" + ((OpenCompletedAt - NativeBuildStartedAt) * 1000.0))
 EndFunction
 
 Function AbortOpen(String Reason)
@@ -84,6 +95,7 @@ Function AbortOpen(String Reason)
     UnregisterForModEvent("DNT_ParchmentResult")
     ActiveRequest = ""
     CurrentSource = None
+    CurrentOrigin = ""
     Debug.Notification("The carriage map could not be opened. Ask for the usual destinations instead.")
 EndFunction
 
@@ -94,11 +106,13 @@ Event OnParchmentResult(String EventName, String StringArg, Float NumberArg, For
 
     Int SelectionIndex = NumberArg as Int
     ObjectReference SourceRef = CurrentSource
+    String SourceOrigin = CurrentOrigin
     String FinishedRequest = ActiveRequest
     String DestinationId = DNT_ParchmentNative.ConsumeCarriageSelectionId(FinishedRequest, SelectionIndex)
     UnregisterForModEvent("DNT_ParchmentResult")
     ActiveRequest = ""
     CurrentSource = None
+    CurrentOrigin = ""
 
     If SelectionIndex < 0
         Debug.Trace("[DNT] CARRIAGE_PARCHMENT_CANCEL source=" + SourceRef + " request=" + FinishedRequest)
@@ -110,5 +124,5 @@ Event OnParchmentResult(String EventName, String StringArg, Float NumberArg, For
     EndIf
 
     Debug.Trace("[DNT] CARRIAGE_PARCHMENT_SELECT source=" + SourceRef + " request=" + FinishedRequest + " destination=" + DestinationId)
-    Coordinator.Purchase(DestinationId, SourceRef)
+    Coordinator.PurchaseFromOrigin(DestinationId, SourceRef, SourceOrigin)
 EndEvent

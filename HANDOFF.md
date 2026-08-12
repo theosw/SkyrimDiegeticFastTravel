@@ -1335,3 +1335,25 @@ stable artifact checks.
   Volkihar 100/0 fare split; confirm Sunmul appears only at Raven Rock with the
   lower-arrow ring; then compare one normal trip's clock advance with one trip
   while the Apparition holder effect is active.
+
+## 2026-08-11 legacy-dialogue suppression checkpoint
+
+- The consolidated release now presents one travel surface per provider. The
+  original CFTO carriage request (paid and free variants), the four shipped
+  CFTO ferry request roots, and the obsolete College destination-list hub are
+  conditioned on `DNT_ShowLegacyTravelDialogue == 1`. The local compatibility
+  global defaults to `0`; records are overridden, not deleted.
+- Court-wizard dialogue that returns the player to the College is deliberately
+  unchanged. Those spokes remain required by the shipped College-centered star
+  topology. The seven wizard/carriage/ferry parchment INFOs are also explicitly
+  audited as ungated.
+- The generator adds this boundary after all parchment providers and before
+  final ESP-FE processing. The semantic release audit proves a zero-valued
+  local global, exactly 1 gated wizard INFO, 2 gated carriage INFOs, 4 gated
+  ferry INFOs, and 7 ungated parchment INFOs.
+- Headless regeneration and package audit pass with 17 SEQ quests, 22 Papyrus
+  scripts, six masters, ESL flag set, and next local FormID `0xAA5`. The package
+  produced for this checkpoint has SHA-256
+  `462683DC43ABA24BF6E07F17EA88E4BA380BCCC947E74601E0BE285228846FE3`.
+- For compatibility diagnosis only, `set DNT_ShowLegacyTravelDialogue to 1`
+  restores the superseded requests without changing travel behavior.

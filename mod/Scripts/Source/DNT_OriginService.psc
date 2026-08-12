@@ -110,29 +110,33 @@ Function ExecuteDirectCarriageTravel(ObjectReference destinationMarker)
 EndFunction
 
 Bool Function CommitDestination(String destinationId, Actor speaker, Int cftoDestination = 0)
+    Return CommitDestinationFromOrigin(destinationId, speaker, OriginId, cftoDestination)
+EndFunction
+
+Bool Function CommitDestinationFromOrigin(String destinationId, Actor speaker, String sourceOriginId, Int cftoDestination = 0)
     If !speaker
-        Debug.Trace("[DNT] PURCHASE_BLOCKED origin=" + OriginId + " reason=speaker_none", 2)
+        Debug.Trace("[DNT] PURCHASE_BLOCKED origin=" + sourceOriginId + " reason=speaker_none", 2)
         Return False
     EndIf
 
     Bool freeRide = KmodCarriageFreeFaction && speaker.IsInFaction(KmodCarriageFreeFaction)
-    Int fare = DNT_ParchmentNative.GetCarriageFare(OriginId, destinationId, freeRide)
-    Float hours = DNT_ParchmentNative.GetCarriageHours(OriginId, destinationId)
+    Int fare = DNT_ParchmentNative.GetCarriageFare(sourceOriginId, destinationId, freeRide)
+    Float hours = DNT_ParchmentNative.GetCarriageHours(sourceOriginId, destinationId)
     If fare < 0 || hours < 0.0
-        Debug.Trace("[DNT] PURCHASE_BLOCKED origin=" + OriginId + " destination=" + destinationId + " reason=native_quote", 2)
+        Debug.Trace("[DNT] PURCHASE_BLOCKED origin=" + sourceOriginId + " destination=" + destinationId + " reason=native_quote", 2)
         Debug.Notification("Carriage travel to that destination is unavailable.")
         Return False
     EndIf
 
     ObjectReference destinationMarker = GetCarriageDestinationMarker(destinationId)
     If !destinationMarker
-        Debug.Trace("[DNT] PURCHASE_BLOCKED origin=" + OriginId + " destination=" + destinationId + " reason=destination_marker", 2)
+        Debug.Trace("[DNT] PURCHASE_BLOCKED origin=" + sourceOriginId + " destination=" + destinationId + " reason=destination_marker", 2)
         Debug.Notification("Carriage travel to that destination is unavailable.")
         Return False
     EndIf
 
     If !freeRide && PlayerRef.GetItemCount(Gold001) < fare
-        Debug.Trace("[DNT] PURCHASE_BLOCKED origin=" + OriginId + " destination=" + destinationId + " reason=gold fare=" + fare)
+        Debug.Trace("[DNT] PURCHASE_BLOCKED origin=" + sourceOriginId + " destination=" + destinationId + " reason=gold fare=" + fare)
         Debug.Notification("You do not have enough gold.")
         Return False
     EndIf
@@ -146,9 +150,9 @@ Bool Function CommitDestination(String destinationId, Actor speaker, Int cftoDes
     EndIf
 
     KmodCarriageDestination.SetValueInt(0)
-    Debug.Trace("[DNT] PURCHASE_COMMITTED origin=" + OriginId + " destination=" + destinationId + " fare=" + fare + " free=" + freeRide + " cfto_destination=" + cftoDestination + " execution=direct speaker=" + speaker)
+    Debug.Trace("[DNT] PURCHASE_COMMITTED origin=" + sourceOriginId + " destination=" + destinationId + " fare=" + fare + " free=" + freeRide + " cfto_destination=" + cftoDestination + " execution=direct speaker=" + speaker)
     ExecuteDirectCarriageTravel(destinationMarker)
-    Debug.Trace("[DNT] CARRIAGE_TRAVEL_COMPLETE origin=" + OriginId + " destination=" + destinationId + " fare=" + fare + " free=" + freeRide + " marker=" + destinationMarker)
+    Debug.Trace("[DNT] CARRIAGE_TRAVEL_COMPLETE origin=" + sourceOriginId + " destination=" + destinationId + " fare=" + fare + " free=" + freeRide + " marker=" + destinationMarker)
     Return True
 EndFunction
 
