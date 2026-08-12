@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "purpose": "Declare the maintained source and tooling surface for the consolidated DiegeticTravel release.",
+  "release_modules": [
+    "mod",
+    "modules/wizard-guides",
+    "modules/parchment-picker",
+    "modules/carriage-parchment",
+    "modules/boat-honrich",
+    "modules/boat-ilinalta",
+    "modules/boat-north-coast",
+    "modules/boat-solstheim"
+  ],
+  "release_entrypoints": [
+    "tools/Build-Release.ps1",
+    "tools/Deploy-Release.ps1",
+    "tools/Run-ConsolidatedReleaseTest.ps1",
+    "tools/Run-OfflineChecks.ps1"
+  ],
+  "release_support_scripts": [
+    "tools/Audit-NativeDependencies.ps1",
+    "tools/Audit-ParchmentPicker.ps1",
+    "tools/Audit-ReleasePackage.ps1",
+    "tools/Build-ParchmentPicker.ps1",
+    "tools/Compile-Papyrus.ps1",
+    "tools/Compile-WizardGuidesPapyrus.ps1",
+    "tools/Compile-ParchmentPickerPapyrus.ps1",
+    "tools/Compile-CarriageParchmentPapyrus.ps1",
+    "tools/Compile-BoatHonrichPapyrus.ps1",
+    "tools/Compile-BoatIlinaltaPapyrus.ps1",
+    "tools/Compile-BoatNorthCoastPapyrus.ps1",
+    "tools/Compile-BoatSolstheimPapyrus.ps1",
+    "tools/Generate-ReleasePlugin.ps1"
+  ],
+  "release_xedit_scripts": [
+    "tools/xedit/DNT_GeneratePlugin.pas",
+    "tools/xedit/DNT_GenerateWizardParchmentAdapter.pas",
+    "tools/xedit/DNT_GenerateCarriageParchment.pas",
+    "tools/xedit/DNT_GenerateBoatHonrich.pas",
+    "tools/xedit/DNT_GenerateBoatIlinalta.pas",
+    "tools/xedit/DNT_GenerateBoatNorthCoast.pas",
+    "tools/xedit/DNT_GenerateBoatSolstheim.pas",
+    "tools/xedit/DNT_GateLegacyDialogue.pas",
+    "tools/xedit/DNT_FinalizeReleasePlugin.pas",
+    "tools/xedit/DNT_AuditReleasePlugin.pas"
+  ],
+  "maintained_developer_tools": [
+    "tools/map-coordinate-calibrator",
+    "tools/Build-CalibratedSelectionRings.ps1",
+    "tools/Build-CarriageParchmentMarkers.ps1",
+    "tools/Build-NordenCarriageMarkers.ps1",
+    "tools/Build-NordenMaritimeMarkers.ps1",
+    "tools/Build-NordenSelectionRing.ps1",
+    "tools/Build-StylizedDocksMarker.ps1",
+    "tools/Build-StylizedShipMarker.ps1",
+    "tools/Build-StylizedWizardMarkers.ps1",
+    "tools/Build-VanillaHoldCapitalMarkers.ps1",
+    "tools/Build-VanillaParchmentMarkers.ps1",
+    "tools/Build-WizardParchmentMarker.ps1",
+    "tools/Sync-CalibrationAssets.ps1"
+  ],
+  "deferred_modules": [
+    "modules/boat-baan-malur"
+  ],
+  "superseded_modules": [
+    "modules/wizard-map-picker"
+  ],
+  "research_only_patterns": [
+    "tools/Inventory-*.ps1",
+    "tools/xedit/DNT_Inventory*.pas",
+    "tools/Inspect-*.ps1",
+    "tools/xedit/DNT_Inspect*.pas",
+    "tools/Find-*.ps1"
+  ],
+  "ignored_local_roots": [
+    ".tools",
+    "build",
+    "dist",
+    "Learning Sources",
+    "logs"
+  ]
+}

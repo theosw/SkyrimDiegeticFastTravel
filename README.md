@@ -145,6 +145,11 @@ product code.
 
 ## Developer quick start
 
+The maintained repository surface and the distinction between runtime source,
+release tooling, visual-authoring utilities, and historical research are
+documented in [`docs/REPOSITORY_SCOPE.md`](docs/REPOSITORY_SCOPE.md) and the
+machine-readable [`config/repository-scope.json`](config/repository-scope.json).
+
 ```powershell
 .\tools\Build-Release.ps1 -LoreRimRoot "D:\Lorerim"
 ```
