@@ -18,6 +18,7 @@
     "tools/Run-OfflineChecks.ps1"
   ],
   "release_support_scripts": [
+    "tools/Audit-RepositoryScope.ps1",
     "tools/Audit-NativeDependencies.ps1",
     "tools/Audit-ParchmentPicker.ps1",
     "tools/Audit-ReleasePackage.ps1",
@@ -30,6 +31,9 @@
     "tools/Compile-BoatNorthCoastPapyrus.ps1",
     "tools/Compile-BoatSolstheimPapyrus.ps1",
     "tools/Generate-ReleasePlugin.ps1"
+  ],
+  "release_support_inputs": [
+    "tools/papyrus-stubs"
   ],
   "release_xedit_scripts": [
     "tools/xedit/DNT_GeneratePlugin.pas",
@@ -50,6 +54,7 @@
   "maintained_developer_tools": [
     "tools/map-coordinate-calibrator",
     "tools/Build-CalibratedSelectionRings.ps1",
+    "tools/Build-BoatRouteChalkTexture.ps1",
     "tools/Build-CarriageParchmentMarkers.ps1",
     "tools/Build-NordenCarriageMarkers.ps1",
     "tools/Build-NordenMaritimeMarkers.ps1",
@@ -60,7 +65,15 @@
     "tools/Build-VanillaHoldCapitalMarkers.ps1",
     "tools/Build-VanillaParchmentMarkers.ps1",
     "tools/Build-WizardParchmentMarker.ps1",
-    "tools/Sync-CalibrationAssets.ps1"
+    "tools/Export-FwmfMeshJson.ps1",
+    "tools/Extract-OneWaySelectionRing.py",
+    "tools/Extract-TransparentComponent.py",
+    "tools/Fade-DarkMatte.py",
+    "tools/New-BoatRouteAuthoringKit.ps1",
+    "tools/Normalize-TransparentMarker.py",
+    "tools/Remove-EdgeBackground.py",
+    "tools/xedit/DNT_ExportFwmfMeshJson.pas",
+    "tools/xedit/patches"
   ],
   "retained_evidence_tools": [
     "tools/Audit-BoatHonrichVoiceAssets.ps1",
@@ -76,6 +89,13 @@
     "tools/xedit/DNT_InventoryBoatIlinalta.pas",
     "tools/xedit/DNT_InventoryBoatNorthCoast.pas",
     "tools/xedit/DNT_InventoryBoatSolstheim.pas"
+  ],
+  "retained_test_harnesses": [
+    "test-harness/state-gated-release",
+    "tools/Analyze-StateGatedReleaseLog.ps1",
+    "tools/Audit-StateGatedReleaseHarness.ps1",
+    "tools/Deploy-StateGatedReleaseHarness.ps1",
+    "tools/Run-StateGatedReleaseTest.ps1"
   ],
   "archived_components": [
     "BCD wizard map adapter (recoverable from Git history)",

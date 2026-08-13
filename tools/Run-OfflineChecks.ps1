@@ -18,6 +18,9 @@ function Invoke-Check([string]$Name, [scriptblock]$Action) {
 # This suite deliberately contains no deployment, MO2 profile editing, VFS
 # launch, gameplay launch, or overwrite operation. xEdit-based build/audit
 # scripts use copies in this repository's ignored build directory.
+Invoke-Check "repository scope" {
+    & (Join-Path $PSScriptRoot "Audit-RepositoryScope.ps1")
+}
 Invoke-Check "dependency lock" {
     & (Join-Path $PSScriptRoot "Audit-NativeDependencies.ps1") `
         -LoreRimRoot $LoreRimRoot
