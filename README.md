@@ -156,7 +156,8 @@ SKSE Menu Framework, CFTO, and the external map-art dependencies listed in
 To repackage already-generated, already-validated build artifacts without
 reopening xEdit, use `.\tools\Build-Release.ps1 -PackageOnly`. Packaging copies
 only the 22 source/PEX pairs in the release inventory, so stale compiler output
-cannot enter the ZIP.
+cannot enter the ZIP. Compiled PEX/DLL files and intermediate module plugins are
+not tracked; see [`docs/ARTIFACT_POLICY.md`](docs/ARTIFACT_POLICY.md).
 
 Stock xEdit 4.1.x does not offer a truly headless `-script` mode: `-script`
 selects Script mode, while `-autoload` and `-autoexit` are parsed only in Edit

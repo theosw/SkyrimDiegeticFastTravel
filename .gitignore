@@ -16,6 +16,16 @@ Learning Sources/
 # Native debug symbols are local build artifacts.
 *.pdb
 
+# Reproducible runtime build products. Build-Release recreates these before
+# packaging. The wizard-guide ESP/SEQ pair is deliberately retained below as
+# the consolidated xEdit generator's reviewed seed.
+modules/*/mod/Scripts/*.pex
+modules/parchment-picker/mod/SKSE/Plugins/*.dll
+modules/*/mod/*.esp
+!modules/wizard-guides/mod/DiegeticTravelWizardGuides.esp
+modules/*/mod/SEQ/*.seq
+!modules/wizard-guides/mod/SEQ/DiegeticTravelWizardGuides.seq
+
 # Papyrus compiler assembly intermediates emitted beside compiled scripts.
 modules/parchment-picker/mod/Scripts/*.pas
 

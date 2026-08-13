@@ -43,6 +43,10 @@
     "tools/xedit/DNT_FinalizeReleasePlugin.pas",
     "tools/xedit/DNT_AuditReleasePlugin.pas"
   ],
+  "tracked_runtime_seeds": [
+    "modules/wizard-guides/mod/DiegeticTravelWizardGuides.esp",
+    "modules/wizard-guides/mod/SEQ/DiegeticTravelWizardGuides.seq"
+  ],
   "maintained_developer_tools": [
     "tools/map-coordinate-calibrator",
     "tools/Build-CalibratedSelectionRings.ps1",
