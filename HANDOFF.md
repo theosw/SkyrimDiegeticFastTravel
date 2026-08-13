@@ -149,9 +149,7 @@ Broad offline checkpoint package hashes:
 - `DiegeticTravelParchmentPicker-offline-candidate.zip`:
   `CC90A93C56A65AC3601126EFCD97E09BD4BDA547889B6FEBEAE294024A4B7671`;
 - `DiegeticTravelWizardGuides-phase1.zip`:
-  `0F5BF619466BF2A8E72345CBB9C9DFC43D8E561E95F768674CA3E72165E83C55`;
-- `DiegeticTravelWizardMapAdapter-alpha.zip`:
-  `CDFF6A1F4297B77073B50526FFED4A2B71B8AE6781E973EBCBBB6CCC99A41994`.
+  `0F5BF619466BF2A8E72345CBB9C9DFC43D8E561E95F768674CA3E72165E83C55`.
 
 The workspace-only suite, Python routing tests, all native/Papyrus builds,
 staging-only xEdit audits, and packages pass. No workspace candidate from this
@@ -638,71 +636,11 @@ new live pass after recompilation.
 
 ### BCD wizard map adapter
 
-The optional adapter lives under `modules\wizard-map-picker` and is deployed as
-additional files inside the existing owned
-`houseCARL - DiegeticTravelWizardGuides` mod directory. It does not modify the
-live-proven core ESP. `DiegeticTravelWizardMap.esp` hard-masters the core wizard
-plugin and Better Carriage Destinations, adds a second faculty dialogue option,
-and opens BCD with a whitelist containing exactly these world-map markers:
-
-- Whiterun `000162CE`
-- Riften `0001C390`
-- Solitude `0004D0F4`
-- Windhelm `00038436`
-- Markarth `0001C38A`
-
-`DNT_WizardMapPicker` receives `BCD_SetDestination`, resolves the selected
-marker while MapMenu is open, translates it to the existing lowercase stable
-destination ID, closes the map, and calls
-`DNT_WizardTravelService.RequestTravel`. It never calls BCD's pricing, scene,
-or travel functions. Cancelling does not invoke the core service, and the old
-five-choice dialogue submenu remains available.
-
-Research is pinned to current BCD HEAD
-`136dc7b3ad9754877c485fd5cea29550af108888`; LoreRim has BCD 1.0.10 enabled in
-`UltraDiegeticTravel`. Both adapter scripts compile with 0 errors and 0
-warnings.
-
-The first monitored adapter build loaded its quest and all properties at runtime
-but exposed no map option. It incorrectly assigned the new topic to the existing
-faculty top-level branch; Skyrim exposes only that branch's designated Starting
-Topic. That ESP (`85AE4DEF...`) is rejected. The corrected generator gives the
-map prompt its own non-blocking, non-exclusive top-level branch and makes it that
-branch's Starting Topic. Generation is byte-idempotent, and the independent
-audit now rejects core-branch reuse while requiring the two-way branch/topic
-links, adapter-quest ownership, whitelist, seven quest properties, faculty
-conditions, and OnBegin fragment. The corrected adapter ESP is SHA-256
-`74D1EF6F6268BFAF5CCC12FA3D6CF4B074790ECC655A233E0AA4481132A08FE4`; the core
-ESP remains
-`F81562179374815AEF3D57015BC0EBC7AD40B7235A730CB727E7994F7EF68B4F`.
-
-The corrected candidate package is
-`dist\DiegeticTravelWizardMapAdapter-alpha.zip`, SHA-256
-`F55A9B42C6DF05F90A612DEC25168D43CC748C5CD36B3E1F80920B84E6BA3D95`.
-`DiegeticTravelWizardMap.esp`, BCD, and the core plugin are enabled in the
-dedicated profile. The complete monitored matrix in
-`docs\WIZARD_MAP_ADAPTER.md` now passes.
-
-The unchanged corrected adapter subsequently passed its first end-to-end live
-selection run at 32:9. Its prompt appeared after saving once with the adapter
-installed and reloading that save. Mirabelle opened the map, selecting Solitude
-emitted `WIZARD_MAP_SELECT` and one matching core start/complete pair, and
-Sybille returned the player to the College. Phinis then opened the map,
-selecting Riften completed another matching pair, and Wylandriah returned the
-player to the College. The prior pass with the same adapter installed also
-completed a retained-list Faralda-to-Windhelm and Wuunferth-to-College
-regression. The exterior-College pass then proved Ancano exclusion, the exact
-five-marker whitelist, and cancellation with no payment or movement. The final
-pass selected Windhelm through Mirabelle with only 22 gold and emitted
-`WIZARD_MAP_SELECT` followed by `WIZARD_TRAVEL_DENIED reason=gold`, with no
-start/completion, payment, or movement. A funded trip in the same pass played
-the payment sound and completed normally. The adapter is therefore Proven as
-a selection-only front end to the core service.
-
-Run that matrix with
-`tools\Run-WizardGuidesTest.ps1 -RequireMapAdapter`. This mode fails preflight
-unless the adapter ESP, BCD ESP, adapter SEQ, and both adapter PEX files are
-active/present, and it streams both `WIZARD_MAP_*` and `WIZARD_TRAVEL_*` traces.
+This selection-only BCD experiment was live-proven, then superseded by the
+physical parchment picker. Its module, binaries, dedicated documentation, and
+build/test pipeline were removed from the maintained tree during repository
+cleanup. The complete implementation and test history remain recoverable from
+Git before cleanup commit `4629542`.
 
 ### Faculty access
 

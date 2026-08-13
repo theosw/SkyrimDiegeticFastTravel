@@ -1,7 +1,6 @@
 param(
     [string]$LoreRimRoot = "D:\Lorerim",
-    [switch]$FullBuild,
-    [switch]$IncludeBcdAdapter
+    [switch]$FullBuild
 )
 
 $ErrorActionPreference = "Stop"
@@ -44,13 +43,6 @@ if ($FullBuild) {
     }
     Invoke-Check "Lake Honrich boat build and isolated xEdit audit" {
         & (Join-Path $PSScriptRoot "Build-BoatHonrich.ps1") `
-            -LoreRimRoot $LoreRimRoot
-    }
-}
-
-if ($IncludeBcdAdapter) {
-    Invoke-Check "optional BCD adapter build and isolated xEdit audit" {
-        & (Join-Path $PSScriptRoot "Build-WizardMapAdapter.ps1") `
             -LoreRimRoot $LoreRimRoot
     }
 }

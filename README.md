@@ -35,14 +35,6 @@ subtitle, and lip sync are gameplay-proven; the current offline candidate
 generalizes that presentation before the parchment opens. Only the selected
 destination runs a travel fragment.
 
-The separate [`modules/wizard-map-picker`](modules/wizard-map-picker) candidate
-uses Better Carriage Destinations only as a five-city MapMenu selector. It
-translates the selected world-map marker to one of the core service's stable
-destination IDs; the core still validates, charges, logs, and teleports. The
-proven dialogue list remains available as a fallback. See
-[`docs/WIZARD_MAP_ADAPTER.md`](docs/WIZARD_MAP_ADAPTER.md) for the pinned
-upstream contract and live-test gate.
-
 The new [`modules/parchment-picker`](modules/parchment-picker) candidate is a
 provider-neutral alternative to the native tween MapMenu. It uses a blocking
 SKSE Menu Framework window, provider-defined artwork/aspect/marker positions,
@@ -213,15 +205,6 @@ changing PEX hashes, use:
 ```powershell
 .\tools\Build-WizardGuides.ps1 -PackageOnly
 ```
-
-The optional BCD wizard map adapter is built and audited separately:
-
-```powershell
-.\tools\Build-WizardMapAdapter.ps1
-```
-
-This writes `dist\DiegeticTravelWizardMapAdapter-alpha.zip`. It requires BCD
-and the core wizard-guide plugin and does not alter either of them.
 
 The isolated Lake Honrich boat candidate is built and audited separately:
 

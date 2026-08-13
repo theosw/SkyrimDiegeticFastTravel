@@ -763,73 +763,13 @@ the first monitored map-adapter pass.
 
 ### UI-001 — BCD as a wizard selection-only map adapter
 
-**Status:** Proven
+**Status:** Archived after proof
 
-**Claim:** A separate adapter can call BCD's native filtered MapMenu, translate
-one of five selected world-map marker references to the wizard service's stable
-destination ID, and leave fare and movement under the proven core service.
-
-**Evidence:** BCD repository HEAD on 2026-07-31 is commit
-`136dc7b3ad9754877c485fd5cea29550af108888`, matching the source already cited
-in the compatibility notes. The installed BCD 1.0.10 Papyrus source confirms
-that its carriage quest registers for `BCD_SetDestination` only inside its own
-`OpenMap`; the adapter instead calls the lower-level native
-`BCD_Utils.OpenTheMap`. A headless xEdit inventory resolved the exact Whiterun,
-Riften, Solitude, Windhelm, and Markarth map-marker references. Both adapter
-scripts compile with zero errors and warnings.
-
-The first monitored build, ESP SHA-256
-`85AE4DEF45B94894D92499654499347CD0C0B380A8969B14113F40CFC324A9EA`, is rejected
-for reusing the core top-level branch without becoming its Starting Topic. The
-adapter quest loaded at runtime but no map prompt appeared and no map trace ran.
-The corrected candidate owns a dedicated top-level branch and is byte-idempotent
-at ESP SHA-256
-`74D1EF6F6268BFAF5CCC12FA3D6CF4B074790ECC655A233E0AA4481132A08FE4`. Its first
-successful live pass used core ESP
-`F81562179374815AEF3D57015BC0EBC7AD40B7235A730CB727E7994F7EF68B4F`; the
-independent adapter audit also passes against the exterior-College candidate
-core `AC92D9C1...E54374`. The audit checks both integration masters, the
-five-entry whitelist, seven quest properties, faculty eligibility, dedicated
-branch ownership and Starting Topic, and the OnBegin picker fragment. The
-corrected candidate package is `dist\DiegeticTravelWizardMapAdapter-alpha.zip`, SHA-256
-`F55A9B42C6DF05F90A612DEC25168D43CC748C5CD36B3E1F80920B84E6BA3D95`.
-
-**Gameplay evidence:** With the corrected adapter unchanged, the prompt became
-visible after the game saved once with the adapter installed and then reloaded
-that save. At 32:9, Mirabelle opened the map and selection of Solitude emitted
-`WIZARD_MAP_OPEN`, `WIZARD_MAP_SELECT destination=Solitude`, and exactly one
-matching `WIZARD_TRAVEL_START` / `WIZARD_TRAVEL_COMPLETE` pair at fare 250.
-Sybille then completed the College return. Phinis repeated the map flow to
-Riften, followed by a successful Wylandriah-to-College return. No
-`WIZARD_MAP_REJECT`, `WIZARD_MAP_DENIED`, or DNT travel failure appeared. A
-preceding run with the same adapter installed completed the retained dialogue
-list from Faralda to Windhelm and Wuunferth back to the College.
-
-The same monitored session then proved cancellation and filtering. Closing the
-map without a selection emitted `WIZARD_MAP_CANCEL`, removed no gold, and left
-the player in place. Attempting a non-whitelisted marker produced another clean
-open/cancel pair with no select or travel trace. The user confirmed that only
-the five intended markers were selectable and that Ancano had no map prompt;
-Ancano correctly produced no DNT trace because dialogue eligibility rejected
-him before the picker script ran.
-
-The final monitored pass proved both fare-feedback paths. A funded faculty map
-trip selected Whiterun and emitted one start/completion pair. A direct Farengar
-request with 22 gold emitted
-`WIZARD_TRAVEL_DENIED reason=gold required=250 available=22`; after funding,
-the same route emitted one start/completion pair. Mirabelle then opened the
-map, selected Windhelm, and emitted `WIZARD_MAP_SELECT` followed by
-`WIZARD_TRAVEL_DENIED reason=gold required=250 available=22`, with no later
-start or completion. The user confirmed that denials displayed the top-left
-notification, removed no gold, played no payment cue, and caused no movement;
-successful payment played vanilla `ITMGoldDown` and travel completed.
-
-**Candidate under test:** Dialogue terminal INFOs now use mutually exclusive
-player-gold conditions, with genuine voiced refusal SharedInfos where exact FUZ
-coverage exists and forced-subtitle fallbacks elsewhere. The service remains the
-authority and the map path remains notification-only because selection occurs
-after dialogue closes. Do not call the semantic mismatch fixed until the new
-candidate passes the monitored denial and funded-regression checks.
+The experiment proved that a separate adapter could use BCD as a filtered
+selection surface while leaving fare and movement under the wizard service.
+The physical parchment picker superseded it. Its source, binaries, and
+dedicated pipeline remain recoverable from Git history before repository
+cleanup; they are no longer part of the maintained architecture.
 
 ## 2026-08-02 offline provider and authoring checkpoint
 

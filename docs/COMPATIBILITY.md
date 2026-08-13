@@ -80,20 +80,13 @@ That design preserves BCD's polished map UI without duplicating service logic.
 It requires a deliberate compatibility patch or a small BCD API
 extension; merely changing load order is not sufficient.
 
-### Wizard-guide adapter
+### Archived wizard-guide experiment
 
-The optional `DiegeticTravelWizardMap.esp` implements that selection-only
-boundary for the wizard network without changing BCD itself. It calls the
-native `BCD_Utils.OpenTheMap` function with a five-city whitelist, receives the
-selected marker through `BCD_SetDestination`, translates it to a stable wizard
-destination ID, and delegates fare and movement to `DNT_WizardTravelService`.
-
-The adapter deliberately remains a separate plugin with hard masters on BCD
-and `DiegeticTravelWizardGuides.esp`. The core wizard plugin and its dialogue
-list therefore remain usable when the adapter is removed. The adapter has now
-passed its monitored 32:9 checks: map open/cancel, core fare denial, funded
-travel, and the dialogue-list fallback. The parchment picker is the preferred
-in-world surface; BCD remains a proven optional adapter and comparison point.
+An earlier optional plugin proved that BCD could act as a selection-only map
+front end while the wizard service retained fare and travel authority. The
+physical parchment picker superseded that experiment. Its source and dedicated
+build/test pipeline were removed from the maintained tree during repository
+cleanup and remain recoverable from Git history.
 
 ## Wizarding Traversal: Apparition Travel
 
