@@ -612,20 +612,16 @@ Rollback commit `a03262d` checkpoints the proven two-way build. Commit
 `9aa25ef` checkpoints the live-proven three-node star before voice changes, and
 commit `ed004f2` checkpoints the fully proven voiced Phase 1 build.
 Commit `4dfb646` checkpoints the live-proven permanent-faculty expansion.
-`tools/Audit-WizardGuideStar.ps1` checks the seven visible INFOs, while
-`tools/Audit-WizardVoiceAssets.ps1` checks the exact FUZ paths. The voice
-patcher produces byte-identical output on a second run. Both the generator and
-the independent audit now prove that every donor belongs to a special
+The consolidated release audit checks the seven visible INFOs, while
+`tools/Audit-WizardVoiceAssets.ps1` checks the exact FUZ paths. Both the
+generator and release audit prove that every donor belongs to a special
 Misc/SharedInfo topic and has an EditorID; the separate archive audit proves
 the expected speaker-specific FUZ paths. See `docs\EVIDENCE_LEDGER.md` for the
 promoted live evidence and the gate future dialogue changes must pass.
 
-`tools/Patch-WizardGuideDialogue.ps1` now defaults to the patched headless
-xEdit at `build/xedit-patched/SSEEdit64.exe`, patches the workspace copy only,
-and deploys to LoreRim only when passed `-Deploy`; deployment is refused while
-`SkyrimSE` is running. `-Deploy` copies the complete owned module payload so
-the ESP, SEQ, and newly compiled PEX files stay in sync. The latest fully proven
-ESP is the fare-feedback build at SHA-256
+The one-off seed audit and dialogue patch pipeline was retired after its output
+became part of the consolidated generator. The latest fully proven ESP is the
+fare-feedback build at SHA-256
 `2DF34217F6576D3FCFE720E1E101690216E6D94157C26A9D79544A1E7BA83C21`.
 Its exact live-tested payload is `dist\DiegeticTravelWizardGuides-phase1.zip`,
 SHA-256

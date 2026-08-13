@@ -33,16 +33,8 @@ Invoke-Check "source and package-boundary audit" {
 }
 
 if ($FullBuild) {
-    Invoke-Check "wizard guide build and isolated xEdit audit" {
-        & (Join-Path $PSScriptRoot "Build-WizardGuides.ps1") `
-            -LoreRimRoot $LoreRimRoot
-    }
-    Invoke-Check "parchment native/Papyrus build and isolated xEdit audit" {
-        & (Join-Path $PSScriptRoot "Build-ParchmentPicker.ps1") `
-            -LoreRimRoot $LoreRimRoot
-    }
-    Invoke-Check "Lake Honrich boat build and isolated xEdit audit" {
-        & (Join-Path $PSScriptRoot "Build-BoatHonrich.ps1") `
+    Invoke-Check "consolidated release build and audits" {
+        & (Join-Path $PSScriptRoot "Build-Release.ps1") `
             -LoreRimRoot $LoreRimRoot
     }
 }

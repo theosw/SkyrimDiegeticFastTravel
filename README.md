@@ -189,63 +189,13 @@ and cleanup; Diegetic Travel recognizes that driver and uses the exact inn as
 the catalogue origin. No compatibility ESP or load-order patch is required.
 See [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md).
 
-The standalone wizard-guide Phase 1 package is built separately:
-
-```powershell
-.\tools\Build-WizardGuides.ps1
-```
-
-This compiles the two wizard scripts and writes
-`dist\DiegeticTravelWizardGuides-phase1.zip`. It does not launch Skyrim or
-deploy/toggle the module in MO2.
-
-To package the exact already-compiled and already-tested module payload without
-changing PEX hashes, use:
-
-```powershell
-.\tools\Build-WizardGuides.ps1 -PackageOnly
-```
-
-The isolated Lake Honrich boat candidate is built and audited separately:
-
-```powershell
-.\tools\Build-BoatHonrich.ps1
-```
-
-This writes `dist\DiegeticTravelBoatHonrich-offline-candidate.zip`. It requires
-CFTO plus the existing parchment-picker runtime, does not include the external
-map texture, and does not deploy or launch Skyrim.
-
-The isolated Lake Ilinalta candidate uses the parallel build:
-
-```powershell
-.\tools\Build-BoatIlinalta.ps1
-```
-
-This writes `dist\DiegeticTravelBoatIlinalta-offline-candidate.zip` under the
-same dependency and no-deployment rules.
-
-The public Solstheim triangle uses:
-
-```powershell
-.\tools\Build-BoatSolstheim.ps1
-```
-
-This writes `dist\DiegeticTravelBoatSolstheim-offline-candidate.zip`, references
-Dragonborn's existing physical Solstheim map, and bundles no artwork or audio.
-
-The first carriage parchment vertical slice is currently regenerated and
-audited with:
-
-```powershell
-.\tools\Compile-CarriageParchmentPapyrus.ps1
-.\tools\Generate-CarriageParchment.ps1
-.\tools\Audit-CarriageParchment.ps1
-.\tools\Build-CarriageParchment.ps1
-```
-
-It requires the separately built carriage alpha and generic parchment runtime;
-the adapter package does not duplicate either dependency.
+The maintained build surface is intentionally singular: use
+`tools\Build-Release.ps1` for all release modules and
+`tools\Run-OfflineChecks.ps1 -FullBuild` for the same build wrapped in the
+workspace-only safety suite. The former per-module package, audit, deployment,
+and gameplay wrappers were retired after consolidation; their history remains
+available in Git. Module-specific Papyrus compilers and xEdit generators remain
+internal inputs to the consolidated builder.
 
 For the SEQ artifact, the xEdit script mirrors xEdit's built-in eligibility
 rule and emits the fixed FormIDs of newly start-game-enabled quests. PowerShell

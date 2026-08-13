@@ -21,7 +21,6 @@
     "tools/Audit-NativeDependencies.ps1",
     "tools/Audit-ParchmentPicker.ps1",
     "tools/Audit-ReleasePackage.ps1",
-    "tools/Build-ParchmentPicker.ps1",
     "tools/Compile-Papyrus.ps1",
     "tools/Compile-WizardGuidesPapyrus.ps1",
     "tools/Compile-ParchmentPickerPapyrus.ps1",
@@ -76,7 +75,8 @@
   ],
   "archived_components": [
     "BCD wizard map adapter (recoverable from Git history)",
-    "Baan Malur merchant-ferry prototype (research and calibration retained; implementation recoverable from Git history)"
+    "Baan Malur merchant-ferry prototype (research and calibration retained; implementation recoverable from Git history)",
+    "standalone module build/audit/deploy/test pipelines superseded by the consolidated release builder"
   ],
   "research_only_patterns": [
     "tools/Inventory-*.ps1",
