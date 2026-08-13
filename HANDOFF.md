@@ -1241,10 +1241,10 @@ stable artifact checks.
 - Their dialogue quests use explicit public/private actor whitelists. xEdit
   audits prove that the private actors are present in the generated DIAL/INFO
   conditions and that the old route-faction exclusion cannot hide them.
-- Baan Malur remains deferred except for the one verified preview: Raven Rock
-  can offer Sunmul through source-quest stage 5. Sunmul is not a provider, so
-  the trip has no implied return service. The other five unfinished/unset
-  stages remain hidden.
+- The Baan Malur preview was kept out of the release and archived during
+  repository cleanup. Its research, verified Sunmul coordinate, and map
+  calibration remain maintained; the prototype implementation is recoverable
+  from Git when the external destinations are ready.
 - The native parchment API now accepts a destination-specific selection-ring
   texture. `norden-oneway-selection-ring.dds` contains only the lower arrow,
   shares the authorized Norden round-trip ring's bounds/transform, and is used

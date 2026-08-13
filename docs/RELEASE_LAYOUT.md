@@ -16,7 +16,7 @@ different: users receive one `DiegeticTravel.esp` and one matching SEQ file.
 - Solstheim ferries
 
 The Baan Malur experiment and Better Carriage Destinations wizard-map adapter
-remain development-only.
+were archived during repository cleanup and remain recoverable from Git.
 
 ## Fixed local FormID blocks
 

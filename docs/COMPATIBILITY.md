@@ -102,8 +102,7 @@ original plugin is not a master and is not required: compatibility is soft
 detected, and an absent override falls through to normal time-passing fast
 travel. The holder effect is logged for diagnostics but is not authoritative,
 because Wizarding Traversal can leave it present after Apparition is toggled
-off. The Baan Malur adapter remains
-an exception because it delegates movement to that source mod's quest stages.
+off.
 
 The release test must verify both toggle directions. The speed override should
 be `100000` while Apparition is enabled and return to its ordinary value after

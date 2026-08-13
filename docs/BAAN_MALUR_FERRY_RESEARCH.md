@@ -73,9 +73,9 @@ Calibrated normalized positions in that cropped artwork space:
 The calibrator keeps these positions separate from the local Solstheim ferry
 coordinates because the two networks use different maps and UV transforms.
 
-## Implemented public slice
+## Archived public-slice prototype
 
-The isolated `modules/boat-baan-malur` candidate now:
+An isolated candidate proved this design:
 
 1. adds the parchment option only to the three public captain bases;
 2. leaves Journey's original destination dialogue available as a fallback;
@@ -83,6 +83,11 @@ The isolated `modules/boat-baan-malur` candidate now:
 4. puts Raven Rock, Baan Malur, and Cormaris on the calibrated FWMF chart;
 5. delegates selections to the proved original stages `1`, `2`, and `3`;
 6. packages no chart or voice assets.
+
+The prototype plugin and its dedicated build/deploy/test pipeline were removed
+from the maintained tree during repository cleanup. They remain recoverable
+from Git history. The research and map-calibration data stay here so the
+provider can be rebuilt when the external destinations are ready.
 
 The gated ports remain a later slice and must mirror each original hidden
 check-actor faction condition exactly.

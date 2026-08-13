@@ -74,11 +74,9 @@
     "tools/xedit/DNT_InventoryBoatNorthCoast.pas",
     "tools/xedit/DNT_InventoryBoatSolstheim.pas"
   ],
-  "deferred_modules": [
-    "modules/boat-baan-malur"
-  ],
   "archived_components": [
-    "BCD wizard map adapter (recoverable from Git history)"
+    "BCD wizard map adapter (recoverable from Git history)",
+    "Baan Malur merchant-ferry prototype (research and calibration retained; implementation recoverable from Git history)"
   ],
   "research_only_patterns": [
     "tools/Inventory-*.ps1",

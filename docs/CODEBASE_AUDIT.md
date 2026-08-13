@@ -93,7 +93,7 @@ Release testing therefore uses a new game after structural plugin changes.
 - the coordinate/icon calibration web app and asset-authoring sources;
 - provider-specific plugin-generation/audit sources needed to reproduce the
   consolidated ESP;
-- the Baan Malur module as non-release research for unfinished external areas;
+- the Baan Malur research and calibration records for unfinished external areas;
 - historical gameplay evidence in `EVIDENCE_LEDGER.md`.
 
 These are outside the explicit release package and are labelled by directory or

@@ -116,7 +116,7 @@ pre-command disposable save. The full matrix and log oracle are documented in
 3. **Implemented:** Castle Volkihar availability, extra outbound fare, free
    return, and distinct Enthralled Ferryman using CFTO's live globals.
 4. **Implemented offline; live test pending:** Captain Remyris's three public
-   merchant stops, in the isolated `boat-baan-malur` module.
+   merchant stops, in the archived Baan Malur prototype recoverable from Git.
 5. **Partial:** expose verified Raven Rock -> Sunmul stage 5 as one-way. Keep the
    other five Baan Malur ports deferred until their areas and return services
    are complete and their original unlocks can be verified.
