@@ -125,7 +125,12 @@ $addressLibraryPath = Assert-Hash "Address Library" $runtime.addressLibrary
 $null = Assert-Hash "SKSE Menu Framework" $runtime.menuFramework
 $null = Assert-Hash "RUSTIC MAPS artwork" $runtime.artwork
 $null = Assert-Hash "Caro Tuts wizard artwork" $runtime.wizardArtwork
-$null = Assert-Hash "Wizard core" $runtime.wizardCore
+$null = Assert-Hash "CFTO base" $runtime.cftoBase
+$null = Assert-Hash "CFTO Fixes and Winterhold" $runtime.cftoFixesAndWinterhold
+$null = Assert-Hash "optional Wait Carriage in Inns" $runtime.optionalWaitCarriageInInns
+if ($runtime.optionalWaitCarriageInInns.dependencyType -notmatch "optional soft lookup") {
+    throw "Wait Carriage in Inns compatibility must remain an optional soft lookup."
+}
 $apparitionPath = Assert-Hash "optional Wizarding Traversal" $runtime.optionalApparitionTravel
 if ($runtime.optionalApparitionTravel.dependencyType -notmatch "optional soft lookup" -or
     $runtime.optionalApparitionTravel.holderMagicEffectLocalFormId -ne "000808") {

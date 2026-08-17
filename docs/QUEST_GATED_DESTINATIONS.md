@@ -24,15 +24,16 @@ earlier than CFTO would.
 
 ## Journey to Baan Malur: faction-unlocked ports
 
-Captain Remyris's safe initial network is Raven Rock, Baan Malur, and Cormaris.
-Six additional destinations are described by hidden check actors or source
-quest stages; only the verified one-way Sunmul trip is enabled for beta:
+Captain Remyris's optional add-on network is Raven Rock, Baan Malur, and
+Cormaris. Six additional destinations are described by hidden check actors or
+source quest stages; only the verified one-way Sunmul trip is enabled in the
+add-on beta:
 
 | Destination | Proven unlock faction / check actor |
 | --- | --- |
 | Pryai | `SOMRBoatHirePryai` via `SOMRBoatTravelPryaiCheck` |
 | Llethrin Fel | `SOMRBoatHireLlethrinFel` |
-| Sunmul | Verified source quest stage 5 works from Raven Rock, but no return provider currently exists. The beta exposes this one trip only and marks it one-way. |
+| Sunmul | Verified source quest stage 5 works as an outbound destination, but no return provider currently exists. The optional add-on exposes it from all three public captains and marks every occurrence one-way. |
 | Seyda Neen | `SOMRBoatHireSeydaNeen` |
 | Vivec | `SOMRBoatHireVivec` via `SOMRBoatTravelVivecCheck` |
 | Old Silgrad | `SOMRBoatHireOldSilgrad` |
@@ -51,7 +52,7 @@ reach them and must not create a fake return service:
 - Ilinalta's Deep (Lake Ilinalta Route 3 extension)
 - Northshore Landing (Solstheim Route 4 extension)
 - Bujold's Retreat (Solstheim Route 4 extension)
-- Sunmul (Baan Malur stage 5, from Raven Rock only)
+- Sunmul (Baan Malur stage 5, from all three public captains)
 
 The carriage network has a separate destination-only classification based on
 CFTO's placed carriage drivers plus LoreRim's installed **Wait Carriage in Inns**
@@ -115,8 +116,10 @@ pre-command disposable save. The full matrix and log oracle are documented in
    placed-ref enable state.
 3. **Implemented:** Castle Volkihar availability, extra outbound fare, free
    return, and distinct Enthralled Ferryman using CFTO's live globals.
-4. **Implemented offline; live test pending:** Captain Remyris's three public
-   merchant stops, in the archived Baan Malur prototype recoverable from Git.
-5. **Partial:** expose verified Raven Rock -> Sunmul stage 5 as one-way. Keep the
-   other five Baan Malur ports deferred until their areas and return services
-   are complete and their original unlocks can be verified.
+4. **Optional add-on:** Captain Remyris's three public merchant stops are
+   packaged in a separate ESP-FE so the main release never acquires a Journey
+   to Baan Malur master.
+5. **Optional add-on:** Raven Rock, Baan Malur, and Cormaris -> Sunmul stage 5
+   are exposed as one-way. The
+   other five Baan Malur ports remain deferred until their areas, original
+   unlock conditions, and return services are complete and verified.

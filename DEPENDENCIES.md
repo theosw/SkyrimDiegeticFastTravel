@@ -10,13 +10,35 @@ verifies it without launching Skyrim.
 - SKSE `2.2.6`
 - Address Library `11.0.0.0`, exact `versionlib-1-6-1170-0.bin`
 - SKSE Menu Framework `3.9.0.0` (runtime interface reports `3.7`)
+- Carriage and Ferry Travel Overhaul `2.0.0.0` (Nexus 8379)
+- Carriage and Ferry Travel Overhaul - Fixes and Winterhold `3.0.0.0`
+  (Nexus 40651), installed after the base mod; this supplies the pinned
+  `CFTO.esp` master and record layout
 - RUSTIC MAPS `2.0.0.0` for the boat/carriage `battlemap01.dds`
 - Skyrim Paper Map by Caro Tuts for FWMF `1.72.0.0` for the wizard
   `textures/terrain/tamriel/skyrim.dds`
 - `DiegeticTravel.esp` as the consolidated ESL-flagged travel authority
 
+The tested profile also includes Wait Carriage in Inns `1.3.0.0` (Nexus
+83044). That integration is optional and uses soft plugin lookups, but its
+local FormIDs are version-sensitive; other versions are not covered by the
+current compatibility claim.
+
 Every installed payload above is pinned by SHA-256. The lock describes the
 isolated `UltraDiegeticTravel` test profile, not the complete LoreRim modlist.
+
+## Optional Baan Malur add-on target
+
+The separately packaged `DiegeticTravelBoatBaanMalur.esp` requires:
+
+- Journey to Baan Malur and Morrowind `i1.1.9b` (Nexus 114518);
+- Solstheim and Baan Malur Paper Map for FWMF `1.0.0.0` (Nexus 137315).
+
+Both installed inputs are pinned under `optionalAddonDependencies`. They are
+deliberately outside `targetRuntime`: neither is required to build, install,
+or run the main `DiegeticTravel.esp`. The add-on archive must not be installed
+unless Journey to Baan Malur is present, and it references rather than bundles
+the external map texture.
 
 ## Build target
 
@@ -71,6 +93,6 @@ Updating the lock requires a fresh research and live-compatibility pass.
 
 Pinned runtime hashes describe separately installed requirements; they are not
 redistribution permission. The repository and release package contain no
-RUSTIC MAPS texture, Caro Tuts map texture, Bethesda FUZ/XWM, BCD asset, or
-Menu Framework binary. See `docs/ASSET_POLICY.md` for the packaging rules and
-fallbacks.
+RUSTIC MAPS texture, Caro Tuts map texture, Baan Malur map texture, Bethesda
+FUZ/XWM, BCD asset, or Menu Framework binary. See `docs/ASSET_POLICY.md` for
+the packaging rules and fallbacks.

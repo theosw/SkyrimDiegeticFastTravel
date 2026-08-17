@@ -44,8 +44,9 @@ The provider belongs to `Journey to Baan Malur.esp`:
   then `MoveTo`, with their own insufficient-funds notification.
 
 The original repeatable xEdit inspection was a discovery tool and was removed
-after its findings were captured here. It remains recoverable from Git history;
-the deferred Baan Malur module is not part of the consolidated release.
+after its findings were captured here. The provider implementation is now
+maintained as a separately built optional ESP-FE; it is not part of the
+consolidated release and does not add a master to `DiegeticTravel.esp`.
 
 ## Chart contract
 
@@ -73,21 +74,23 @@ Calibrated normalized positions in that cropped artwork space:
 The calibrator keeps these positions separate from the local Solstheim ferry
 coordinates because the two networks use different maps and UV transforms.
 
-## Archived public-slice prototype
+## Optional public-slice add-on
 
-An isolated candidate proved this design:
+The maintained optional add-on implements this design:
 
 1. adds the parchment option only to the three public captain bases;
 2. leaves Journey's original destination dialogue available as a fallback;
 3. shares Journey's original `Where are you headed?` response record;
 4. puts Raven Rock, Baan Malur, and Cormaris on the calibrated FWMF chart;
 5. delegates selections to the proved original stages `1`, `2`, and `3`;
-6. packages no chart or voice assets.
+6. adds the verified stage-5 trip to Sunmul from all three public captains as
+   one-way;
+7. packages no chart, voice assets, native DLL, or copy of the main runtime.
 
-The prototype plugin and its dedicated build/deploy/test pipeline were removed
-from the maintained tree during repository cleanup. They remain recoverable
-from Git history. The research and map-calibration data stay here so the
-provider can be rebuilt when the external destinations are ready.
+`DiegeticTravelBoatBaanMalur.esp` requires Journey to Baan Malur and the main
+Diegetic Fast Travel installation. Its chart remains a separately installed
+texture dependency. Users without Journey to Baan Malur omit the optional
+archive; the main release and all CFTO/wizard services remain unaffected.
 
-The gated ports remain a later slice and must mirror each original hidden
-check-actor faction condition exactly.
+The other gated ports remain a later slice and must mirror each original
+hidden check-actor faction condition exactly.

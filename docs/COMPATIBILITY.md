@@ -58,7 +58,8 @@ The installed BCD dialogue fragment calls its quest's `OpenMap` directly. Its
 CFTO ferry patch chooses a driver-faction-specific whitelist before doing the
 same. Consequently, BCD's CFTO dialogue entry opens the map before the player
 reaches CFTO's normal destination topics. Diegetic Travel currently owns a
-separate parchment handoff with flat destination gates and CFTO-tier fares.
+separate parchment handoff with flat destination gates and configurable
+distance-based carriage fares.
 With the BCD CFTO patch enabled, that handoff is bypassed.
 
 For alpha testing:
@@ -73,8 +74,8 @@ A proper integration should reuse BCD only as the selection surface:
    destination set and live gates.
 2. BCD opens the map with that whitelist.
 3. The selected marker is translated back to a Diegetic Travel destination ID.
-4. Diegetic Travel revalidates availability, uses CFTO's current fare tier,
-   then performs its normal direct travel handoff.
+4. Diegetic Travel revalidates availability, uses its immutable configured
+   carriage quote, then performs its normal direct travel handoff.
 
 That design preserves BCD's polished map UI without duplicating service logic.
 It requires a deliberate compatibility patch or a small BCD API

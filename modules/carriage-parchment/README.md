@@ -15,10 +15,12 @@ or waits for a carriage-seat link; clicking the marker is the travel action.
 
 The beta deliberately has no variable route or route-segment presentation. It
 does not draw straight spokes or imply a road path that CFTO does not expose.
-Carriage stops use exact Norden UI discovered-map symbols under direct author
-permission supplied to the project owner. Capitals retain their unique Norden
-capital symbols; smaller stops use Norden's Town, Settlement, Wood Mill, Mine,
-or Farm symbol according to destination type. Helgen and Granite Hill remain omitted because the
+Carriage stops use exact NORDIC UI discovered-map symbols under outobugi's
+published open-art permission. Capitals retain their unique NORDIC UI capital
+symbols; smaller stops use NORDIC UI's Town, Settlement, Wood Mill, Mine, or
+Farm symbol according to destination type. The assets were extracted from the
+installed downstream Norden UI SWF, and their legacy `norden-*` runtime names
+remain unchanged for compatibility. Helgen and Granite Hill remain omitted because the
 installed CFTO plugin has no native executable handoff for them.
 
 The ordinary CFTO-derived destination dialogue remains the fallback.
@@ -26,6 +28,6 @@ The ordinary CFTO-derived destination dialogue remains the fallback.
 No BCD integration is required. The module reuses the generic native parchment
 runtime and references the same external Skyrim Paper Map/FWMF
 `textures/terrain/tamriel/skyrim.dds` illustration used by the wizard provider.
-The carriage sheet defaults to Norden UI destination symbols and the exact
-Norden round-trip loading symbol as its selection ring. No background map
+The carriage sheet defaults to NORDIC UI destination symbols and the exact
+Norden UI round-trip loading symbol as its selection ring. No background map
 artwork is packaged.

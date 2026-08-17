@@ -3,7 +3,8 @@
 ## Release shape
 
 The release is one ESL-flagged `DiegeticTravel.esp`, one native SKSE plugin,
-22 Papyrus scripts, one 27-location carriage catalogue, and UI textures. The
+22 Papyrus scripts, one validated pricing INI, one 27-location carriage
+catalogue, and UI textures. The
 development modules remain separate source boundaries, but the xEdit release
 generator consolidates their records into the single plugin.
 
@@ -13,7 +14,8 @@ generator consolidates their records into the single plugin.
 
 `DNTParchmentPicker.dll` owns work that must be fast or presentation-heavy:
 
-- loading and validating `travel_catalog.tsv` once at startup;
+- loading and validating `DiegeticTravel.ini` and `travel_catalog.tsv` once at
+  startup;
 - direct carriage fare/hour estimation from the flat catalogue;
 - availability checks that can be resolved from live forms;
 - parchment request construction and stable selection-index mapping;
@@ -37,8 +39,9 @@ Papyrus is deliberately a thin world-mutation bridge:
   CFTO's arrival marker, and performs travel. Its explicit-origin entry point
   lets compatible providers reuse this world-mutation path without adding
   another persistent service quest;
-- each boat and wizard service owns only its provider-specific gates, fare,
-  companion handoff, and arrival behavior;
+- each boat and wizard service owns only its provider-specific gates,
+  companion handoff, and arrival behavior; prices are resolved through the
+  immutable native pricing snapshot so labels and deductions cannot diverge;
 - `DNT_TravelCompatibility` chooses normal `Game.FastTravel` or zero-time
   Apparition `MoveTo` immediately before travel.
 
@@ -56,6 +59,9 @@ read or written by the runtime travel path.
   topology, marker presentation, and verified one-way classification.
 - `modules/parchment-picker/mod/SKSE/Plugins/DiegeticTravel/travel_catalog.tsv`
   is the small runtime catalogue used by native code.
+- `modules/parchment-picker/mod/SKSE/Plugins/DiegeticTravel.ini` holds supported
+  user-facing fare and estimate settings. Invalid individual values retain
+  defaults; settings are never reloaded mid-session.
 
 Destination IDs are stable strings at the UI/service boundary. FormIDs are
 resolved only where Skyrim records are required.

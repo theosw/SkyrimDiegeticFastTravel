@@ -23,6 +23,18 @@ does not ship that derivative.
 
 This project credits borokoshow as the original creator of the icon.
 
+Solstheim and Baan Malur Paper Map for FWMF (external optional dependency)
+---------------------------------------------------------------------------
+
+Optional add-on chart: Solstheim and Baan Malur Paper Map for FWMF
+Nexus: https://www.nexusmods.com/skyrimspecialedition/mods/137315
+FWMF adaptation/calibration: Caites
+Original map art credited by that project: Limon
+
+The optional Baan Malur merchant-ferry add-on references the separately
+installed `textures/terrain/dlc2solstheimworld/solstheim.dds`. No copy of this
+texture, its mesh, or its plugin is redistributed by Diegetic Fast Travel.
+
 Skyrim Special Edition vanilla map markers
 -------------------------------------------
 
@@ -32,24 +44,51 @@ Exact archive/member hashes, symbol IDs, and reproduction notes are retained in
 `assets/vanilla-interface/hold-capitals/SOURCE.md`. Skyrim Special Edition is a
 required game dependency; these files are intended only for use with Skyrim.
 
-Norden UI map markers
+NORDIC UI map markers
 ---------------------
 
-Wizard and carriage destinations use fourteen discovered-map symbols exported
-from Norden UI 1.2.5's `Interface/skyui/mapmarkerart.swf`: nine hold-capital
-symbols plus the Town, Settlement, Farm, Wood Mill, and Mine symbols. Their
-round-trip selection indicator uses shape 48 exported from
-`Interface/loadingmenu.swf`.
+Wizard and carriage destinations use fourteen discovered-map symbols from
+outobugi's NORDIC UI 2.4.1: nine hold-capital symbols plus the Town,
+Settlement, Farm, Wood Mill, and Mine symbols.
+
+Original artwork: NORDIC UI - Interface Overhaul
+Original creator: outobugi
+Source: https://www.nexusmods.com/skyrimspecialedition/mods/49881
+
+The NORDIC UI author states that permissions are open to use the art as desired
+and asks users to check SkyUI's and SkyHUD's permissions as well. SkyUI Team and
+SkyHUD Team are therefore credited here as upstream UI authors:
+
+SkyUI: https://www.nexusmods.com/skyrimspecialedition/mods/12604
+SkyHUD: https://www.nexusmods.com/skyrimspecialedition/mods/463
+
+Their published Nexus permissions were reviewed. No SkyHUD asset is knowingly
+redistributed in this package, and the bundled map-marker artwork is attributed
+to NORDIC UI rather than to SkyUI's separately credited icon authors.
+
+For reproducibility, the pinned development extraction was made from the
+installed downstream Norden UI 1.2.5 `Interface/skyui/mapmarkerart.swf`:
+
+Extraction source: https://www.nexusmods.com/skyrimspecialedition/mods/166086
+Installed extraction-source SHA-256: AF39A7C181E8BF6187E389CC6D5F333780F11057C562673BC40A78490998B1AA
+
+The exact exported SVGs and their pinned hashes remain under the legacy
+`assets/norden-interface/carriage-markers/` path. Legacy `norden-*` filenames
+and runtime identifiers are retained for compatibility and do not indicate the
+original artist.
+
+Norden UI round-trip selection indicator
+-----------------------------------------
+
+The round-trip selection indicator uses shape 48 exported from Norden UI
+1.2.5's `Interface/loadingmenu.swf`.
 
 Source: https://www.nexusmods.com/skyrimspecialedition/mods/166086
-Installed source SHA-256: AF39A7C181E8BF6187E389CC6D5F333780F11057C562673BC40A78490998B1AA
-Loading-menu source SHA-256: A2C39E2F99F1506ABAABE65DF4FA8EF2192A57E6B5156557B0441C658F4BA4AD
+Installed source SHA-256: A2C39E2F99F1506ABAABE65DF4FA8EF2192A57E6B5156557B0441C658F4BA4AD
 
 The project owner reports direct permission from the Norden UI author to use
-and redistribute these assets. The exact exported SVGs and their pinned hashes
-are retained under `assets/norden-interface/carriage-markers/`.
-The pinned selection-ring export and provenance are retained under
-`assets/norden-interface/selection-ring/`.
+and redistribute this asset. The pinned selection-ring export and provenance
+are retained under `assets/norden-interface/selection-ring/`.
 
 CommonLibSSE-NG
 Copyright (c) 2018 Ryan-rsm-McKenzie

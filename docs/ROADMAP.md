@@ -3,7 +3,8 @@
 ## Beta release gates
 
 - [x] Replace the experimental graph runtime with a flat CFTO destination manifest.
-- [x] Use CFTO's live local, standard, and extra carriage-fare globals.
+- [x] Use the restart-time pricing INI for deterministic distance-based carriage
+  fares and approximate hours; retain CFTO's live globals for ferries.
 - [x] Remove route-derived hours, hazards, and variable rates from beta UI/runtime.
 - [x] Author the ESP generator for dialogue overrides, cost/availability globals,
   quests, and VMAD properties.
@@ -12,7 +13,8 @@
 - [x] Smoke-test the unattended xEdit generator and inspect the resulting ESP.
 - [x] Verify the generated TES4 master order and expected generated-record counts.
 - [ ] Verify the nine CFTO driver actor identities in the target load order.
-- [ ] Reverify CFTO-tier payment and free-carriage faction behavior in game.
+- [ ] Reverify configured carriage payment, estimate calibration, and free-ride
+  behavior in game.
 - [ ] Verify the complete Apparition lifecycle in one monitored run: normal
   travel, toggle on with zero elapsed time, toggle off through the power, and
   restored normal elapsed time. Keep raw `removespell` as a diagnostic only.
@@ -95,8 +97,9 @@
   zero-time `MoveTo` arrival for direct DNT travel without adding a master or
   mutating the source mod's fast-travel-speed global.
 - [x] Expand and independently audit the carriage parchment adapter to all 27
-  destinations with a native CFTO handoff. The beta uses cached live fare/time
-  quotes, revalidates at purchase, and deliberately draws no synthetic routes.
+  destinations with a native CFTO handoff. The beta uses an immutable native
+  pricing snapshot, revalidates at purchase, and deliberately draws no
+  synthetic routes.
 - [ ] Live-test the carriage parchment adapter: paid and free driver roots,
   all expected destinations from one origin, capital/minor marker readability,
   full executable-endpoint visibility, first-open latency, fare/time labels, cancel,

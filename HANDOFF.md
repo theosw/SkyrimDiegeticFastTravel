@@ -1,6 +1,48 @@
 # Diegetic Travel handoff
 
-Updated: 2026-08-11
+Updated: 2026-08-16
+
+## 2026-08-16 selection-ring web-vector checkpoint
+
+- The map-coordinate calibrator's `/icon-alignment` page now renders the thin
+  and Norden round-trip arrows from source-matched inline SVG paths. The
+  idealized circular generator is rejected because it visibly changed the
+  authored contours, heads, forks, bevel, and shadow.
+- Texture and procedural modes remain side by side for visual comparison. The
+  procedural editor tunes body weight separately from source-anchored feather
+  weight, angle, and root overlap, plus whole-ring rotation. Weight changes are
+  radial and preserve the authored outside edge while moving only the
+  center-facing edge. A reference opacity slider plus
+  0/50/100% presets crossfade both layers; neutral thin and Norden geometry was
+  checked at all three states without doubled contours.
+- The web-vector work changes only the developer calibrator. Runtime DDS assets
+  and the native parchment renderer are unchanged.
+- Production build and all six rendered-page tests pass. Lint has no errors
+  and retains nine pre-existing `no-img-element` warnings. Both designs were
+  visually checked against their reference assets at multiple sizes.
+- The focused source model, comparison procedure, rejected-edit boundary, and
+  continuation notes are in
+  `tools/map-coordinate-calibrator/SELECTION_RING_HANDOFF.md`.
+
+## 2026-08-14 optional Baan Malur add-on checkpoint
+
+- Captain Remyris support is maintained as the separate optional ESP-FE
+  `DiegeticTravelBoatBaanMalur.esp`; it is not merged into
+  `DiegeticTravel.esp`.
+- The optional network contains Raven Rock, Baan Malur, and Cormaris, plus the
+  verified stage-5 one-way trip to Sunmul from all three public captains. It delegates fare,
+  insufficient-funds feedback, and movement to Journey to Baan Malur's
+  original repeated-stage ferry quest.
+- The add-on requires the main Diegetic Fast Travel runtime, Journey to Baan
+  Malur and Morrowind, and Solstheim and Baan Malur Paper Map for FWMF. It
+  packages no native DLL or external chart assets.
+- Main-release isolation is deliberate and audited: the consolidated plugin
+  retains its exact six-master contract and never gains a Journey to Baan
+  Malur master. Users without that mod install only the main archive and keep
+  every carriage, CFTO ferry, Solstheim local ferry, and wizard service.
+- `tools/Build-BoatBaanMalur.ps1` builds and semantically audits the optional
+  add-on independently. The package inventory is one ESP-FE, one SEQ, three
+  PEX files, three PSC files, and one add-on README.
 
 ## Release-code cleanup checkpoint
 
@@ -997,11 +1039,14 @@ stable artifact checks.
 - Clicking a parchment marker now revalidates the quote, resolves CFTO's own
   ground-level arrival marker, charges atomically, and immediately uses the
   boat-proven fade/encumbrance/`Game.FastTravel` sequence.
-- The carriage sheet now uses fourteen exact Norden UI discovered-map symbols:
-  nine unique capitals plus Town, Settlement, Farm, Wood Mill, and Mine. The
-  project owner supplied direct permission from the Norden UI author. Sources,
-  hashes, and attribution are retained under
-  `assets/norden-interface/carriage-markers/` and `THIRD_PARTY_NOTICES.txt`.
+- The carriage sheet now uses fourteen exact NORDIC UI discovered-map symbols:
+  nine unique capitals plus Town, Settlement, Farm, Wood Mill, and Mine.
+  outobugi publishes open permissions for NORDIC UI artwork. The pinned
+  extraction came from the installed downstream Norden UI SWF, so legacy
+  `norden-*` identifiers remain for compatibility. Sources, hashes, and both
+  layers of provenance are retained under
+  `assets/norden-interface/carriage-markers/`, `dependencies.lock.json`, and
+  `THIRD_PARTY_NOTICES.txt`.
 - Eight Papyrus scripts compile with zero errors/warnings. The strict asset
   audit, isolated xEdit/SEQ audit, native CTest, ten Python tests, and no-launch
   `UltraDiegeticTravel` preflight all pass.
