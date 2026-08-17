@@ -13,9 +13,12 @@ the player, advance game time, or move actors.
   mouse/controller input, rendering, and mod-event result delivery.
 - `TravelCatalog` loads the flat carriage catalogue from
   `travel_catalog.tsv`.
+- `PricingConfig` loads and validates user-tunable fares and estimate display
+  settings from `SKSE/Plugins/DiegeticTravel.ini`, retaining per-field safe
+  defaults when a value is missing or invalid.
 - `TravelRuntime` resolves carriage origins, builds the native request, quotes
-  fare/hours, maps the selected index back to a stable destination ID, and
-  resolves arrival markers.
+  fare/hours, exposes the immutable wizard/ferry pricing snapshot, maps the
+  selected index back to a stable destination ID, and resolves arrival markers.
 - `Papyrus.cpp` exposes the small provider-neutral native API plus the carriage
   request/quote bindings.
 
@@ -51,11 +54,24 @@ stable IDs and consumes the result through `ConsumeCarriageSelectionId`.
 
 Map artwork remains external and is selected by provider configuration. The
 release includes project-owned/edited ferry markers plus Skyrim-derived and
-authorized Norden symbols documented in `docs/ASSET_POLICY.md` and
+open-permission NORDIC UI symbols documented in `docs/ASSET_POLICY.md` and
 `docs/THIRD_PARTY_ASSETS.md`.
 
 Runtime dependencies are SKSE, Address Library, Menu Framework, and the game
 runtime pinned by the native build. JContainers is not required.
+
+## Pricing configuration
+
+`SKSE/Plugins/DiegeticTravel.ini` is read once at `kDataLoaded`; changing it
+requires a game restart. It controls the carriage distance coefficients,
+minimum/rounding step, the flat College fare, optional local/regional/extra
+ferry overrides, and whether carriage-hour estimates are shown and marked as
+approximate. Ferry overrides feed both the map and the payment transaction.
+With no override, ferries follow CFTO's live fare globals by default.
+
+The optional Baan Malur add-on is intentionally excluded: its external quest
+owns the fixed 30-gold transaction, so configuring only the displayed price
+would be unsafe.
 
 ## Verification
 

@@ -239,8 +239,9 @@ namespace
                          "Data/textures/DiegeticTravel/norden-town.dds") && configured;
         configured = DNT::ParchmentMenu::SetSelectionRingTexture(
                          requestId,
-                         "Data/textures/DiegeticTravel/thin-circle-selection-ring.dds") && configured;
+                         "Data/textures/DiegeticTravel/norden-roundtrip-selection-ring.dds") && configured;
 
+        const auto pricing = DNT::TravelRuntime::GetPricingSettings();
         std::vector<std::string> destinationIds;
         destinationIds.reserve(locations.size());
         for (const auto& location : locations) {
@@ -262,7 +263,12 @@ namespace
             }
 
             const auto style = GetCarriageMarkerStyle(location.id);
-            const auto label = std::format("{} ({:.1f} hours) ", location.name, quote->hours);
+            auto label = location.name + " ";
+            if (pricing.showEstimatedHours) {
+                label = pricing.markHoursAsApproximate ?
+                    std::format("{} (~{:.1f} hours) ", location.name, quote->hours) :
+                    std::format("{} ({:.1f} hours) ", location.name, quote->hours);
+            }
             bool added = DNT::ParchmentMenu::AddStyledDestination(
                 requestId,
                 location.id,
@@ -359,6 +365,21 @@ namespace
             a_destinationId.c_str(),
             false);
         return quote ? quote->hours : -1.0F;
+    }
+
+    std::int32_t GetWizardFare(
+        RE::StaticFunctionTag*,
+        const std::int32_t a_fallbackFare)
+    {
+        return DNT::TravelRuntime::GetWizardFare(a_fallbackFare);
+    }
+
+    std::int32_t ResolveFerryFare(
+        RE::StaticFunctionTag*,
+        const RE::BSFixedString a_tier,
+        const std::int32_t a_liveCftoFare)
+    {
+        return DNT::TravelRuntime::ResolveFerryFare(a_tier.c_str(), a_liveCftoFare);
     }
 
     bool RequestDialogueClose(RE::StaticFunctionTag*)
@@ -715,6 +736,8 @@ bool DNT::Papyrus::Register(RE::BSScript::IVirtualMachine* a_vm)
     a_vm->RegisterFunction("ConsumeCarriageSelectionId", PapyrusClass, ConsumeCarriageSelectionId);
     a_vm->RegisterFunction("GetCarriageFare", PapyrusClass, GetCarriageFare);
     a_vm->RegisterFunction("GetCarriageHours", PapyrusClass, GetCarriageHours);
+    a_vm->RegisterFunction("GetWizardFare", PapyrusClass, GetWizardFare);
+    a_vm->RegisterFunction("ResolveFerryFare", PapyrusClass, ResolveFerryFare);
     a_vm->RegisterFunction("RequestDialogueClose", PapyrusClass, RequestDialogueClose);
     a_vm->RegisterFunction("BeginRequest", PapyrusClass, BeginRequest);
     a_vm->RegisterFunction("SetSourceLabel", PapyrusClass, SetSourceLabel);

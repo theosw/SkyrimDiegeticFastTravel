@@ -277,6 +277,27 @@ const DNT::Travel::ProviderPolicy* DNT::Travel::Catalog::FindPolicy(const std::s
     return found == policies.end() ? nullptr : std::addressof(*found);
 }
 
+bool DNT::Travel::Catalog::OverridePolicy(
+    const std::string_view a_id,
+    const float a_hoursPerMapUnit,
+    const float a_farePerMapUnit,
+    const std::int32_t a_minimumFare,
+    const std::int32_t a_fareStep)
+{
+    const auto key = CanonicalizeIdentifier(a_id);
+    const auto found = std::ranges::find(policies, key, &ProviderPolicy::id);
+    if (found == policies.end() || !std::isfinite(a_hoursPerMapUnit) || a_hoursPerMapUnit <= 0.0F ||
+        !std::isfinite(a_farePerMapUnit) || a_farePerMapUnit < 0.0F ||
+        a_minimumFare < 0 || a_fareStep <= 0) {
+        return false;
+    }
+    found->hoursPerMapUnit = a_hoursPerMapUnit;
+    found->farePerMapUnit = a_farePerMapUnit;
+    found->minimumFare = a_minimumFare;
+    found->fareStep = a_fareStep;
+    return true;
+}
+
 std::optional<DNT::Travel::Quote> DNT::Travel::Catalog::EstimateQuote(
     const std::string_view a_providerId,
     const std::string_view a_originId,

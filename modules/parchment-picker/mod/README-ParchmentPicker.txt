@@ -44,9 +44,9 @@ Framework, RUSTIC MAPS for boat providers, Skyrim Paper Map by Caro Tuts for
 FWMF for the College and carriage providers, and DiegeticTravelWizardGuides.esp. This
 package excludes the deferred ferry-route artwork for the beta. It includes
 AI-assisted/user-edited Docks and Ship markers, nine vanilla-derived hold-capital markers, and one
-vanilla-derived neutral town marker. It also includes fourteen exact Norden UI
-discovered-map symbols for carriage destinations under direct permission from
-the Norden UI author to the project owner, plus the exact Norden round-trip
+vanilla-derived neutral town marker. It also includes fourteen exact NORDIC UI
+discovered-map symbols for carriage destinations under outobugi's published
+open-art permission, plus the exact Norden UI round-trip
 loading symbol used as the formal-map selection ring. The
 previously evaluated custom wizard markers and Dragonborn Reskin - Wheeler icon
 are not bundled. The package includes no background map artwork, voice asset,

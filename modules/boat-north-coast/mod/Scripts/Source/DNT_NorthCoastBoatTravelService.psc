@@ -55,14 +55,17 @@ Int Function GetFareForSource(String DestinationId, String SourceId)
     EndIf
 
     Int FareForm = FerryCostForm
+    String FareTier = "regional"
     If DestinationId == "icewater_jetty"
         FareForm = FerryCostExtraForm
+        FareTier = "extra"
     EndIf
     GlobalVariable FareGlobal = Game.GetFormFromFile(FareForm, CftoPlugin) as GlobalVariable
-    If FareGlobal == None
-        Return -1
+    Int LiveFare = -1
+    If FareGlobal != None
+        LiveFare = FareGlobal.GetValueInt()
     EndIf
-    Return FareGlobal.GetValueInt()
+    Return DNT_ParchmentNative.ResolveFerryFare(FareTier, LiveFare)
 EndFunction
 
 String Function GetSourceId(ObjectReference SourceRef)

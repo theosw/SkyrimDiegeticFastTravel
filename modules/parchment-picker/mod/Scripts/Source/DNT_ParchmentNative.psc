@@ -6,6 +6,8 @@ Int Function BuildCarriageRequest(String RequestId, String OriginId, ObjectRefer
 String Function ConsumeCarriageSelectionId(String RequestId, Int SelectionIndex) Global Native
 Int Function GetCarriageFare(String OriginId, String DestinationId, Bool FreeRide) Global Native
 Float Function GetCarriageHours(String OriginId, String DestinationId) Global Native
+Int Function GetWizardFare(Int FallbackFare) Global Native
+Int Function ResolveFerryFare(String Tier, Int LiveCftoFare) Global Native
 
 Bool Function RequestDialogueClose() Global Native
 

@@ -81,6 +81,12 @@ namespace DNT::Travel
 
         [[nodiscard]] const Location* FindLocation(std::string_view a_id) const;
         [[nodiscard]] const ProviderPolicy* FindPolicy(std::string_view a_id) const;
+        [[nodiscard]] bool OverridePolicy(
+            std::string_view a_id,
+            float a_hoursPerMapUnit,
+            float a_farePerMapUnit,
+            std::int32_t a_minimumFare,
+            std::int32_t a_fareStep);
         [[nodiscard]] std::optional<Quote> EstimateQuote(
             std::string_view a_providerId,
             std::string_view a_originId,

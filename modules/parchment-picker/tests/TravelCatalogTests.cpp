@@ -1,3 +1,4 @@
+#include "DNT/PricingConfig.h"
 #include "DNT/TravelCatalog.h"
 
 #include <array>
@@ -98,6 +99,68 @@ namespace
         Require(!catalog.Load(caseDuplicate, error), "case-only location duplicates must fail");
     }
 
+    void TestPolicyOverride()
+    {
+        auto catalog = LoadFixture();
+        Require(catalog.OverridePolicy("CARRIAGE", 8.0F, 1000.0F, 200, 25),
+            "valid policy override should apply case-insensitively");
+        const auto quote = catalog.EstimateQuote("carriage", "morthal", "falkreath");
+        Require(quote && std::abs(quote->hours - 4.0F) < 0.0001F, "overridden hours mismatch");
+        Require(quote && quote->fare == 500, "overridden fare mismatch");
+        Require(!catalog.OverridePolicy("missing", 8.0F, 1000.0F, 200, 25),
+            "unknown provider override must fail");
+        Require(!catalog.OverridePolicy("carriage", 8.0F, 1000.0F, 200, 0),
+            "zero fare step must fail");
+    }
+
+    void TestPricingConfig()
+    {
+        std::istringstream input(
+            "[Carriage]\n"
+            "HoursPerMapUnit=8.5\n"
+            "FarePerMapUnit=1200\n"
+            "MinimumFare=75\n"
+            "FareStep=25\n"
+            "[Wizard]\n"
+            "FarePerTrip=300\n"
+            "[Ferries]\n"
+            "UseCFTOFares=no\n"
+            "LocalFareOverride=40\n"
+            "RegionalFareOverride=-1\n"
+            "ExtraFareOverride=125\n"
+            "[Display]\n"
+            "ShowEstimatedHours=false\n"
+            "MarkHoursAsApproximate=on\n");
+        DNT::Pricing::Config config;
+        std::vector<std::string> warnings;
+        Require(config.Load(input, warnings), "valid pricing config should load");
+        Require(warnings.empty(), "valid pricing config should not warn");
+        const auto& settings = config.Get();
+        Require(std::abs(settings.carriageHoursPerMapUnit - 8.5F) < 0.0001F,
+            "configured carriage hours mismatch");
+        Require(settings.carriageFarePerMapUnit == 1200.0F, "configured carriage fare rate mismatch");
+        Require(settings.carriageMinimumFare == 75 && settings.carriageFareStep == 25,
+            "configured carriage rounding mismatch");
+        Require(settings.wizardFarePerTrip == 300, "configured wizard fare mismatch");
+        Require(!settings.useCftoFares && settings.localFerryFareOverride == 40 &&
+                settings.regionalFerryFareOverride == -1 && settings.extraFerryFareOverride == 125,
+            "configured ferry settings mismatch");
+        Require(!settings.showEstimatedHours && settings.markHoursAsApproximate,
+            "configured display settings mismatch");
+
+        std::istringstream invalid(
+            "[Carriage]\n"
+            "HoursPerMapUnit=0\n"
+            "FareStep=0\n"
+            "[Wizard]\n"
+            "FarePerTrip=-4\n");
+        Require(config.Load(invalid, warnings), "invalid fields should retain safe defaults");
+        Require(warnings.size() == 3, "each invalid field should produce a warning");
+        Require(config.Get().carriageHoursPerMapUnit == 10.0F &&
+                config.Get().carriageFareStep == 50 && config.Get().wizardFarePerTrip == 250,
+            "invalid fields must retain defaults");
+    }
+
     void TestShippedCatalogue()
     {
         DNT::Travel::Catalog catalog;
@@ -129,6 +192,13 @@ namespace
         }
         Require(catalog.EstimateQuote("carriage", "morthal", "falkreath").has_value(),
             "shipped catalogue must quote a representative route");
+
+        DNT::Pricing::Config pricing;
+        std::vector<std::string> pricingWarnings;
+        const auto pricingPath = std::filesystem::path(DNT_SOURCE_DIR) /
+            "modules/parchment-picker/mod/SKSE/Plugins/DiegeticTravel.ini";
+        Require(pricing.LoadFile(pricingPath, pricingWarnings), "shipped pricing INI must load");
+        Require(pricingWarnings.empty(), "shipped pricing INI must not warn");
 
         const std::vector<std::string_view> liveFalkreathDestinationIds{
             "DARKWATER_CROSSING",
@@ -169,6 +239,8 @@ int main()
     TestOverridesAndModes();
     TestIdentifierCanonicalization();
     TestValidation();
+    TestPolicyOverride();
+    TestPricingConfig();
     TestShippedCatalogue();
     std::cout << "TravelCatalogTests: all checks passed\n";
     return EXIT_SUCCESS;

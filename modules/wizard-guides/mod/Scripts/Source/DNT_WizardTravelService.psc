@@ -20,7 +20,7 @@ Int Function GetFare(String DestinationId)
         Return -1
     EndIf
 
-    Return FarePerHop
+    Return DNT_ParchmentNative.GetWizardFare(FarePerHop)
 EndFunction
 
 Bool Function CanTravel(String DestinationId)
@@ -28,7 +28,8 @@ Bool Function CanTravel(String DestinationId)
         Return False
     EndIf
 
-    Return PlayerRef.GetItemCount(Gold001) >= FarePerHop
+    Int Fare = GetFare(DestinationId)
+    Return Fare >= 0 && PlayerRef.GetItemCount(Gold001) >= Fare
 EndFunction
 
 Bool Function RequestTravel(String DestinationId, ObjectReference SourceRef = None)
@@ -39,16 +40,24 @@ Bool Function RequestTravel(String DestinationId, ObjectReference SourceRef = No
         Return False
     EndIf
 
+    Int Fare = GetFare(DestinationId)
     Int AvailableGold = PlayerRef.GetItemCount(Gold001)
-    If AvailableGold < FarePerHop
-        Debug.Trace("[DNT] WIZARD_TRAVEL_DENIED source=" + SourceRef + " destination=" + DestinationId + " reason=gold required=" + FarePerHop + " available=" + AvailableGold)
-        Debug.Notification("You need " + FarePerHop + " gold for this journey.")
+    If Fare < 0
+        Debug.Trace("[DNT] WIZARD_TRAVEL_DENIED source=" + SourceRef + " destination=" + DestinationId + " reason=fare_unavailable", 1)
+        Debug.MessageBox("Wizard travel is unavailable.")
+        Return False
+    EndIf
+    If AvailableGold < Fare
+        Debug.Trace("[DNT] WIZARD_TRAVEL_DENIED source=" + SourceRef + " destination=" + DestinationId + " reason=gold required=" + Fare + " available=" + AvailableGold)
+        Debug.Notification("You need " + Fare + " gold for this journey.")
         Return False
     EndIf
 
     GoToState("Travelling")
-    PlayerRef.RemoveItem(Gold001, FarePerHop, True)
-    Debug.Trace("[DNT] WIZARD_TRAVEL_START source=" + SourceRef + " destination=" + DestinationId + " fare=" + FarePerHop)
+    If Fare > 0
+        PlayerRef.RemoveItem(Gold001, Fare, True)
+    EndIf
+    Debug.Trace("[DNT] WIZARD_TRAVEL_START source=" + SourceRef + " destination=" + DestinationId + " fare=" + Fare)
     ; Every reused confirmation is at most 1.11 seconds. Keep the transaction
     ; cue out of that window so it cannot mask the first word, then wait for the
     ; cue itself before MoveTo changes cells.
@@ -57,7 +66,7 @@ Bool Function RequestTravel(String DestinationId, ObjectReference SourceRef = No
         FarePaymentSound.PlayAndWait(PlayerRef)
     EndIf
     PlayerRef.MoveTo(DestinationMarker)
-    Debug.Trace("[DNT] WIZARD_TRAVEL_COMPLETE source=" + SourceRef + " destination=" + DestinationId + " fare=" + FarePerHop)
+    Debug.Trace("[DNT] WIZARD_TRAVEL_COMPLETE source=" + SourceRef + " destination=" + DestinationId + " fare=" + Fare)
     GoToState("")
     Return True
 EndFunction

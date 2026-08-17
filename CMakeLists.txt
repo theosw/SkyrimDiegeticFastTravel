@@ -7,6 +7,7 @@ option(DNT_PARCHMENT_BUILD_TESTS "Build offline parchment-picker tests" ON)
 
 add_library(DNTParchmentCore STATIC
     modules/parchment-picker/src/ParchmentCore.cpp
+    modules/parchment-picker/src/PricingConfig.cpp
     modules/parchment-picker/src/TravelCatalog.cpp
 )
 target_compile_features(DNTParchmentCore PUBLIC cxx_std_23)

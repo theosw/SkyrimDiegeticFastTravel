@@ -139,6 +139,8 @@ foreach ($sourceFile in $sourceFiles) {
 $parchmentMod = Join-Path $projectRoot "modules\parchment-picker\mod"
 Copy-Item -LiteralPath (Join-Path $parchmentMod "SKSE\Plugins\DNTParchmentPicker.dll") `
     -Destination (Join-Path $packageRoot "SKSE\Plugins") -Force
+Copy-Item -LiteralPath (Join-Path $parchmentMod "SKSE\Plugins\DiegeticTravel.ini") `
+    -Destination (Join-Path $packageRoot "SKSE\Plugins") -Force
 Copy-Item -LiteralPath (Join-Path $parchmentMod "SKSE\Plugins\DiegeticTravel\travel_catalog.tsv") `
     -Destination (Join-Path $packageRoot "SKSE\Plugins\DiegeticTravel") -Force
 Copy-Item -Path (Join-Path $parchmentMod "textures\DiegeticTravel\*.dds") `

@@ -32,10 +32,11 @@ Int Function GetFare(String DestinationId)
     EndIf
 
     GlobalVariable FareGlobal = Game.GetFormFromFile(FerryCostLocalForm, CftoPlugin) as GlobalVariable
-    If FareGlobal == None
-        Return -1
+    Int LiveFare = -1
+    If FareGlobal != None
+        LiveFare = FareGlobal.GetValueInt()
     EndIf
-    Return FareGlobal.GetValueInt()
+    Return DNT_ParchmentNative.ResolveFerryFare("local", LiveFare)
 EndFunction
 
 String Function GetSourceId(ObjectReference SourceRef)

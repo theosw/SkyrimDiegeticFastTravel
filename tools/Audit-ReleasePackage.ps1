@@ -152,6 +152,32 @@ $dlls = @(Get-ChildItem -LiteralPath $package -Recurse -File -Filter "*.dll")
 if ($dlls.Count -ne 1 -or $dlls[0].Name -ne "DNTParchmentPicker.dll") {
     throw "Release must contain only DNTParchmentPicker.dll"
 }
+$pricingIniPath = Join-Path $package "SKSE\Plugins\DiegeticTravel.ini"
+if (-not (Test-Path -LiteralPath $pricingIniPath -PathType Leaf)) {
+    throw "Release is missing DiegeticTravel.ini"
+}
+$pricingIni = Get-Content -LiteralPath $pricingIniPath -Raw
+foreach ($pricingToken in @(
+    "[Carriage]",
+    "HoursPerMapUnit=10.0",
+    "FarePerMapUnit=1600.0",
+    "MinimumFare=100",
+    "FareStep=50",
+    "[Wizard]",
+    "FarePerTrip=250",
+    "[Ferries]",
+    "UseCFTOFares=true",
+    "LocalFareOverride=-1",
+    "RegionalFareOverride=-1",
+    "ExtraFareOverride=-1",
+    "[Display]",
+    "ShowEstimatedHours=true",
+    "MarkHoursAsApproximate=true"
+)) {
+    if ($pricingIni -notmatch [regex]::Escape($pricingToken)) {
+        throw "DiegeticTravel.ini is missing default contract: $pricingToken"
+    }
+}
 $travelCatalogPath = Join-Path $package `
     "SKSE\Plugins\DiegeticTravel\travel_catalog.tsv"
 if (-not (Test-Path -LiteralPath $travelCatalogPath -PathType Leaf)) {
@@ -274,6 +300,7 @@ $lines = @(
     "PASS seq_quests=17",
     "PASS papyrus_scripts=$($expectedScripts.Count)",
     "PASS native_dll=DNTParchmentPicker.dll",
+    "PASS pricing_ini=DiegeticTravel.ini",
     "PASS xedit_semantic_audit=true"
 )
 [IO.File]::WriteAllLines($report, $lines, [Text.UTF8Encoding]::new($false))

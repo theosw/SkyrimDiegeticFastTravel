@@ -39,14 +39,17 @@ Int Function GetFare(String DestinationId)
     EndIf
 
     Int FareForm = FerryCostLocalForm
+    String FareTier = "local"
     If DestinationId == "ilinatas_deep"
         FareForm = FerryCostRegionalForm
+        FareTier = "regional"
     EndIf
     GlobalVariable FareGlobal = Game.GetFormFromFile(FareForm, CftoPlugin) as GlobalVariable
-    If FareGlobal == None
-        Return -1
+    Int LiveFare = -1
+    If FareGlobal != None
+        LiveFare = FareGlobal.GetValueInt()
     EndIf
-    Return FareGlobal.GetValueInt()
+    Return DNT_ParchmentNative.ResolveFerryFare(FareTier, LiveFare)
 EndFunction
 
 String Function GetSourceId(ObjectReference SourceRef)
