@@ -36,6 +36,11 @@ $requiredSources = @(
     (Join-Path $moduleRoot "include\DNT\MenuFrameworkAPI.h"),
     (Join-Path $moduleRoot "include\DNT\ParchmentCore.h"),
     (Join-Path $moduleRoot "include\DNT\ParchmentMenu.h"),
+    (Join-Path $moduleRoot "include\DNT\PricingConfig.h"),
+    (Join-Path $moduleRoot "include\DNT\TravelCatalog.h"),
+    (Join-Path $moduleRoot "include\DNT\TravelRuntime.h"),
+    (Join-Path $moduleRoot "mod\SKSE\Plugins\DiegeticTravel.ini"),
+    (Join-Path $moduleRoot "mod\SKSE\Plugins\DiegeticTravel\travel_catalog.tsv"),
     (Join-Path $moduleRoot "mod\Scripts\Source\DNT_ParchmentNative.psc"),
     (Join-Path $moduleRoot "mod\Scripts\Source\DNT_TravelCompatibility.psc"),
     (Join-Path $moduleRoot "mod\Scripts\Source\DNT_WizardParchmentFragment.psc"),
@@ -44,7 +49,10 @@ $requiredSources = @(
     (Join-Path $moduleRoot "src\Papyrus.cpp"),
     (Join-Path $moduleRoot "src\ParchmentCore.cpp"),
     (Join-Path $moduleRoot "src\ParchmentMenu.cpp"),
+    (Join-Path $moduleRoot "src\PricingConfig.cpp"),
     (Join-Path $moduleRoot "src\Plugin.cpp")
+    (Join-Path $moduleRoot "src\TravelCatalog.cpp")
+    (Join-Path $moduleRoot "src\TravelRuntime.cpp")
     (Join-Path $projectRoot "assets\route-overlays\boat-route-chalk-overlay.png")
     (Join-Path $projectRoot "assets\user-authored\stylized-docks-marker.png")
     (Join-Path $projectRoot "assets\user-authored\stylized-ship-marker.png")
@@ -80,6 +88,7 @@ $requiredSources = @(
     (Join-Path $projectRoot "assets\diegetic-travel\selection-rings\parchment-arrows-thin.png")
     (Join-Path $projectRoot "assets\norden-interface\selection-ring\SOURCE.md")
     (Join-Path $projectRoot "assets\norden-interface\selection-ring\norden-roundtrip-selection-ring.svg")
+    (Join-Path $projectRoot "tools\map-coordinate-calibrator\public\markers\norden-roundtrip-selection-ring-cropped.png")
     (Join-Path $projectRoot "tools\Build-VanillaParchmentMarkers.ps1")
     (Join-Path $projectRoot "tools\Audit-NativeDependencies.ps1")
     (Join-Path $projectRoot "THIRD_PARTY_NOTICES.txt")
@@ -88,7 +97,7 @@ $requiredSources += Get-ChildItem -LiteralPath (Join-Path $projectRoot `
     "assets\norden-interface\carriage-markers") -Filter "*.svg" -File |
     Select-Object -ExpandProperty FullName
 if (($requiredSources | Where-Object { $_ -like "*\assets\norden-interface\carriage-markers\*.svg" }).Count -ne 14) {
-    throw "Expected exactly fourteen authorized Norden marker SVG sources."
+    throw "Expected exactly fourteen authorized NORDIC UI marker SVG sources."
 }
 foreach ($source in $requiredSources) {
     if (-not (Test-Path -LiteralPath $source -PathType Leaf)) {
@@ -125,7 +134,7 @@ if ($unexpectedAssets.Count -gt 0 -or $shippedAssets.Count -ne $expectedAssets.C
 $nativeScript = Get-Content -Raw (Join-Path $modRoot "Scripts\Source\DNT_ParchmentNative.psc")
 $travelCompatibilityScript = Get-Content -Raw (Join-Path $modRoot "Scripts\Source\DNT_TravelCompatibility.psc")
 $providerScript = Get-Content -Raw (Join-Path $modRoot "Scripts\Source\DNT_WizardParchmentPicker.psc")
-foreach ($requiredToken in @("RequestDialogueClose", "BeginRequest", "SetSourceLabel", "SetPaymentLabelPosition", "SetMarkerTextures", "SetOriginMarkerTexture", "SetSelectionRingTexture", "SetRouteOrigin", "AddRouteLandmark", "AddDestination", "SetDestinationMarkerTexture", "SetDestinationMarkerScale", "SetDestinationSelectionRingStyle", "SetDestinationSelectionRingTexture", "Show", "Cancel", "PlayPresentation", "DNT_ParchmentResult")) {
+foreach ($requiredToken in @("GetWizardFare", "ResolveFerryFare", "RequestDialogueClose", "BeginRequest", "SetSourceLabel", "SetPaymentLabelPosition", "SetMarkerTextures", "SetOriginMarkerTexture", "SetSelectionRingTexture", "SetRouteOrigin", "AddRouteLandmark", "AddDestination", "SetDestinationMarkerTexture", "SetDestinationMarkerScale", "SetDestinationSelectionRingStyle", "SetDestinationSelectionRingTexture", "Show", "Cancel", "PlayPresentation", "DNT_ParchmentResult")) {
     if ($nativeScript -notmatch [regex]::Escape($requiredToken) -and
         $providerScript -notmatch [regex]::Escape($requiredToken)) {
         throw "Parchment Papyrus contract is missing token: $requiredToken"
@@ -156,7 +165,7 @@ foreach ($destination in @("whiterun", "riften", "solitude", "windhelm", "markar
         throw "Wizard parchment provider is missing destination: $destination"
     }
 }
-foreach ($artToken in @("textures/terrain/tamriel/skyrim.dds", "norden-winterhold-capital.dds", "norden-whiterun-capital.dds", "norden-riften-capital.dds", "norden-solitude-capital.dds", "norden-windhelm-capital.dds", "norden-markarth-capital.dds", "norden-dawnstar-capital.dds", "norden-morthal-capital.dds", "thin-circle-selection-ring.dds", "SetMarkerTextures", "SetOriginMarkerTexture", "SetSelectionRingTexture", "SetDestinationMarkerTexture", "TextureUvMinX", "TextureUvMaxY", "1.414075", "0.088379", "0.187012", "0.932129", "0.783691", "0.750802", "0.167836")) {
+foreach ($artToken in @("textures/terrain/tamriel/skyrim.dds", "norden-winterhold-capital.dds", "norden-whiterun-capital.dds", "norden-riften-capital.dds", "norden-solitude-capital.dds", "norden-windhelm-capital.dds", "norden-markarth-capital.dds", "norden-dawnstar-capital.dds", "norden-morthal-capital.dds", "norden-roundtrip-selection-ring.dds", "SetMarkerTextures", "SetOriginMarkerTexture", "SetSelectionRingTexture", "SetDestinationMarkerTexture", "TextureUvMinX", "TextureUvMaxY", "1.414075", "0.088379", "0.187012", "0.932129", "0.783691", "0.750802", "0.167836")) {
     if ($providerScript -notmatch [regex]::Escape($artToken)) {
         throw "Wizard parchment provider is missing artwork contract token: $artToken"
     }
@@ -357,5 +366,5 @@ if ($RequireNativeBuild) {
 }
 
 Write-Host "Parchment-picker audit passed."
-Write-Host "Bundled artwork: 2 user-authored/edited marker assets, 10 Skyrim-derived map markers, 14 authorized Norden map markers, and 2 authorized Norden selection rings"
+Write-Host "Bundled artwork: 2 user-authored/edited marker assets, 10 Skyrim-derived map markers, 14 open-permission NORDIC UI map markers, and 2 authorized Norden UI selection rings"
 Write-Host "Wizard destinations: 7"

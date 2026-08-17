@@ -21,6 +21,10 @@ type ProceduralRingSettings = {
   renderMode: RingRenderMode;
   design: RingDesign;
   bodyThickness: number;
+  separateFeathers: boolean;
+  featherThickness: number;
+  featherRotation: number;
+  featherRootOverlap: number;
   rotation: number;
 };
 
@@ -62,6 +66,10 @@ type OpticsDocument = {
     render_mode?: RingRenderMode;
     design?: RingDesign;
     body_thickness?: number;
+    separate_feathers?: boolean;
+    feather_thickness?: number;
+    feather_rotation_degrees?: number;
+    feather_root_overlap?: number;
     thickness_unit?: "px" | "percent_of_diameter";
     arrowhead_scale?: number;
     fork_tail_scale?: number;
@@ -107,20 +115,22 @@ const ICONS: IconDefinition[] = [
 ];
 
 const OPTICS_DRAFT_KEY = "dnt-icon-optics:v7";
-const PROCEDURAL_RING_DRAFT_KEY = "dnt-procedural-selection-ring:v4";
+const PROCEDURAL_RING_DRAFT_KEY = "dnt-procedural-selection-ring:v7";
 
-const RING_DESIGN_DEFAULTS: Record<RingDesign, Pick<ProceduralRingSettings, "bodyThickness" | "rotation">> = {
-  thin: { bodyThickness: 2.8, rotation: 0 },
-  norden: { bodyThickness: 6.4, rotation: 0 },
+const RING_DESIGN_DEFAULTS: Record<RingDesign, Pick<ProceduralRingSettings, "bodyThickness" | "featherThickness" | "featherRotation" | "featherRootOverlap" | "rotation">> = {
+  thin: { bodyThickness: 2.8, featherThickness: 2.8, featherRotation: 0, featherRootOverlap: 2, rotation: 0 },
+  norden: { bodyThickness: 6.4, featherThickness: 6.4, featherRotation: 0, featherRootOverlap: 4, rotation: 105 },
 };
 
 const DEFAULT_PROCEDURAL_RING: ProceduralRingSettings = {
-  renderMode: "procedural",
-  design: "thin",
-  ...RING_DESIGN_DEFAULTS.thin,
+  renderMode: "texture",
+  design: "norden",
+  separateFeathers: true,
+  ...RING_DESIGN_DEFAULTS.norden,
 };
 
-const NORDEN_ROUNDTRIP_PREVIEW = "/markers/norden-roundtrip-selection-ring.png?v=20260816a";
+const NORDEN_ROUNDTRIP_PREVIEW = "/markers/norden-roundtrip-selection-ring-cropped.png?v=20260817a";
+const NORDEN_ROUNDTRIP_PREVIEW_BAKED_ROTATION = 37;
 
 const SELECTION_RING_PREVIEWS: Record<IconTheme, string> = {
   norden: "/markers/thin-circle-selection-ring.png?v=20260808b",
@@ -129,7 +139,7 @@ const SELECTION_RING_PREVIEWS: Record<IconTheme, string> = {
 };
 
 const SELECTION_RING_TEXTURES: Record<IconTheme, string> = {
-  norden: "Data/textures/DiegeticTravel/thin-circle-selection-ring.dds",
+  norden: "Data/textures/DiegeticTravel/norden-roundtrip-selection-ring.dds",
   vanilla: "Data/textures/DiegeticTravel/thin-circle-selection-ring.dds",
   ferry: "Data/textures/DiegeticTravel/parchment-thin-selection-ring.dds",
 };
@@ -288,6 +298,10 @@ export function IconAlignmentCalibrator() {
   const proceduralRingChanged = proceduralRing.renderMode !== DEFAULT_PROCEDURAL_RING.renderMode ||
     proceduralRing.design !== DEFAULT_PROCEDURAL_RING.design ||
     proceduralRing.bodyThickness !== DEFAULT_PROCEDURAL_RING.bodyThickness ||
+    proceduralRing.separateFeathers !== DEFAULT_PROCEDURAL_RING.separateFeathers ||
+    proceduralRing.featherThickness !== DEFAULT_PROCEDURAL_RING.featherThickness ||
+    proceduralRing.featherRotation !== DEFAULT_PROCEDURAL_RING.featherRotation ||
+    proceduralRing.featherRootOverlap !== DEFAULT_PROCEDURAL_RING.featherRootOverlap ||
     proceduralRing.rotation !== DEFAULT_PROCEDURAL_RING.rotation;
   const totalChangedCount = changedCount + (proceduralRingChanged ? 1 : 0);
 
@@ -326,6 +340,10 @@ export function IconAlignmentCalibrator() {
           renderMode: ringDraft.renderMode ?? importedRing?.render_mode ?? DEFAULT_PROCEDURAL_RING.renderMode,
           design,
           bodyThickness: Number(ringDraft.bodyThickness ?? importedRing?.body_thickness ?? designDefaults.bodyThickness),
+          separateFeathers: ringDraft.separateFeathers ?? importedRing?.separate_feathers ?? true,
+          featherThickness: Number(ringDraft.featherThickness ?? importedRing?.feather_thickness ?? designDefaults.featherThickness),
+          featherRotation: Number(ringDraft.featherRotation ?? importedRing?.feather_rotation_degrees ?? designDefaults.featherRotation),
+          featherRootOverlap: Number(ringDraft.featherRootOverlap ?? importedRing?.feather_root_overlap ?? designDefaults.featherRootOverlap),
           rotation: Number(ringDraft.rotation ?? importedRing?.rotation_degrees ?? designDefaults.rotation),
         });
         setLoaded(true);
@@ -458,13 +476,17 @@ export function IconAlignmentCalibrator() {
     return {
       schema_version: 1,
       generated_by: "DNT Icon Alignment Calibrator",
-      selection_ring_texture: "Data/textures/DiegeticTravel/thin-circle-selection-ring.dds",
+      selection_ring_texture: "Data/textures/DiegeticTravel/norden-roundtrip-selection-ring.dds",
       selection_ring_textures: SELECTION_RING_TEXTURES,
       global_selection_ring_scale: globalRingScale,
       procedural_selection_ring: {
         render_mode: proceduralRing.renderMode,
         design: proceduralRing.design,
         body_thickness: round(proceduralRing.bodyThickness),
+        separate_feathers: proceduralRing.separateFeathers,
+        feather_thickness: round(proceduralRing.featherThickness),
+        feather_rotation_degrees: round(proceduralRing.featherRotation),
+        feather_root_overlap: round(proceduralRing.featherRootOverlap),
         thickness_unit: "percent_of_diameter",
         rotation_degrees: round(proceduralRing.rotation),
       },
@@ -518,12 +540,20 @@ export function IconAlignmentCalibrator() {
         });
         const ring = document.procedural_selection_ring;
         if (ring) {
-          setProceduralRing((current) => ({
-            renderMode: ring.render_mode ?? current.renderMode,
-            design: normalizeRingDesign(ring.design ?? current.design),
-            bodyThickness: Number.isFinite(Number(ring.body_thickness)) ? clamp(Number(ring.body_thickness), 1, 48) : current.bodyThickness,
-            rotation: Number.isFinite(Number(ring.rotation_degrees)) ? clamp(Number(ring.rotation_degrees), -180, 180) : current.rotation,
-          }));
+          setProceduralRing((current) => {
+            const design = normalizeRingDesign(ring.design ?? current.design);
+            const defaults = RING_DESIGN_DEFAULTS[design];
+            return {
+              renderMode: ring.render_mode ?? current.renderMode,
+              design,
+              bodyThickness: Number.isFinite(Number(ring.body_thickness)) ? clamp(Number(ring.body_thickness), 1, 14) : current.bodyThickness,
+              separateFeathers: typeof ring.separate_feathers === "boolean" ? ring.separate_feathers : current.separateFeathers,
+              featherThickness: Number.isFinite(Number(ring.feather_thickness)) ? clamp(Number(ring.feather_thickness), 1, 14) : defaults.featherThickness,
+              featherRotation: Number.isFinite(Number(ring.feather_rotation_degrees)) ? clamp(Number(ring.feather_rotation_degrees), -12, 12) : defaults.featherRotation,
+              featherRootOverlap: Number.isFinite(Number(ring.feather_root_overlap)) ? clamp(Number(ring.feather_root_overlap), 0, 8) : defaults.featherRootOverlap,
+              rotation: Number.isFinite(Number(ring.rotation_degrees)) ? clamp(Number(ring.rotation_degrees), -180, 180) : current.rotation,
+            };
+          });
         }
         setNotice(`Imported ${imported} matching icon optic${imported === 1 ? "" : "s"}${ring ? " and the procedural ring design" : ""}.`);
       })
@@ -556,6 +586,22 @@ export function IconAlignmentCalibrator() {
     "--procedural-dark": ringPalette.dark,
     "--procedural-outline": ringPalette.outline,
   } as CSSProperties;
+  const referenceOverlayStyle = {
+    opacity: referenceOpacity,
+    transform: proceduralRing.design === "norden" ? `rotate(${-NORDEN_ROUNDTRIP_PREVIEW_BAKED_ROTATION}deg)` : undefined,
+  } as CSSProperties;
+  const textureRingStyle = {
+    transform: proceduralRing.design === "norden"
+      ? `rotate(${proceduralRing.rotation - NORDEN_ROUNDTRIP_PREVIEW_BAKED_ROTATION}deg)`
+      : `rotate(${proceduralRing.rotation}deg)`,
+    transformOrigin: "center",
+  } as CSSProperties;
+  const rotationControl = (
+    <label>
+      <span>Arrow rotation <b>{proceduralRing.rotation.toFixed(0)}{"°"}</b></span>
+      <input type="range" min="-180" max="180" step="1" value={proceduralRing.rotation} onChange={(event) => setProceduralRing((current) => ({ ...current, rotation: Number(event.target.value) }))} />
+    </label>
+  );
 
   return (
     <main className="calibrator-shell icon-calibrator-shell">
@@ -628,15 +674,19 @@ export function IconAlignmentCalibrator() {
                     onKeyDown={nudgeRing}
                   >
                     {proceduralRing.renderMode === "texture" ? (
-                      <img src={ringPreview} alt="" draggable={false} />
+                      <img src={ringPreview} alt="" draggable={false} style={textureRingStyle} />
                     ) : (
                       <span className={`procedural-ring-art ${proceduralRing.design}`} style={proceduralRingStyle} aria-hidden="true">
                         {/* The reference must retain the PNG's exact transparent canvas for pixel comparison. */}
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img className="procedural-reference-overlay" src={ringPreview} alt="" draggable={false} style={{ opacity: referenceOpacity }} />
+                        <img className="procedural-reference-overlay" src={ringPreview} alt="" draggable={false} style={referenceOverlayStyle} />
                         <SelectionRingVector
                           bodyThickness={proceduralRing.bodyThickness}
                           design={proceduralRing.design}
+                          separateFeathers={proceduralRing.separateFeathers}
+                          featherRootOverlap={proceduralRing.featherRootOverlap}
+                          featherRotation={proceduralRing.featherRotation}
+                          featherThickness={proceduralRing.featherThickness}
                         />
                       </span>
                     )}
@@ -680,15 +730,32 @@ export function IconAlignmentCalibrator() {
                   </div>
                   {proceduralRing.renderMode === "procedural" && (
                     <div className="preview-controls procedural-controls">
-                      <small className="source-vector-note">Neutral settings use the source-matched contours. Raise the reference overlay to expose any edge drift.</small>
+                      <small className="source-vector-note">Weight edits keep the authored outside radius fixed and move only the center-facing edge. Feathers retain that source radius and overlap the body at a constrained root.</small>
                       <label>
                         <span>Arrow weight <b>{proceduralRing.bodyThickness.toFixed(1)}%</b></span>
                         <input type="range" min="1" max="14" step="0.2" value={proceduralRing.bodyThickness} onChange={(event) => setProceduralRing((current) => ({ ...current, bodyThickness: Number(event.target.value) }))} />
                       </label>
-                      <label>
-                        <span>Arrow rotation <b>{proceduralRing.rotation.toFixed(0)}{"°"}</b></span>
-                        <input type="range" min="-180" max="180" step="1" value={proceduralRing.rotation} onChange={(event) => setProceduralRing((current) => ({ ...current, rotation: Number(event.target.value) }))} />
+                      <label aria-label="Tune feathers separately" className="feather-mode-toggle" htmlFor="separate-feather-controls">
+                        <input id="separate-feather-controls" type="checkbox" checked={proceduralRing.separateFeathers} onChange={(event) => setProceduralRing((current) => ({ ...current, separateFeathers: event.target.checked }))} />
+                        <span><strong>Tune feathers separately</strong><small>Off applies Arrow weight to the complete authored contour.</small></span>
                       </label>
+                      {proceduralRing.separateFeathers && (
+                        <>
+                          <label>
+                            <span>Feather weight <b>{proceduralRing.featherThickness.toFixed(1)}%</b></span>
+                            <input type="range" min="1" max="14" step="0.2" value={proceduralRing.featherThickness} onChange={(event) => setProceduralRing((current) => ({ ...current, featherThickness: Number(event.target.value) }))} />
+                          </label>
+                          <label>
+                            <span>Feather angle <b>{proceduralRing.featherRotation.toFixed(1)}{"°"}</b></span>
+                            <input type="range" min="-12" max="12" step="0.5" value={proceduralRing.featherRotation} onChange={(event) => setProceduralRing((current) => ({ ...current, featherRotation: Number(event.target.value) }))} />
+                          </label>
+                          <label>
+                            <span>Feather root overlap <b>{proceduralRing.featherRootOverlap.toFixed(1)}%</b></span>
+                            <input type="range" min="0" max="8" step="0.2" value={proceduralRing.featherRootOverlap} onChange={(event) => setProceduralRing((current) => ({ ...current, featherRootOverlap: Number(event.target.value) }))} />
+                          </label>
+                        </>
+                      )}
+                      {rotationControl}
                       <div className="reference-opacity-control">
                         <label>
                           <span>Reference overlay <b>{Math.round(referenceOpacity * 100)}%</b></span>
@@ -699,6 +766,11 @@ export function IconAlignmentCalibrator() {
                         </div>
                         <small>At 50%, mismatched edges appear doubled. At 100%, only the shipped texture is visible.</small>
                       </div>
+                    </div>
+                  )}
+                  {proceduralRing.renderMode === "texture" && (
+                    <div className="preview-controls ring-rotation-controls">
+                      {rotationControl}
                     </div>
                   )}
                 </div>

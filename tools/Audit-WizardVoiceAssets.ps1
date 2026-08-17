@@ -209,7 +209,7 @@ try {
         $reader.ReadBytes($fileNameBytes)
     )
     $fileNames = $fileNameBlob.Split(
-        [char]0,
+        [char[]]@([char]0),
         [System.StringSplitOptions]::RemoveEmptyEntries
     )
     if ($fileNames.Count -ne $fileCount) {

@@ -10,17 +10,19 @@ $flags = Join-Path $compilerRoot "scripts\TESV_Papyrus_Flags.flg"
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $moduleRoot = Join-Path $projectRoot "modules\wizard-guides"
 $source = Join-Path $moduleRoot "mod\Scripts\Source"
+$parchmentSource = Join-Path $projectRoot `
+    "modules\parchment-picker\mod\Scripts\Source"
 $stubs = Join-Path $projectRoot "tools\papyrus-stubs"
 $output = Join-Path $moduleRoot "mod\Scripts"
 
-foreach ($requiredPath in @($compiler, $flags, $source, $stubs)) {
+foreach ($requiredPath in @($compiler, $flags, $source, $parchmentSource, $stubs)) {
     if (-not (Test-Path -LiteralPath $requiredPath)) {
         throw "Required Papyrus build input not found: $requiredPath"
     }
 }
 
 New-Item -ItemType Directory -Force -Path $output | Out-Null
-$imports = "$source;$stubs"
+$imports = "$source;$parchmentSource;$stubs"
 $scripts = Get-ChildItem -LiteralPath $source -File -Filter "DNT_Wizard*.psc" | Sort-Object Name
 
 foreach ($script in $scripts) {

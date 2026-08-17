@@ -59,7 +59,11 @@ or deploys to LoreRim by itself.
    Captain Remyris's formal-map maritime symbols remain under Norden.
 2. In **Selection arrow design**, compare the shipped texture with the
    source-matched inline-SVG web vector. Choose the **Thin** or **Norden**
-   silhouette, then tune its contour weight and rotation. Use the reference
+   silhouette, then tune body weight, source-anchored feather weight, feather
+   angle, feather-root overlap, and whole-ring rotation. Weight changes preserve
+   the authored outside radius and move only the center-facing edge. Disable
+   **Tune feathers separately** to hide the feather controls and apply Arrow
+   weight to the complete authored contour as one piece. Use the reference
    overlay slider or the 0/50/100%
    presets to crossfade the procedural layer against the shipped texture;
    neutral settings should not produce doubled edges at 50%. Geometry settings

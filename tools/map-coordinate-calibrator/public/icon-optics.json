@@ -1,13 +1,24 @@
 {
   "schema_version": 1,
   "generated_by": "DNT Icon Alignment Calibrator",
-  "selection_ring_texture": "Data/textures/DiegeticTravel/thin-circle-selection-ring.dds",
+  "selection_ring_texture": "Data/textures/DiegeticTravel/norden-roundtrip-selection-ring.dds",
   "selection_ring_textures": {
-    "norden": "Data/textures/DiegeticTravel/thin-circle-selection-ring.dds",
+    "norden": "Data/textures/DiegeticTravel/norden-roundtrip-selection-ring.dds",
     "vanilla": "Data/textures/DiegeticTravel/thin-circle-selection-ring.dds",
     "ferry": "Data/textures/DiegeticTravel/parchment-thin-selection-ring.dds"
   },
   "global_selection_ring_scale": 2.0,
+  "procedural_selection_ring": {
+    "render_mode": "texture",
+    "design": "norden",
+    "body_thickness": 6.4,
+    "separate_feathers": true,
+    "feather_thickness": 6.4,
+    "feather_rotation_degrees": 0,
+    "feather_root_overlap": 4,
+    "thickness_unit": "percent_of_diameter",
+    "rotation_degrees": 105
+  },
   "offset_space": "icon_half_extent",
   "coordinate_notes": {
     "origin": "marker icon center",

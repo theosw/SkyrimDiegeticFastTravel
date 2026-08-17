@@ -17,6 +17,12 @@ def main() -> int:
     parser.add_argument("--max-width", type=int, default=448)
     parser.add_argument("--max-height", type=int, default=448)
     parser.add_argument(
+        "--rotate-clockwise-degrees",
+        type=float,
+        default=0.0,
+        help="rotate the source clockwise around its canvas center before normalization",
+    )
+    parser.add_argument(
         "--bounds-from",
         type=Path,
         help="use the alpha bounds of this reference image so related layers share one transform",
@@ -29,6 +35,12 @@ def main() -> int:
     args = parser.parse_args()
 
     image = Image.open(args.input).convert("RGBA")
+    if args.rotate_clockwise_degrees:
+        image = image.rotate(
+            -args.rotate_clockwise_degrees,
+            resample=Image.Resampling.BICUBIC,
+            expand=False,
+        )
     bounds_image = image
     if args.bounds_from is not None:
         bounds_image = Image.open(args.bounds_from).convert("RGBA")

@@ -531,6 +531,39 @@ button {
   line-height: 1.45;
 }
 
+.preview-controls label.feather-mode-toggle {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 9px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.018);
+  cursor: pointer;
+}
+
+.preview-controls label.feather-mode-toggle > input {
+  accent-color: var(--gold);
+}
+
+.preview-controls label.feather-mode-toggle > span {
+  display: grid;
+  justify-content: initial;
+  gap: 2px;
+}
+
+.feather-mode-toggle strong {
+  color: #d0c9b9;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.feather-mode-toggle small {
+  color: var(--muted);
+  font-size: 8px;
+  line-height: 1.35;
+}
+
 .reference-opacity-control {
   display: grid;
   gap: 7px;

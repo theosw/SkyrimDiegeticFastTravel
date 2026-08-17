@@ -75,13 +75,50 @@ test("builds editable selection arrows from source-matched SVG geometry", async 
   assert.match(component, /Selection arrow design/);
   assert.match(component, /SelectionRingVector/);
   assert.match(component, /norden-roundtrip-selection-ring/);
+  assert.match(component, /norden-roundtrip-selection-ring-cropped\.png/);
+  assert.match(component, /rotation: 105/);
+  assert.match(component, /proceduralRing\.rotation - NORDEN_ROUNDTRIP_PREVIEW_BAKED_ROTATION/);
+  assert.match(component, /NORDEN_ROUNDTRIP_PREVIEW_BAKED_ROTATION/);
+  assert.match(component, /textureRingStyle/);
+  assert.match(component, /rotation - NORDEN_ROUNDTRIP_PREVIEW_BAKED_ROTATION/);
+  assert.match(component, /ring-rotation-controls/);
+  assert.match(component, /Arrow rotation/);
   assert.match(component, /ring-design-switcher/);
   assert.match(component, /Arrow weight/);
+  assert.match(component, /Tune feathers separately/);
+  assert.match(component, /separate_feathers/);
+  assert.match(component, /separateFeathers/);
+  assert.match(component, /Feather weight/);
+  assert.match(component, /Feather angle/);
+  assert.match(component, /Feather root overlap/);
+  assert.match(component, /feather_thickness/);
+  assert.match(component, /feather_rotation_degrees/);
+  assert.match(component, /feather_root_overlap/);
   assert.match(component, /Reference overlay/);
   assert.match(component, /procedural-reference-overlay/);
   assert.match(vector, /THIN_LIGHT_PATH/);
   assert.match(vector, /NORDEN_UPPER_DARK/);
-  assert.match(vector, /feMorphology/);
+  assert.match(vector, /radialScale/);
+  assert.match(vector, /radialInnerRadius/);
+  assert.match(vector, /outerRadius/);
+  assert.match(vector, /scaleAround/);
+  assert.match(vector, /body-radial-weight/);
+  assert.match(vector, /arrowheadPath: SourcePath/);
+  assert.match(vector, /NORDEN_UPPER_ARROWHEAD/);
+  assert.match(vector, /NORDEN_LOWER_ARROWHEAD/);
+  assert.match(vector, /<circle cx={source.center.x} cy={source.center.y} r={bodyInnerRadius} fill="black"/);
+  assert.match(vector, /bodyDelta < -0\.001 && <SourcePaths omitShadow paths={\[arrow\.arrowheadPath\]}/);
+  assert.doesNotMatch(vector, /radialCutPath/);
+  assert.doesNotMatch(vector, /angularDistance/);
+  assert.doesNotMatch(vector, /arrowheadProtection/);
+  assert.doesNotMatch(vector, /<polygon points={arrowheadProtection}/);
+  assert.doesNotMatch(vector, /function MaskPaths/);
+  assert.match(vector, /body-without-feather/);
+  assert.match(vector, /feather-region/);
+  assert.match(vector, /featherRootOverlap/);
+  assert.match(vector, /separateFeathers/);
+  assert.doesNotMatch(vector, /featherScale/);
+  assert.doesNotMatch(vector, /feMorphology/);
   assert.match(vector, /source-matched-vector/);
   assert.match(css, /\.procedural-ring-svg\s*{/);
   assert.match(css, /\.procedural-ring-art\.norden/);
@@ -99,7 +136,7 @@ test("ships the approved, versioned Norden icon-optics baseline", async () => {
   assert.equal(Object.keys(optics.icon_optics.norden).length, 16);
   assert.deepEqual(optics.icon_optics.vanilla, {});
   assert.deepEqual(optics.selection_ring_textures, {
-    norden: "Data/textures/DiegeticTravel/thin-circle-selection-ring.dds",
+    norden: "Data/textures/DiegeticTravel/norden-roundtrip-selection-ring.dds",
     vanilla: "Data/textures/DiegeticTravel/thin-circle-selection-ring.dds",
     ferry: "Data/textures/DiegeticTravel/parchment-thin-selection-ring.dds",
   });

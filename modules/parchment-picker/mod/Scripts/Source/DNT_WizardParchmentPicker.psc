@@ -100,7 +100,7 @@ Function OpenMap(ObjectReference SourceRef)
     ; theme, but every live wizard destination uses the Norden symbol set.
     Bool AddedAll = DNT_ParchmentNative.SetMarkerTextures(ActiveRequest, "Data/textures/DiegeticTravel/norden-town.dds", "Data/textures/DiegeticTravel/norden-town.dds")
     AddedAll = DNT_ParchmentNative.SetOriginMarkerTexture(ActiveRequest, "Data/textures/DiegeticTravel/norden-winterhold-capital.dds") && AddedAll
-    AddedAll = DNT_ParchmentNative.SetSelectionRingTexture(ActiveRequest, "Data/textures/DiegeticTravel/thin-circle-selection-ring.dds") && AddedAll
+    AddedAll = DNT_ParchmentNative.SetSelectionRingTexture(ActiveRequest, "Data/textures/DiegeticTravel/norden-roundtrip-selection-ring.dds") && AddedAll
     AddedAll = DNT_ParchmentNative.SetSourceLabel(ActiveRequest, "College of Winterhold") && AddedAll
     AddedAll = DNT_ParchmentNative.SetPaymentLabelPosition(ActiveRequest, 0.616470, 0.924230) && AddedAll
     ; Positions are calculated from the FWMF Tamriel quad and the exact vanilla

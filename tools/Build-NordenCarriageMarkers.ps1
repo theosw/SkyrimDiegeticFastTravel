@@ -9,8 +9,8 @@ if (-not [System.IO.Path]::IsPathRooted($Texconv)) {
     $Texconv = Join-Path $projectRoot $Texconv
 }
 
-# Exact discovered-map symbols exported from Norden UI's mapmarkerart.swf.
-# The project owner has the Norden author's permission to use these assets.
+# Exact NORDIC UI discovered-map symbols exported from the installed downstream
+# Norden UI mapmarkerart.swf. The NORDIC UI author publishes open art permissions.
 $sources = @(
     @{ Name = "norden-town"; Hash = "BB04A1293BFC0E7CFACAC31F9D7BE2615D2540AF787777D9BA1FAA3D6C01636E" },
     @{ Name = "norden-settlement"; Hash = "F3EDAFAA562576704252D25ECC69B196D817C67C68CEEDF820F4BECF1BD21D6E" },
