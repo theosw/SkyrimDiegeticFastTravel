@@ -309,6 +309,56 @@ button {
   user-select: none;
 }
 
+.procedural-ring-art {
+  position: absolute;
+  inset: 0;
+  display: block;
+  transform: rotate(var(--procedural-rotation));
+  transform-origin: center;
+  pointer-events: none;
+}
+
+.procedural-reference-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+}
+
+.procedural-ring-svg {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+  opacity: var(--procedural-vector-opacity);
+}
+
+.source-matched-vector .vector-layer-light {
+  fill: var(--procedural-light);
+}
+
+.source-matched-vector .vector-layer-dark {
+  fill: var(--procedural-dark);
+}
+
+.source-matched-vector .vector-shadow {
+  fill: #585858;
+}
+
+.procedural-ring-art.thin .thin-vector {
+  filter: drop-shadow(0 0 1px var(--procedural-outline)) drop-shadow(0 1px 1px rgba(0, 0, 0, 0.72));
+}
+
+.procedural-ring-art.norden .norden-vector {
+  filter: drop-shadow(0 1px 0.75px var(--procedural-outline));
+}
+
 .alignment-crosshair {
   position: absolute;
   z-index: 0;
@@ -408,6 +458,117 @@ button {
 
 .optical-controls {
   margin-bottom: 13px;
+}
+
+.procedural-ring-card {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 13px;
+  padding: 11px;
+  border: 1px solid rgba(210, 167, 79, 0.28);
+  border-radius: 5px;
+  background: rgba(210, 167, 79, 0.035);
+}
+
+.procedural-ring-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.procedural-ring-heading > div {
+  display: grid;
+  gap: 3px;
+}
+
+.procedural-ring-heading span {
+  color: #d8d1c2;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.procedural-ring-heading small,
+.reference-opacity-control small {
+  color: var(--muted);
+  font-size: 8px;
+  line-height: 1.35;
+}
+
+.procedural-ring-heading button {
+  padding: 4px 7px;
+  font-size: 8px;
+}
+
+.ring-source-switcher {
+  width: 100%;
+  margin: 0;
+}
+
+.ring-design-picker {
+  display: grid;
+  gap: 6px;
+}
+
+.ring-design-picker > span {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.ring-design-switcher {
+  width: 100%;
+  margin: 0;
+}
+
+.procedural-controls {
+  padding: 10px 0 0;
+  border-bottom: 0;
+}
+
+.source-vector-note {
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.reference-opacity-control {
+  display: grid;
+  gap: 7px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.reference-opacity-control small {
+  display: block;
+}
+
+.overlay-opacity-presets {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.overlay-opacity-presets button {
+  padding: 4px;
+  border: 0;
+  border-right: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-size: 8px;
+  cursor: pointer;
+}
+
+.overlay-opacity-presets button:last-child {
+  border-right: 0;
+}
+
+.overlay-opacity-presets button.active {
+  background: rgba(210, 167, 79, 0.14);
+  color: var(--gold-bright);
 }
 
 .alpha-analysis-card {

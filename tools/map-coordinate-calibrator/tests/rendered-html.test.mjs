@@ -54,11 +54,39 @@ test("server-renders the icon optical-alignment workspace", async () => {
   assert.match(html, /Icon optical alignment/);
   assert.match(html, /Map layout/);
   assert.match(html, /Icon alignment/);
-  assert.match(html, /Ring and icon optics change; map anchor and clickbox stay fixed/);
+  assert.match(html, /Ring geometry and icon optics change; map anchor and clickbox stay fixed/);
   assert.match(html, /Import optics JSON/);
   assert.match(html, /Alpha bounds/);
   assert.match(html, /norden/i);
   assert.match(html, /vanilla/i);
+});
+
+test("builds editable selection arrows from source-matched SVG geometry", async () => {
+  const component = await readFile(
+    new URL("../app/icon-alignment/IconAlignmentCalibrator.tsx", import.meta.url),
+    "utf8",
+  );
+  const vector = await readFile(
+    new URL("../app/icon-alignment/SelectionRingVector.tsx", import.meta.url),
+    "utf8",
+  );
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.match(component, /Selection arrow design/);
+  assert.match(component, /SelectionRingVector/);
+  assert.match(component, /norden-roundtrip-selection-ring/);
+  assert.match(component, /ring-design-switcher/);
+  assert.match(component, /Arrow weight/);
+  assert.match(component, /Reference overlay/);
+  assert.match(component, /procedural-reference-overlay/);
+  assert.match(vector, /THIN_LIGHT_PATH/);
+  assert.match(vector, /NORDEN_UPPER_DARK/);
+  assert.match(vector, /feMorphology/);
+  assert.match(vector, /source-matched-vector/);
+  assert.match(css, /\.procedural-ring-svg\s*{/);
+  assert.match(css, /\.procedural-ring-art\.norden/);
+  assert.match(css, /\.procedural-reference-overlay/);
+  assert.match(css, /\.source-matched-vector/);
 });
 
 test("ships the approved, versioned Norden icon-optics baseline", async () => {

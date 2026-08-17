@@ -57,16 +57,24 @@ or deploys to LoreRim by itself.
 1. Open **Icon alignment** and select the **Norden**, **Vanilla**, or **Ferry**
    icon family. Ferry contains the selectable physical-map anchor asset;
    Captain Remyris's formal-map maritime symbols remain under Norden.
-2. Drag the ring, nudge it with the arrow keys, or seed it from either the
+2. In **Selection arrow design**, compare the shipped texture with the
+   source-matched inline-SVG web vector. Choose the **Thin** or **Norden**
+   silhouette, then tune its contour weight and rotation. Use the reference
+   overlay slider or the 0/50/100%
+   presets to crossfade the procedural layer against the shipped texture;
+   neutral settings should not produce doubled edges at 50%. Geometry settings
+   are included in exported optics JSON under `procedural_selection_ring`; see
+   `SELECTION_RING_HANDOFF.md` for implementation and verification details.
+3. Drag the ring, nudge it with the arrow keys, or seed it from either the
    alpha-bounds center or alpha-weighted visual centroid. The cyan rectangle is
    the visible alpha extent; the cyan and orange dots show those two centers.
-3. Tune the **Marker size multiplier** to resize that shared icon type in the
+4. Tune the **Marker size multiplier** to resize that shared icon type in the
    native menu. It is exported as `marker_scale`; map coordinates and clickboxes
    remain fixed. The generic **Preview zoom** on the Map layout page is only a
    browser aid and is deliberately not exported.
-4. Tune the per-icon ring width multiplier. This changes only the ring. Ring
+5. Tune the per-icon ring width multiplier. This changes only the ring. Ring
    offsets continue to use the resized icon's half-extent, matching runtime.
-5. Copy a changed-only patch or download the complete `icon-optics.json`.
+6. Copy a changed-only patch or download the complete `icon-optics.json`.
 
 Offsets are normalized in icon-half-extent units: `1.0` moves the ring by half
 the rendered icon width or height. The native picker exposes

@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import SelectionRingVector from "./SelectionRingVector";
 import {
+  type CSSProperties,
   type ChangeEvent,
   type KeyboardEvent,
   type PointerEvent,
@@ -12,6 +14,15 @@ import {
 } from "react";
 
 type IconTheme = "norden" | "vanilla" | "ferry";
+type RingRenderMode = "texture" | "procedural";
+type RingDesign = "thin" | "norden";
+
+type ProceduralRingSettings = {
+  renderMode: RingRenderMode;
+  design: RingDesign;
+  bodyThickness: number;
+  rotation: number;
+};
 
 type IconDefinition = {
   id: string;
@@ -47,6 +58,15 @@ type OpticsDocument = {
   selection_ring_texture?: string;
   selection_ring_textures?: Partial<Record<IconTheme, string>>;
   global_selection_ring_scale?: number;
+  procedural_selection_ring?: {
+    render_mode?: RingRenderMode;
+    design?: RingDesign;
+    body_thickness?: number;
+    thickness_unit?: "px" | "percent_of_diameter";
+    arrowhead_scale?: number;
+    fork_tail_scale?: number;
+    rotation_degrees?: number;
+  };
   offset_space?: string;
   icon_optics?: Partial<Record<IconTheme, Record<string, {
     texture?: string;
@@ -87,6 +107,20 @@ const ICONS: IconDefinition[] = [
 ];
 
 const OPTICS_DRAFT_KEY = "dnt-icon-optics:v7";
+const PROCEDURAL_RING_DRAFT_KEY = "dnt-procedural-selection-ring:v4";
+
+const RING_DESIGN_DEFAULTS: Record<RingDesign, Pick<ProceduralRingSettings, "bodyThickness" | "rotation">> = {
+  thin: { bodyThickness: 2.8, rotation: 0 },
+  norden: { bodyThickness: 6.4, rotation: 0 },
+};
+
+const DEFAULT_PROCEDURAL_RING: ProceduralRingSettings = {
+  renderMode: "procedural",
+  design: "thin",
+  ...RING_DESIGN_DEFAULTS.thin,
+};
+
+const NORDEN_ROUNDTRIP_PREVIEW = "/markers/norden-roundtrip-selection-ring.png?v=20260816a";
 
 const SELECTION_RING_PREVIEWS: Record<IconTheme, string> = {
   norden: "/markers/thin-circle-selection-ring.png?v=20260808b",
@@ -106,6 +140,10 @@ function round(value: number) {
 
 function clamp(value: number, minimum: number, maximum: number) {
   return Math.min(maximum, Math.max(minimum, round(value)));
+}
+
+function normalizeRingDesign(value: unknown): RingDesign {
+  return value === "norden" ? "norden" : "thin";
 }
 
 function changed(optic: IconOptic) {
@@ -228,6 +266,8 @@ export function IconAlignmentCalibrator() {
   const [selectedId, setSelectedId] = useState(ICONS[0].id);
   const [optics, setOptics] = useState<Record<string, IconOptic>>({});
   const [globalRingScale, setGlobalRingScale] = useState(2);
+  const [proceduralRing, setProceduralRing] = useState<ProceduralRingSettings>(DEFAULT_PROCEDURAL_RING);
+  const [referenceOpacity, setReferenceOpacity] = useState(0);
   const [alphaAnalysis, setAlphaAnalysis] = useState<{ iconId: string; result: AlphaAnalysis } | null>(null);
   const [showAlphaBounds, setShowAlphaBounds] = useState(true);
   const [notice, setNotice] = useState("Loading checked-in icon optics…");
@@ -245,6 +285,11 @@ export function IconAlignmentCalibrator() {
       round((analysis.centroid[1] - 0.5) * 2),
     ] : null;
   const changedCount = Object.values(optics).filter(changed).length;
+  const proceduralRingChanged = proceduralRing.renderMode !== DEFAULT_PROCEDURAL_RING.renderMode ||
+    proceduralRing.design !== DEFAULT_PROCEDURAL_RING.design ||
+    proceduralRing.bodyThickness !== DEFAULT_PROCEDURAL_RING.bodyThickness ||
+    proceduralRing.rotation !== DEFAULT_PROCEDURAL_RING.rotation;
+  const totalChangedCount = changedCount + (proceduralRingChanged ? 1 : 0);
 
   useEffect(() => {
     let cancelled = false;
@@ -268,8 +313,23 @@ export function IconAlignmentCalibrator() {
         ]));
         setOptics(restored);
         setGlobalRingScale(Number(document.global_selection_ring_scale ?? 2));
+        let ringDraft: Partial<ProceduralRingSettings> = {};
+        try {
+          ringDraft = JSON.parse(localStorage.getItem(PROCEDURAL_RING_DRAFT_KEY) ?? "{}");
+        } catch {
+          ringDraft = {};
+        }
+        const importedRing = document.procedural_selection_ring;
+        const design = normalizeRingDesign(ringDraft.design ?? importedRing?.design);
+        const designDefaults = RING_DESIGN_DEFAULTS[design];
+        setProceduralRing({
+          renderMode: ringDraft.renderMode ?? importedRing?.render_mode ?? DEFAULT_PROCEDURAL_RING.renderMode,
+          design,
+          bodyThickness: Number(ringDraft.bodyThickness ?? importedRing?.body_thickness ?? designDefaults.bodyThickness),
+          rotation: Number(ringDraft.rotation ?? importedRing?.rotation_degrees ?? designDefaults.rotation),
+        });
         setLoaded(true);
-        setNotice(Object.keys(draft).length ? "Restored your local icon-optics draft." : "Ready. Drag the ring or use the controls for optical alignment.");
+        setNotice(Object.keys(draft).length || Object.keys(ringDraft).length ? "Restored your local icon and ring-design draft." : "Ready. Drag the ring or tune its procedural geometry.");
       })
       .catch((error: Error) => setNotice(`Could not load icon optics: ${error.message}`));
     return () => { cancelled = true; };
@@ -285,6 +345,11 @@ export function IconAlignmentCalibrator() {
     }]));
     localStorage.setItem(OPTICS_DRAFT_KEY, JSON.stringify(draft));
   }, [loaded, optics]);
+
+  useEffect(() => {
+    if (!loaded) return;
+    localStorage.setItem(PROCEDURAL_RING_DRAFT_KEY, JSON.stringify(proceduralRing));
+  }, [loaded, proceduralRing]);
 
   useEffect(() => {
     if (!selectedIcon) return;
@@ -367,8 +432,11 @@ export function IconAlignmentCalibrator() {
       ringScale: optic.originalRingScale,
       markerScale: optic.originalMarkerScale,
     }])));
+    setProceduralRing(DEFAULT_PROCEDURAL_RING);
+    setReferenceOpacity(0);
     localStorage.removeItem(OPTICS_DRAFT_KEY);
-    setNotice("All icon optics reset to checked-in values.");
+    localStorage.removeItem(PROCEDURAL_RING_DRAFT_KEY);
+    setNotice("All icon optics and procedural ring settings reset.");
   }
 
   function makeDocument(includeAll: boolean) {
@@ -393,6 +461,13 @@ export function IconAlignmentCalibrator() {
       selection_ring_texture: "Data/textures/DiegeticTravel/thin-circle-selection-ring.dds",
       selection_ring_textures: SELECTION_RING_TEXTURES,
       global_selection_ring_scale: globalRingScale,
+      procedural_selection_ring: {
+        render_mode: proceduralRing.renderMode,
+        design: proceduralRing.design,
+        body_thickness: round(proceduralRing.bodyThickness),
+        thickness_unit: "percent_of_diameter",
+        rotation_degrees: round(proceduralRing.rotation),
+      },
       offset_space: "icon_half_extent",
       coordinate_notes: {
         origin: "marker icon center",
@@ -411,7 +486,7 @@ export function IconAlignmentCalibrator() {
 
   async function copyChanged() {
     await copyText(`${JSON.stringify(makeDocument(false), null, 2)}\n`);
-    setNotice(changedCount ? `Copied ${changedCount} changed icon optic${changedCount === 1 ? "" : "s"}.` : "Nothing is adjusted yet; copied an empty optics patch.");
+    setNotice(totalChangedCount ? `Copied ${changedCount} changed icon optic${changedCount === 1 ? "" : "s"}${proceduralRingChanged ? " plus the procedural ring design" : ""}.` : "Nothing is adjusted yet; copied an empty optics patch.");
   }
 
   function importOptics(event: ChangeEvent<HTMLInputElement>) {
@@ -441,7 +516,16 @@ export function IconAlignmentCalibrator() {
           }
           return next;
         });
-        setNotice(`Imported ${imported} matching icon optic${imported === 1 ? "" : "s"}.`);
+        const ring = document.procedural_selection_ring;
+        if (ring) {
+          setProceduralRing((current) => ({
+            renderMode: ring.render_mode ?? current.renderMode,
+            design: normalizeRingDesign(ring.design ?? current.design),
+            bodyThickness: Number.isFinite(Number(ring.body_thickness)) ? clamp(Number(ring.body_thickness), 1, 48) : current.bodyThickness,
+            rotation: Number.isFinite(Number(ring.rotation_degrees)) ? clamp(Number(ring.rotation_degrees), -180, 180) : current.rotation,
+          }));
+        }
+        setNotice(`Imported ${imported} matching icon optic${imported === 1 ? "" : "s"}${ring ? " and the procedural ring design" : ""}.`);
       })
       .catch(() => setNotice("That file was not a supported icon-optics JSON document."));
     event.target.value = "";
@@ -451,6 +535,27 @@ export function IconAlignmentCalibrator() {
   const ringLeft = selectedOptic ? 50 + selectedOptic.offsetX * markerScale * 50 : 50;
   const ringTop = selectedOptic ? 50 + selectedOptic.offsetY * markerScale * 50 : 50;
   const ringWidth = selectedOptic ? (globalRingScale / 1.12) * selectedOptic.ringScale * markerScale * 100 : 178.571;
+  const ringPreview = proceduralRing.design === "norden" ? NORDEN_ROUNDTRIP_PREVIEW : SELECTION_RING_PREVIEWS[selectedIcon?.theme ?? "norden"];
+  const ringPalette = proceduralRing.design === "norden" ? {
+    light: "#cbcbcb",
+    dark: "#5b676d",
+    outline: "#080a0b",
+  } : selectedIcon?.theme === "ferry" ? {
+    light: "#eee0bd",
+    dark: "#3a281d",
+    outline: "#1b110b",
+  } : {
+    light: "#d7d6d5",
+    dark: "#727c82",
+    outline: "#0a0c0d",
+  };
+  const proceduralRingStyle = {
+    "--procedural-rotation": `${proceduralRing.rotation}deg`,
+    "--procedural-vector-opacity": 1 - referenceOpacity,
+    "--procedural-light": ringPalette.light,
+    "--procedural-dark": ringPalette.dark,
+    "--procedural-outline": ringPalette.outline,
+  } as CSSProperties;
 
   return (
     <main className="calibrator-shell icon-calibrator-shell">
@@ -464,8 +569,8 @@ export function IconAlignmentCalibrator() {
           <Link href="/icon-alignment" className="active" aria-current="page">Icon alignment</Link>
         </nav>
         <div className="topbar-status" aria-live="polite">
-          <span className={changedCount ? "status-dot changed" : "status-dot"} />
-          {changedCount} changed
+          <span className={totalChangedCount ? "status-dot changed" : "status-dot"} />
+          {totalChangedCount} changed
         </div>
       </header>
 
@@ -496,7 +601,7 @@ export function IconAlignmentCalibrator() {
               <label className="file-button secondary">Import optics JSON<input type="file" accept="application/json,.json" onChange={importOptics} /></label>
               <button onClick={() => setShowAlphaBounds((current) => !current)}>{showAlphaBounds ? "Hide" : "Show"} alpha bounds</button>
             </div>
-            <span>Ring and icon optics change; map anchor and clickbox stay fixed.</span>
+            <span>Ring geometry and icon optics change; map anchor and clickbox stay fixed.</span>
           </div>
           <div className="alignment-stage">
             <div className="alignment-board">
@@ -522,7 +627,19 @@ export function IconAlignmentCalibrator() {
                     onPointerCancel={endRingDrag}
                     onKeyDown={nudgeRing}
                   >
-                    <img src={SELECTION_RING_PREVIEWS[selectedIcon.theme]} alt="" draggable={false} />
+                    {proceduralRing.renderMode === "texture" ? (
+                      <img src={ringPreview} alt="" draggable={false} />
+                    ) : (
+                      <span className={`procedural-ring-art ${proceduralRing.design}`} style={proceduralRingStyle} aria-hidden="true">
+                        {/* The reference must retain the PNG's exact transparent canvas for pixel comparison. */}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img className="procedural-reference-overlay" src={ringPreview} alt="" draggable={false} style={{ opacity: referenceOpacity }} />
+                        <SelectionRingVector
+                          bodyThickness={proceduralRing.bodyThickness}
+                          design={proceduralRing.design}
+                        />
+                      </span>
+                    )}
                   </button>
                 )}
               </div>
@@ -543,6 +660,48 @@ export function IconAlignmentCalibrator() {
                 <p className="eyebrow">Selected icon type</p>
                 <div className="selected-title"><img src={selectedIcon.preview} alt="" /><div><h2>{selectedIcon.label}</h2><code>{selectedIcon.id}</code></div></div>
                 <div className="authoring-note"><strong>Shared asset</strong><p>{selectedIcon.usedBy}</p><small>{selectedIcon.texture}</small></div>
+                <div className="procedural-ring-card">
+                  <div className="procedural-ring-heading">
+                    <div><span>Selection arrow design</span><small>Compare the shipped texture with continuous web-vector geometry.</small></div>
+                    <button type="button" onClick={() => { setProceduralRing(DEFAULT_PROCEDURAL_RING); setReferenceOpacity(0); }} disabled={!proceduralRingChanged && referenceOpacity === 0}>Reset</button>
+                  </div>
+                  <div className="segmented two ring-source-switcher" aria-label="Selection ring source">
+                    {(["texture", "procedural"] as RingRenderMode[]).map((mode) => (
+                      <button key={mode} type="button" className={proceduralRing.renderMode === mode ? "active" : ""} onClick={() => setProceduralRing((current) => ({ ...current, renderMode: mode }))}>{mode}</button>
+                    ))}
+                  </div>
+                  <div className="ring-design-picker">
+                    <span>Arrow silhouette</span>
+                    <div className="segmented two ring-design-switcher" aria-label="Arrow silhouette">
+                      {(["thin", "norden"] as RingDesign[]).map((design) => (
+                        <button key={design} type="button" className={proceduralRing.design === design ? "active" : ""} onClick={() => setProceduralRing((current) => ({ ...current, design, ...RING_DESIGN_DEFAULTS[design] }))}>{design}</button>
+                      ))}
+                    </div>
+                  </div>
+                  {proceduralRing.renderMode === "procedural" && (
+                    <div className="preview-controls procedural-controls">
+                      <small className="source-vector-note">Neutral settings use the source-matched contours. Raise the reference overlay to expose any edge drift.</small>
+                      <label>
+                        <span>Arrow weight <b>{proceduralRing.bodyThickness.toFixed(1)}%</b></span>
+                        <input type="range" min="1" max="14" step="0.2" value={proceduralRing.bodyThickness} onChange={(event) => setProceduralRing((current) => ({ ...current, bodyThickness: Number(event.target.value) }))} />
+                      </label>
+                      <label>
+                        <span>Arrow rotation <b>{proceduralRing.rotation.toFixed(0)}{"°"}</b></span>
+                        <input type="range" min="-180" max="180" step="1" value={proceduralRing.rotation} onChange={(event) => setProceduralRing((current) => ({ ...current, rotation: Number(event.target.value) }))} />
+                      </label>
+                      <div className="reference-opacity-control">
+                        <label>
+                          <span>Reference overlay <b>{Math.round(referenceOpacity * 100)}%</b></span>
+                          <input type="range" min="0" max="1" step="0.05" value={referenceOpacity} onChange={(event) => setReferenceOpacity(Number(event.target.value))} />
+                        </label>
+                        <div className="overlay-opacity-presets" aria-label="Reference overlay presets">
+                          {[0, 0.5, 1].map((opacity) => <button type="button" className={referenceOpacity === opacity ? "active" : ""} key={opacity} onClick={() => setReferenceOpacity(opacity)}>{opacity * 100}%</button>)}
+                        </div>
+                        <small>At 50%, mismatched edges appear doubled. At 100%, only the shipped texture is visible.</small>
+                      </div>
+                    </div>
+                  )}
+                </div>
                 <div className="coordinate-grid optical-grid">
                   <label><span>Ring X offset</span><input type="number" min="-0.75" max="0.75" step="0.01" value={selectedOptic.offsetX.toFixed(4)} onChange={(event) => updateSelected({ offsetX: clamp(Number(event.target.value), -0.75, 0.75) })} /></label>
                   <label><span>Ring Y offset</span><input type="number" min="-0.75" max="0.75" step="0.01" value={selectedOptic.offsetY.toFixed(4)} onChange={(event) => updateSelected({ offsetY: clamp(Number(event.target.value), -0.75, 0.75) })} /></label>
@@ -565,10 +724,10 @@ export function IconAlignmentCalibrator() {
                 <button className="wide-button" onClick={resetSelected} disabled={!changed(selectedOptic)}>Reset selected</button>
               </div>
               <div className="export-card">
-                <div><p className="eyebrow">Export</p><h3>{changedCount} optical change{changedCount === 1 ? "" : "s"}</h3></div>
+                <div><p className="eyebrow">Export</p><h3>{totalChangedCount} optical change{totalChangedCount === 1 ? "" : "s"}</h3></div>
                 <button className="primary-button" onClick={copyChanged}>Copy changed optics</button>
                 <button onClick={() => downloadJson("icon-optics-all.json", makeDocument(true))}>Download all icon optics</button>
-                <button className="danger-button" onClick={resetAll} disabled={!changedCount}>Discard local draft</button>
+                <button className="danger-button" onClick={resetAll} disabled={!totalChangedCount}>Discard local draft</button>
               </div>
             </>
           ) : <div className="empty-selection"><span>+</span><p>Select an icon type to begin alignment.</p></div>}
