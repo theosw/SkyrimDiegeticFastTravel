@@ -17,6 +17,22 @@
     "tools/Run-ConsolidatedReleaseTest.ps1",
     "tools/Run-OfflineChecks.ps1"
   ],
+  "optional_release_modules": [
+    "modules/boat-baan-malur"
+  ],
+  "optional_release_entrypoints": [
+    "tools/Build-BoatBaanMalur.ps1"
+  ],
+  "optional_release_support_scripts": [
+    "tools/Audit-BaanMalurAddonPackage.ps1",
+    "tools/Audit-BoatBaanMalur.ps1",
+    "tools/Compile-BoatBaanMalurPapyrus.ps1",
+    "tools/Generate-BoatBaanMalur.ps1"
+  ],
+  "optional_release_xedit_scripts": [
+    "tools/xedit/DNT_GenerateBoatBaanMalur.pas",
+    "tools/xedit/DNT_AuditBoatBaanMalur.pas"
+  ],
   "release_support_scripts": [
     "tools/Audit-RepositoryScope.ps1",
     "tools/Audit-NativeDependencies.ps1",
@@ -99,7 +115,6 @@
   ],
   "archived_components": [
     "BCD wizard map adapter (recoverable from Git history)",
-    "Baan Malur merchant-ferry prototype (research and calibration retained; implementation recoverable from Git history)",
     "standalone module build/audit/deploy/test pipelines superseded by the consolidated release builder"
   ],
   "research_only_patterns": [

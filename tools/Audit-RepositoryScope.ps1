@@ -16,6 +16,10 @@ if ($scope.schema_version -ne 1) {
 $maintainedSections = @(
     "release_modules",
     "release_entrypoints",
+    "optional_release_modules",
+    "optional_release_entrypoints",
+    "optional_release_support_scripts",
+    "optional_release_xedit_scripts",
     "release_support_scripts",
     "release_support_inputs",
     "release_xedit_scripts",

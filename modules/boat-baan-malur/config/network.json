@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "provider": "merchant_ship",
+  "lane": "baan_malur_public",
+  "fare_default": 30,
+  "travel_delegate": {
+    "quest": "0033708F:Journey to Baan Malur.esp",
+    "stages": {
+      "baan_malur": 1,
+      "cormaris": 2,
+      "raven_rock": 3,
+      "sunmul": 5
+    }
+  },
+  "map": {
+    "texture": "Data/textures/terrain/dlc2solstheimworld/solstheim.dds",
+    "uv_crop": [0.0, 0.158447, 1.0, 0.810181],
+    "art_aspect_ratio": 1.534,
+    "asset_policy": "external dependency; do not package the DDS"
+  },
+  "ui_elements": [
+    {
+      "id": "fare_label",
+      "name": "Payment label",
+      "sample": "Raven Rock to Baan Malur    30 gold",
+      "map_position": [0.81433, 0.697376]
+    }
+  ],
+  "stops": [
+    {
+      "id": "raven_rock",
+      "name": "Raven Rock",
+      "service_npc": "0010F3BE:Journey to Baan Malur.esp",
+      "map_position": [0.572274, 0.405605]
+    },
+    {
+      "id": "baan_malur",
+      "name": "Baan Malur",
+      "service_npc": "000FFB6B:Journey to Baan Malur.esp",
+      "map_position": [0.510018, 0.640516]
+    },
+    {
+      "id": "cormaris",
+      "name": "Cormaris",
+      "service_npc": "0010F414:Journey to Baan Malur.esp",
+      "map_position": [0.157237, 0.323277]
+    }
+  ],
+  "one_way_stops": [
+    {
+      "id": "sunmul",
+      "name": "Sunmul",
+      "available_from": ["raven_rock", "baan_malur", "cormaris"],
+      "stage": 5,
+      "fare_default": 30,
+      "return_service_verified": false,
+      "selection_ring": "Data/textures/DiegeticTravel/thin-circle-oneway-selection-ring.dds",
+      "map_position": [0.561367, 0.894535],
+      "map_position_status": "calibrated"
+    }
+  ],
+  "deferred_stops": [
+    "pryai",
+    "llethrin_fel",
+    "seyda_neen",
+    "vivec",
+    "old_silgrad"
+  ]
+}
