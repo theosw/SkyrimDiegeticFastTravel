@@ -1333,39 +1333,6 @@ bool DNT::ParchmentMenu::AddStyledDestination(
     return added;
 }
 
-bool DNT::ParchmentMenu::SetDestinationMarkerTexture(
-    const std::string_view a_requestId,
-    const std::string_view a_destinationId,
-    const std::string_view a_texturePath)
-{
-    std::scoped_lock lock(requestLock);
-    if (!activeRequest || activeRequest->request.requestId != a_requestId || activeRequest->visible) {
-        return false;
-    }
-
-    std::string error;
-    const auto added = Parchment::SetDestinationMarkerTexture(
-        activeRequest->request,
-        a_destinationId,
-        std::string(a_texturePath),
-        error);
-    if (!added) {
-        logger::warn(
-            "PARCHMENT_DESTINATION_MARKER_REJECT request={} destination={} path={} reason={}",
-            a_requestId,
-            a_destinationId,
-            a_texturePath,
-            error);
-    } else {
-        logger::info(
-            "PARCHMENT_DESTINATION_MARKER_SET request={} destination={} path={}",
-            a_requestId,
-            a_destinationId,
-            a_texturePath);
-    }
-    return added;
-}
-
 bool DNT::ParchmentMenu::SetDestinationSelectionRingTexture(
     const std::string_view a_requestId,
     const std::string_view a_destinationId,

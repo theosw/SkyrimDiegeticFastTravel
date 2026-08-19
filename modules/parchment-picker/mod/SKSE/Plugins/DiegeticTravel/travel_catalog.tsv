@@ -16,6 +16,7 @@ location	karthwasten	Karthwasten	0.192772	0.401553	CFTO.esp	0x0B6E50	one_way
 location	soljunds_sinkhole	Soljund's Sinkhole	0.225058	0.504729	CFTO.esp	0x0B6E51	one_way
 location	old_hroldan	Old Hroldan	0.231397	0.546434	CFTO.esp	0x0B6E52	open
 location	solitude	Solitude	0.365471	0.191247	CFTO.esp	0x0B6E45	open
+location	thalmor_embassy	Thalmor Embassy	0.317566	0.169034	CFTO.esp	0x0B6E54	one_way
 location	dragon_bridge	Dragon Bridge	0.264061	0.259819	CFTO.esp	0x0B6E53	open
 location	whiterun	Whiterun	0.532756	0.548290	CFTO.esp	0x0B6E46	open
 location	rorikstead	Rorikstead	0.300256	0.502491	CFTO.esp	0x0B6E55	open

@@ -3,7 +3,7 @@
 ## Release shape
 
 The release is one ESL-flagged `DiegeticTravel.esp`, one native SKSE plugin,
-22 Papyrus scripts, one validated pricing INI, one 27-location carriage
+22 Papyrus scripts, one validated pricing INI, one 28-location carriage
 catalogue, and UI textures. The
 development modules remain separate source boundaries, but the xEdit release
 generator consolidates their records into the single plugin.
@@ -19,8 +19,7 @@ generator consolidates their records into the single plugin.
 - direct carriage fare/hour estimation from the flat catalogue;
 - availability checks that can be resolved from live forms;
 - parchment request construction and stable selection-index mapping;
-- menu rendering, mouse/controller input, marker styling, and dialogue close;
-- voice/subtitle presentation helpers.
+- menu rendering, mouse/controller input, marker styling, and dialogue close.
 
 The native catalogue is authoritative for carriage menu contents and quotes.
 There is no shadow/legacy quote comparison path.
@@ -35,8 +34,9 @@ Papyrus is deliberately a thin world-mutation bridge:
   service properties. Its optional WCI integration validates one of WCI's four
   spawned drivers, translates the player's exact inn Location into one of the
   seven existing catalogue origin IDs, and passes that scalar origin onward;
-- `DNT_OriginService` revalidates the selected quote, charges gold, resolves
-  CFTO's arrival marker, and performs travel. Its explicit-origin entry point
+- `DNT_OriginService` revalidates the selected quote, requests CFTO's arrival
+  marker from the same native catalogue, charges gold, and performs travel. It
+  contains no destination/FormID table. Its explicit-origin entry point
   lets compatible providers reuse this world-mutation path without adding
   another persistent service quest;
 - each boat and wizard service owns only its provider-specific gates,
@@ -55,7 +55,7 @@ read or written by the runtime travel path.
 
 - `config/carriage_provider.json` contains the nine driver FormIDs used by the
   generator.
-- `modules/carriage-parchment/config/network.json` documents the 27-stop
+- `modules/carriage-parchment/config/network.json` documents the 28-stop
   topology, marker presentation, and verified one-way classification.
 - `modules/parchment-picker/mod/SKSE/Plugins/DiegeticTravel/travel_catalog.tsv`
   is the small runtime catalogue used by native code.
@@ -63,15 +63,18 @@ read or written by the runtime travel path.
   user-facing fare and estimate settings. Invalid individual values retain
   defaults; settings are never reloaded mid-session.
 
-Destination IDs are stable strings at the UI/service boundary. FormIDs are
-resolved only where Skyrim records are required.
+Destination IDs are stable strings at the UI/service boundary. The native
+catalogue is the sole destination/FormID registry and returns the resolved
+`ObjectReference` to the small Papyrus world-mutation bridge only at commit.
 
 ## Build and verification
 
 `tools/Build-Release.ps1` is the only release entry point. It builds/tests the
 native plugin, compiles Papyrus, runs the headless xEdit generator/finalizer,
-copies an explicit 22-script inventory, audits the package, and creates the
-ZIP. Development-module builders are retained only for isolated provider work.
+copies an explicit 22-script inventory, proves every borrowed wizard/ferry
+voice asset in the installed dependency archives, audits the package, and
+creates the ZIP. Voice proof also runs during `-PackageOnly`; development-module
+builders are retained only for isolated provider work.
 
 The generator creates 17 start-game quests: nine carriage origin services and
 eight provider quests. The audit enforces one plugin, one SEQ, ESL local-ID

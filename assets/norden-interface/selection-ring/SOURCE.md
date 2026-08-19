@@ -12,6 +12,12 @@ maps.
 - Permission: use and redistribution permission supplied directly by the
   Norden UI author to the project owner.
 
+`selection-ring-cropped.svg` records the accepted calibrated vector derived
+from that permitted source. The shipped one-way ring is extracted directly
+from the accepted calibrated round-trip raster, retaining the complete darker
+arrow and its antialiased shadow. It is normalized against the complete ring
+so both variants share the same rotation, scale, and marker anchor.
+
 `tools/Build-NordenSelectionRing.ps1` renders, alpha-normalizes, and BC7-encodes
 the pinned SVG. Ferryman maps intentionally do not use this asset; their
 one-way/return visual language is authored separately.

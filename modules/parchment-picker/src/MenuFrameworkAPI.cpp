@@ -37,9 +37,7 @@ bool DNT::MenuFramework::API::Resolve()
     getMousePos_ = ResolveFunction<GetMousePosFn>("igGetMousePos");
     setMouseCursor_ = ResolveFunction<SetMouseCursorFn>("igSetMouseCursor");
     image_ = ResolveFunction<ImageFn>("igImage");
-    button_ = ResolveFunction<ButtonFn>("igButton");
     invisibleButton_ = ResolveFunction<InvisibleButtonFn>("igInvisibleButton");
-    setItemDefaultFocus_ = ResolveFunction<ActionFn>("igSetItemDefaultFocus");
     isItemHovered_ = ResolveFunction<ItemStateFn>("igIsItemHovered");
     isItemFocused_ = ResolveFunction<FocusedFn>("igIsItemFocused");
     pushStyleColor_ = ResolveFunction<PushStyleColorFn>("igPushStyleColor_U32");
@@ -52,10 +50,7 @@ bool DNT::MenuFramework::API::Resolve()
     addImage_ = ResolveFunction<AddImageFn>("ImDrawList_AddImage");
     addPolyline_ = ResolveFunction<AddPolylineFn>("ImDrawList_AddPolyline");
     addConcavePolyFilled_ = ResolveFunction<AddConcavePolyFilledFn>("ImDrawList_AddConcavePolyFilled");
-    addTriangle_ = ResolveFunction<AddTriangleFn>("ImDrawList_AddTriangle");
     addTriangleFilled_ = ResolveFunction<AddTriangleFilledFn>("ImDrawList_AddTriangleFilled");
-    addCircle_ = ResolveFunction<AddCircleFn>("ImDrawList_AddCircle");
-    addCircleFilled_ = ResolveFunction<AddCircleFilledFn>("ImDrawList_AddCircleFilled");
 
     return IsReady();
 }
@@ -64,12 +59,11 @@ bool DNT::MenuFramework::API::IsReady() const
 {
     return module_ && addWindow_ && addInputEvent_ && loadTexture_ && disposeTexture_ &&
            setNextWindowPos_ && setNextWindowSize_ && setNextWindowBgAlpha_ && begin_ && end_ &&
-           setCursorScreenPos_ && getMousePos_ && setMouseCursor_ && image_ && button_ &&
-           invisibleButton_ && setItemDefaultFocus_ && isItemHovered_ && isItemFocused_ &&
+           setCursorScreenPos_ && getMousePos_ && setMouseCursor_ && image_ &&
+           invisibleButton_ && isItemHovered_ && isItemFocused_ &&
            pushStyleColor_ && popStyleColor_ && setWindowFontScale_ && calcTextSize_ && textUnformatted_ &&
            getForegroundDrawList_ && addLine_ && addImage_ && addPolyline_ &&
-           addConcavePolyFilled_ && addTriangle_ && addTriangleFilled_ && addCircle_ &&
-           addCircleFilled_;
+           addConcavePolyFilled_ && addTriangleFilled_;
 }
 
 float DNT::MenuFramework::API::Version() const
@@ -162,23 +156,12 @@ void DNT::MenuFramework::API::Image(
     image_(a_texture, a_size, a_uv0, a_uv1, a_tint, Vec4{});
 }
 
-bool DNT::MenuFramework::API::Button(const std::string_view a_label, const Vec2 a_size) const
-{
-    const auto label = std::string(a_label);
-    return button_(label.c_str(), a_size);
-}
-
 bool DNT::MenuFramework::API::InvisibleButton(
     const std::string_view a_label,
     const Vec2 a_size) const
 {
     const auto label = std::string(a_label);
     return invisibleButton_(label.c_str(), a_size, 0);
-}
-
-void DNT::MenuFramework::API::SetItemDefaultFocus() const
-{
-    setItemDefaultFocus_();
 }
 
 bool DNT::MenuFramework::API::IsItemHovered() const
@@ -269,17 +252,6 @@ void DNT::MenuFramework::API::AddConcavePolyFilled(
     addConcavePolyFilled_(a_drawList, a_points, a_pointCount, a_color);
 }
 
-void DNT::MenuFramework::API::AddTriangle(
-    const DrawList a_drawList,
-    const Vec2 a_first,
-    const Vec2 a_second,
-    const Vec2 a_third,
-    const Color a_color,
-    const float a_thickness) const
-{
-    addTriangle_(a_drawList, a_first, a_second, a_third, a_color, a_thickness);
-}
-
 void DNT::MenuFramework::API::AddTriangleFilled(
     const DrawList a_drawList,
     const Vec2 a_first,
@@ -288,25 +260,4 @@ void DNT::MenuFramework::API::AddTriangleFilled(
     const Color a_color) const
 {
     addTriangleFilled_(a_drawList, a_first, a_second, a_third, a_color);
-}
-
-void DNT::MenuFramework::API::AddCircle(
-    const DrawList a_drawList,
-    const Vec2 a_center,
-    const float a_radius,
-    const Color a_color,
-    const std::int32_t a_segments,
-    const float a_thickness) const
-{
-    addCircle_(a_drawList, a_center, a_radius, a_color, a_segments, a_thickness);
-}
-
-void DNT::MenuFramework::API::AddCircleFilled(
-    const DrawList a_drawList,
-    const Vec2 a_center,
-    const float a_radius,
-    const Color a_color,
-    const std::int32_t a_segments) const
-{
-    addCircleFilled_(a_drawList, a_center, a_radius, a_color, a_segments);
 }

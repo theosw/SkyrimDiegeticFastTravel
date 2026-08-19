@@ -1,4 +1,7 @@
-# Parchment icon themes
+# Deferred parchment icon themes
+
+Status: authoring/calibration concept only. The beta runtime ships and uses the
+Norden theme; it has no icon-theme setting or MCM.
 
 ## Decision
 
@@ -24,8 +27,8 @@ Both the wizard and carriage picker scripts read the setting when `OpenMap`
 begins. They must not cache it in script state. A change therefore applies to
 the next map opened and remains safe for existing saves.
 
-Invalid or unavailable values resolve to Vanilla. Both complete texture sets
-remain packaged so switching themes never requires a reinstall.
+This is not implemented in the beta. The vanilla set remains available as
+authoring source but is deliberately excluded from the release ZIP.
 
 ## MCM surface
 

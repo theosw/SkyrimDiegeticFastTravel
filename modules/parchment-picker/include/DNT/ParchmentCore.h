@@ -8,14 +8,11 @@
 
 namespace DNT::Parchment
 {
-    // A full CFTO carriage sheet exposes 27 native destinations. Leave a small
+    // A full CFTO carriage sheet exposes 28 native destinations. Leave a small
     // amount of headroom for providers that add DLC stops without weakening the
     // bounded-request guarantee at the Papyrus/native boundary.
     inline constexpr std::size_t MaxDestinations = 32;
     inline constexpr std::size_t MaxRouteLandmarks = 48;
-    inline constexpr std::size_t MaxPresentationVoicePath = 260;
-    inline constexpr std::size_t MaxPresentationSubtitle = 512;
-    inline constexpr float PresentationTaskMarginSeconds = 0.20F;
 
     struct Destination
     {
@@ -66,13 +63,6 @@ namespace DNT::Parchment
         std::vector<Destination> destinations;
     };
 
-    struct Presentation
-    {
-        std::string voicePath;
-        std::string subtitle;
-        float voiceDurationSeconds{ 0.0F };
-    };
-
     struct Layout
     {
         float left{ 0.0F };
@@ -107,11 +97,6 @@ namespace DNT::Parchment
     [[nodiscard]] bool SetRouteOrigin(Request& a_request, RouteOrigin a_origin, std::string& a_error);
     [[nodiscard]] bool AddRouteLandmark(Request& a_request, RoutePoint a_landmark, std::string& a_error);
     [[nodiscard]] bool AddDestination(Request& a_request, Destination a_destination, std::string& a_error);
-    [[nodiscard]] bool SetDestinationMarkerTexture(
-        Request& a_request,
-        std::string_view a_destinationId,
-        std::string a_texturePath,
-        std::string& a_error);
     [[nodiscard]] bool SetDestinationMarkerScale(
         Request& a_request,
         std::string_view a_destinationId,
@@ -135,8 +120,6 @@ namespace DNT::Parchment
         float a_directionX,
         float a_directionY);
     [[nodiscard]] bool ValidateReadyRequest(const Request& a_request, std::string& a_error);
-    [[nodiscard]] bool ValidatePresentation(const Presentation& a_presentation, std::string& a_error);
-    [[nodiscard]] float PresentationWindowSeconds(float a_voiceDurationSeconds);
     [[nodiscard]] Layout ComputeLayout(float a_viewportWidth, float a_viewportHeight, float a_artAspectRatio);
     [[nodiscard]] std::vector<float> ComputeDestinationHitSizes(const Request& a_request, const Layout& a_layout);
 }

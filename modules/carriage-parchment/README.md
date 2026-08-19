@@ -3,8 +3,9 @@
 This module is a thin UI adapter over the existing carriage alpha. It does not
 calculate routes, charge gold, or execute travel itself.
 
-The beta sheet exposes all 27 destinations with a native CFTO handoff: the nine
-hold capitals, fifteen minor Skyrim stops, and three HearthFires homesteads. A
+The beta sheet exposes all 28 destinations with a native CFTO handoff: the nine
+hold capitals, fifteen minor Skyrim stops, three HearthFires homesteads, and the
+destination-only Thalmor Embassy stop. A
 single batched refresh evaluates the matched `DNT_OriginService` against live
 hazard state; the adapter then reads the cached fare and time and draws only
 currently available destinations. Selection returns a stable destination ID to
@@ -25,8 +26,11 @@ installed CFTO plugin has no native executable handoff for them.
 
 The ordinary CFTO-derived destination dialogue remains the fallback.
 
-No BCD integration is required. The module reuses the generic native parchment
-runtime and references the same external Skyrim Paper Map/FWMF
+The carriage module itself has no BCD master or runtime dependency. LoreRim's
+BCD adapters intercept the same dialogue and therefore require the separate
+coexistence ESL to leave this parchment authoritative while BCD stays loaded.
+The module reuses the generic native parchment runtime and references the same
+external Skyrim Paper Map/FWMF
 `textures/terrain/tamriel/skyrim.dds` illustration used by the wizard provider.
 The carriage sheet defaults to NORDIC UI destination symbols and the exact
 Norden UI round-trip loading symbol as its selection ring. No background map

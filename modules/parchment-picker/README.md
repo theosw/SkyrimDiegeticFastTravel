@@ -8,7 +8,7 @@ the player, advance game time, or move actors.
 ## Release responsibilities
 
 - `ParchmentCore` validates bounded requests, layout, hitboxes, marker optics,
-  controller navigation, presentations, route origins, and inactive landmarks.
+  controller navigation, route origins, and inactive landmarks.
 - `ParchmentMenu` owns one active menu session, texture caches, HUD suppression,
   mouse/controller input, rendering, and mod-event result delivery.
 - `TravelCatalog` loads the flat carriage catalogue from
@@ -18,13 +18,14 @@ the player, advance game time, or move actors.
   defaults when a value is missing or invalid.
 - `TravelRuntime` resolves carriage origins, builds the native request, quotes
   fare/hours, exposes the immutable wizard/ferry pricing snapshot, maps the
-  selected index back to a stable destination ID, and resolves arrival markers.
-- `Papyrus.cpp` exposes the small provider-neutral native API plus the carriage
-  request/quote bindings.
+  selected index back to a stable destination ID, and returns the resolved
+  arrival `ObjectReference` from that same catalogue entry at purchase time.
+- `Papyrus.cpp` exposes the provider-neutral native API plus single-call
+  carriage and College request builders and quote bindings.
 
 Papyrus provider scripts supply request metadata and perform Skyrim world
-mutation after native selection: gate revalidation, payment, time advancement,
-fade, and movement.
+mutation after native selection: payment, time advancement, fade, and movement.
+Carriage Papyrus contains no destination/FormID registry.
 
 ## Request contract
 
@@ -34,13 +35,12 @@ A provider may set:
 - map texture, crop, and aspect ratio;
 - route-origin marker and inactive route landmarks;
 - default marker and selection-ring textures;
-- per-destination marker texture, marker scale, and selection-ring optics;
-- an optional actor-targeted voice/subtitle presentation.
+- per-destination marker texture, marker scale, and selection-ring optics.
 
 The picker supports at most 32 destinations and 48 inactive landmarks. It does
 not contain the retired transparent-overlay or dynamic route-segment engines.
-That keeps the release request small and avoids Papyrus work for presentation
-features that no shipped provider uses.
+That keeps the release request small and avoids Papyrus work for features no
+shipped provider uses.
 
 ## Result contract
 
@@ -48,7 +48,9 @@ features that no shipped provider uses.
 `DNT_ParchmentResult` with the request ID and selected zero-based index (`-1`
 for cancel). Generic providers translate that index through their own stable
 destination table. The native carriage builder instead retains the ordered
-stable IDs and consumes the result through `ConsumeCarriageSelectionId`.
+stable IDs and consumes the result through `ConsumeCarriageSelectionId`. The
+College builder emits its fixed seven destinations in the same order as the
+Papyrus index table.
 
 ## Artwork and dependencies
 

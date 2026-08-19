@@ -46,6 +46,12 @@ def main() -> int:
         bounds_image = Image.open(args.bounds_from).convert("RGBA")
         if bounds_image.size != image.size:
             raise SystemExit("bounds reference must use the same canvas size as the input")
+        if args.rotate_clockwise_degrees:
+            bounds_image = bounds_image.rotate(
+                -args.rotate_clockwise_degrees,
+                resample=Image.Resampling.BICUBIC,
+                expand=False,
+            )
     bounds = bounds_image.getchannel("A").getbbox()
     if bounds is None:
         raise SystemExit("input contains no visible pixels")

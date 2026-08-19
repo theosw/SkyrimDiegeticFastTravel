@@ -1,6 +1,6 @@
 # Release codebase audit
 
-Audit date: 2026-08-11
+Audit date: 2026-08-19
 Behavior fallback: `efc32bd` (`checkpoint: controller-proven release candidate`)
 
 ## Verdict
@@ -32,7 +32,12 @@ unused branches.
 - unused Papyrus `AddStyledDestination` binding;
 - retired chalk-overlay request/loading/rendering API;
 - unused dynamic route edges, Dijkstra pathfinding, red/gold route drawing,
-  provider authoring functions, and their extraction/application tools.
+  provider authoring functions, and their extraction/application tools;
+- dormant native voice/subtitle presentation and its runtime relocation;
+- unused incremental marker-texture setter and superseded Papyrus purchase
+  wrappers;
+- unused mandatory Menu Framework button, focus, outline-triangle, and circle
+  exports.
 
 This cleanup removes more than five thousand lines while preserving the tested
 map, marker, controller, payment, timing, Apparition, and travel flows.
@@ -52,7 +57,7 @@ ordered stable IDs used to render the request and consumes the chosen ID.
 
 ## Data structures retained intentionally
 
-- `TravelCatalog` vectors for 27 carriage locations and one policy. Linear
+- `TravelCatalog` vectors for 28 carriage locations and one policy. Linear
   lookup is appropriate at this scale and is covered by native tests.
 - one mutex-protected active parchment request and small texture caches. Skyrim
   exposes one UI session, so a singleton runtime is the correct ownership
@@ -81,6 +86,7 @@ The package audit requires exactly:
 - one `DiegeticTravel.esp`, ESL-flagged;
 - one native DLL and catalogue TSV;
 - 22 named PSC/PEX pairs;
+- exactly 22 named live DDS assets from `config/release-textures.txt`;
 - no runtime/dialogue JSON files and no extra DNT scripts.
 
 Generated quest records currently occupy plugin-local IDs below `0x800`.
@@ -106,6 +112,8 @@ the symbol-bearing `parchment-ae` preset is reserved for development work.
 
 - native CMake build;
 - 2/2 CTest targets;
+- ordered carriage parity across 28 JSON/TSV destinations;
+- ordered College parity across seven JSON/C++/Papyrus destinations;
 - all release Papyrus compile sets with zero errors/warnings;
 - provider structural audits;
 - headless xEdit generation/finalization/semantic audit;
@@ -113,4 +121,5 @@ the symbol-bearing `parchment-ae` preset is reserved for development work.
 - `git diff --check`.
 
 The remaining required validation is one fresh-save in-game smoke test of the
-cleaned package. No game launch is part of this source-cleanup change.
+exact timestamped candidate. The final release tag should be created only after
+that live gate passes.

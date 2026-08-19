@@ -160,6 +160,17 @@ std::optional<DNT::Travel::Quote> DNT::TravelRuntime::EstimateQuote(
     return catalog.EstimateQuote(a_providerId, a_originId, a_destinationId, a_options);
 }
 
+std::optional<DNT::Travel::Location> DNT::TravelRuntime::GetLocation(
+    const std::string_view a_locationId)
+{
+    std::scoped_lock lock(catalogLock);
+    if (!catalogReady) {
+        return std::nullopt;
+    }
+    const auto* const location = catalog.FindLocation(a_locationId);
+    return location ? std::optional{ *location } : std::nullopt;
+}
+
 std::vector<DNT::Travel::Location> DNT::TravelRuntime::GetLocations()
 {
     std::scoped_lock lock(catalogLock);

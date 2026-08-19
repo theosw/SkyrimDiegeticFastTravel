@@ -169,13 +169,20 @@ namespace
             "modules/parchment-picker/mod/SKSE/Plugins/DiegeticTravel/travel_catalog.tsv";
         Require(catalog.LoadFile(path, error), error);
         Require(catalog.SchemaVersion() == 1, "shipped schema mismatch");
-        Require(catalog.LocationCount() == 27, "shipped carriage catalogue must have 27 locations");
+        Require(catalog.LocationCount() == 28, "shipped carriage catalogue must have 28 locations");
         Require(catalog.PolicyCount() == 1, "shipped catalogue must have one carriage policy");
-        Require(catalog.Locations().size() == 27, "enumerable location view must expose every stop");
+        Require(catalog.Locations().size() == 28, "enumerable location view must expose every stop");
         Require(catalog.Locations().front().id == "windhelm", "enumeration must preserve authored selection order");
         Require(catalog.Locations().back().id == "winstad_manor", "enumeration tail must preserve authored selection order");
         Require(catalog.FindLocation("morthal") != nullptr, "morthal must be present");
         Require(catalog.FindLocation("winstad_manor") != nullptr, "Windstad Manor must be present");
+        const auto* embassy = catalog.FindLocation("thalmor_embassy");
+        Require(embassy != nullptr, "Thalmor Embassy must be present");
+        Require(embassy->arrivalMarker.plugin == "CFTO.esp" &&
+                embassy->arrivalMarker.localFormId == 0x0B6E54,
+            "Thalmor Embassy must resolve CFTO's authored arrival marker");
+        Require(embassy->availability == DNT::Travel::Availability::kOneWay,
+            "Thalmor Embassy must remain destination-only");
         const std::array innOrigins{
             std::pair{ "riverwood", "Riverwood" },
             std::pair{ "old_hroldan", "Old Hroldan" },
@@ -221,6 +228,7 @@ namespace
             "Solitude",
             "soljunds_sinkhole",
             "Stonehills",
+            "thalmor_embassy",
             "Whiterun",
             "Windhelm",
             "Winterhold"

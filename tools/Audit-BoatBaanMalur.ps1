@@ -152,7 +152,7 @@ if ($sunmul.Count -ne 1 -or
     $sunmul[0].stage -ne 5 -or
     $sunmul[0].fare_default -ne 30 -or
     $sunmul[0].return_service_verified -ne $false -or
-    $sunmul[0].selection_ring -ne "Data/textures/DiegeticTravel/thin-circle-oneway-selection-ring.dds" -or
+    $sunmul[0].selection_ring -ne "Data/textures/DiegeticTravel/norden-oneway-selection-ring.dds" -or
     [Math]::Abs([double]$sunmul[0].map_position[0] - 0.561367) -gt 0.000001 -or
     [Math]::Abs([double]$sunmul[0].map_position[1] - 0.894535) -gt 0.000001) {
     throw "Baan Malur Sunmul one-way contract does not match the verified stage-5 route."
@@ -160,7 +160,7 @@ if ($sunmul.Count -ne 1 -or
 foreach ($oneWayToken in @(
     'AddedAll = AddSunmul(Fare) && AddedAll',
     'Return "sunmul"',
-    'SetDestinationSelectionRingTexture(ActiveRequest, "sunmul", "Data/textures/DiegeticTravel/thin-circle-oneway-selection-ring.dds")',
+    'SetDestinationSelectionRingTexture(ActiveRequest, "sunmul", "Data/textures/DiegeticTravel/norden-oneway-selection-ring.dds")',
     'Bool Function SetDestinationSelectionRingTexture('
 )) {
     if (($pickerSource + $nativeSource) -notmatch [regex]::Escape($oneWayToken)) {
@@ -285,6 +285,10 @@ if (-not (Test-Path -LiteralPath $reportPath -PathType Leaf)) {
 }
 
 $report = Get-Content -LiteralPath $reportPath
+if ($report -notcontains `
+    "PASS native_dialogue_gate=provider_scoped_default_off_restorable") {
+    throw "Baan Malur audit did not prove the provider-scoped native-dialogue gate."
+}
 $questIdLine = $report | Where-Object { $_ -match '^QUEST_FIXED_FORM_ID=' }
 if (@($questIdLine).Count -ne 1) {
     throw "Baan Malur audit report does not identify one quest FormID."

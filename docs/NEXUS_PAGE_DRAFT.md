@@ -47,7 +47,7 @@ and limitations. Learning those connections is part of travelling Skyrim.
 [size=5][color=#d8b46a][b]THE NETWORKS[/b][/color][/size]
 
 [list]
-[*][b]Carriages:[/b] all 27 executable CFTO destinations, using configurable
+[*][b]Carriages:[/b] all 28 executable CFTO destinations, using configurable
 distance-based fares and estimates plus CFTO's arrival markers and availability
 rules.
 [*][b]Ferries:[/b] Lake Honrich, Lake Ilinalta, the northern coast, and
@@ -110,6 +110,8 @@ Rock, Baan Malur, and Cormaris triangle plus one-way Sunmul service. Requires
 Malur and Morrowind[/url] and
 [url=https://www.nexusmods.com/skyrimspecialedition/mods/137315]Solstheim and
 Baan Malur Paper Map for FWMF[/url]. The main file does not require either.
+For those three public captains, this file replaces Journey's parallel native
+destination prompt; all other Journey captains keep their original dialogue.
 [/list]
 
 [line]
@@ -124,8 +126,14 @@ Baan Malur Paper Map for FWMF[/url]. The main file does not require either.
 [/list]
 
 Do not install old standalone Diegetic Travel development plugins beside the
-consolidated release. [b]Better Carriage Destinations and its CFTO patch are
-currently incompatible[/b] because they intercept the same selector flow.
+consolidated release. Better Carriage Destinations intercepts the same selector
+flow. LoreRim users should keep its complete BCD chain enabled and install the
+separate [b]Diegetic Travel - LoreRim BCD Coexistence[/b] optional file after
+the main plugin. Do not disable and re-enable BCD in the curated profile.
+
+The coexistence patch suppresses BCD's competing carriage, ferry, and WCI
+dialogue entries; it does not add BCD's broad map-marker destination universe
+to Diegetic Travel.
 
 Legacy travel dialogue is hidden by default. For conflict diagnosis, restore
 it with:
@@ -196,10 +204,12 @@ Diegetic Fast Travel - Baan Malur Merchant Ferries - 0.1.0 Beta
 **Optional file description**
 
 Separate ESP-FE for Captain Remyris and the public Journey to Baan Malur ferry
-triangle, plus the verified one-way trip to Sunmul from all three public captains. Requires the
-main Diegetic Fast Travel file, Journey to Baan Malur and Morrowind, and
-Solstheim and Baan Malur Paper Map for FWMF. Do not install this optional file
-without those dependencies. The main file does not require it.
+triangle, plus the verified one-way trip to Sunmul from all three public
+captains. For those providers it replaces Journey's parallel native destination
+prompt by default; all other Journey captains retain their original dialogue.
+Requires the main Diegetic Fast Travel file, Journey to Baan Malur and
+Morrowind, and Solstheim and Baan Malur Paper Map for FWMF. Do not install this
+optional file without those dependencies. The main file does not require it.
 
 ## Suggested image set and captions
 

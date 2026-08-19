@@ -70,10 +70,6 @@ namespace DNT::ParchmentMenu
         float a_ringOffsetX,
         float a_ringOffsetY,
         float a_ringScale);
-    [[nodiscard]] bool SetDestinationMarkerTexture(
-        std::string_view a_requestId,
-        std::string_view a_destinationId,
-        std::string_view a_texturePath);
     [[nodiscard]] bool SetDestinationMarkerScale(
         std::string_view a_requestId,
         std::string_view a_destinationId,

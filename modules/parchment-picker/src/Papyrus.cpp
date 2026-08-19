@@ -5,6 +5,7 @@
 #include "DNT/TravelRuntime.h"
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cctype>
 #include <format>
@@ -17,10 +18,6 @@
 namespace
 {
     constexpr std::string_view PapyrusClass = "DNT_ParchmentNative";
-    constexpr REL::Version ExpectedRuntime{ 1, 6, 1170, 0 };
-    constexpr std::uint64_t LegacyCompileAndRunId = 21890;
-    constexpr std::uint64_t ModernCompileAndRunId = 441582;
-    constexpr std::uintptr_t ExpectedCompileAndRunOffset = 0x33D6A0;
     std::mutex carriageRequestLock;
     std::unordered_map<std::string, std::vector<std::string>> carriageRequestDestinations;
 
@@ -42,17 +39,28 @@ namespace
         float ringScale{ 1.0F };
     };
 
-    [[nodiscard]] bool IsOneWayCarriageDestination(const std::string_view a_destinationId)
+    struct WizardDestination
     {
-        return a_destinationId == "darkwater_crossing" ||
-               a_destinationId == "mixwater_mill" ||
-               a_destinationId == "halfmoon_mill" ||
-               a_destinationId == "karthwasten" ||
-               a_destinationId == "soljunds_sinkhole" ||
-               a_destinationId == "shors_stone" ||
-               a_destinationId == "heartwood_mill" ||
-               a_destinationId == "stonehills";
-    }
+        std::string_view id;
+        std::string_view name;
+        float normalizedX;
+        float normalizedY;
+        std::string_view texture;
+        float markerScale;
+        float ringOffsetX;
+        float ringOffsetY;
+        float ringScale;
+    };
+
+    constexpr std::array<WizardDestination, 7> WizardDestinations{
+        WizardDestination{ "whiterun", "Whiterun", 0.532756F, 0.548290F, "Data/textures/DiegeticTravel/norden-whiterun-capital.dds", 1.00F, 0.0316F, -0.0474F, 0.88F },
+        WizardDestination{ "riften", "Riften", 0.880078F, 0.833512F, "Data/textures/DiegeticTravel/norden-riften-capital.dds", 0.99F, 0.0F, -0.0580F, 0.88F },
+        WizardDestination{ "solitude", "Solitude", 0.365471F, 0.191247F, "Data/textures/DiegeticTravel/norden-solitude-capital.dds", 1.00F, 0.0F, -0.0474F, 0.85F },
+        WizardDestination{ "windhelm", "Windhelm", 0.793249F, 0.410699F, "Data/textures/DiegeticTravel/norden-windhelm-capital.dds", 0.93F, 0.0316F, -0.1001F, 0.89F },
+        WizardDestination{ "markarth", "Markarth", 0.094238F, 0.507741F, "Data/textures/DiegeticTravel/norden-markarth-capital.dds", 0.95F, 0.0F, -0.1107F, 0.89F },
+        WizardDestination{ "dawnstar", "Dawnstar", 0.557529F, 0.185081F, "Data/textures/DiegeticTravel/norden-dawnstar-capital.dds", 1.01F, 0.0F, -0.0474F, 0.86F },
+        WizardDestination{ "morthal", "Morthal", 0.400452F, 0.311110F, "Data/textures/DiegeticTravel/norden-morthal-capital.dds", 0.95F, 0.0F, -0.0896F, 0.92F }
+    };
 
     [[nodiscard]] CarriageMarkerStyle GetCarriageMarkerStyle(const std::string_view a_id)
     {
@@ -74,7 +82,7 @@ namespace
         if (a_id == "lakeview_manor" || a_id == "heljarchen_hall" || a_id == "winstad_manor") {
             return { "Data/textures/DiegeticTravel/norden-farm.dds", 0.78F, -0.0422F, -0.0158F, 1.04F };
         }
-        if (a_id == "darkwater_crossing" || a_id == "kynesgrove" || a_id == "karthwasten" || a_id == "shors_stone" || a_id == "stonehills") {
+        if (a_id == "darkwater_crossing" || a_id == "kynesgrove" || a_id == "karthwasten" || a_id == "shors_stone" || a_id == "stonehills" || a_id == "thalmor_embassy") {
             return { "Data/textures/DiegeticTravel/norden-settlement.dds", 0.80F, 0.0105F, 0.1107F, 1.0F };
         }
         return { "Data/textures/DiegeticTravel/norden-town.dds", 0.80F, 0.0211F, 0.1529F, 1.0F };
@@ -107,11 +115,8 @@ namespace
     {
         const auto originId = NormalizeTravelId(a_originId);
         const auto destinationId = NormalizeTravelId(a_destinationId);
-        const auto locations = DNT::TravelRuntime::GetLocations();
-        const auto location = std::ranges::find_if(locations, [&](const auto& candidate) {
-            return candidate.id == destinationId;
-        });
-        if (location == locations.end() || !IsCarriageLocationAvailable(*location)) {
+        const auto location = DNT::TravelRuntime::GetLocation(destinationId);
+        if (!location || !IsCarriageLocationAvailable(*location)) {
             return std::nullopt;
         }
         return DNT::TravelRuntime::EstimateQuote(
@@ -119,54 +124,6 @@ namespace
             originId,
             destinationId,
             DNT::Travel::QuoteOptions{ .freeRide = a_freeRide });
-    }
-
-    constexpr std::uint64_t SelectCompileAndRunId(const REL::Version& a_version)
-    {
-        return a_version.patch() < 1130 ? LegacyCompileAndRunId : ModernCompileAndRunId;
-    }
-
-    static_assert(SelectCompileAndRunId(REL::Version{ 1, 6, 640, 0 }) == LegacyCompileAndRunId);
-    static_assert(SelectCompileAndRunId(ExpectedRuntime) == ModernCompileAndRunId);
-
-    void CompileAndRunWithRuntimeRelocation(
-        RE::Script* a_script,
-        RE::TESObjectREFR* a_target,
-        const std::uint64_t a_relocationId)
-    {
-        using func_t = void(
-            RE::Script*,
-            RE::ScriptCompiler*,
-            RE::COMPILER_NAME,
-            RE::TESObjectREFR*);
-
-        RE::ScriptCompiler compiler;
-        REL::Relocation<func_t> compileAndRun{ REL::ID(a_relocationId) };
-        compileAndRun(
-            a_script,
-            &compiler,
-            RE::COMPILER_NAME::kSystemWindowCompiler,
-            a_target);
-    }
-
-    bool AddPresentationSubtitle(
-        RE::Actor* a_speaker,
-        const std::string_view a_subtitleText)
-    {
-        auto* const subtitleManager = RE::SubtitleManager::GetSingleton();
-        if (!a_speaker || !subtitleManager) {
-            return false;
-        }
-
-        RE::SubtitleInfo subtitle{};
-        subtitle.speaker = a_speaker->GetHandle();
-        subtitle.subtitle = a_subtitleText.data();
-        subtitle.targetDistance = 0.0F;
-        subtitle.forceDisplay = true;
-
-        RE::BSSpinLockGuard lock(subtitleManager->lock);
-        subtitleManager->subtitles.push_back(std::move(subtitle));
-        return true;
     }
 
     bool IsAvailable(RE::StaticFunctionTag*)
@@ -285,7 +242,7 @@ namespace
                 added = DNT::ParchmentMenu::SetDestinationSelectionRingTexture(
                     requestId,
                     location.id,
-                    "Data/textures/DiegeticTravel/thin-circle-oneway-selection-ring.dds");
+                    "Data/textures/DiegeticTravel/norden-oneway-selection-ring.dds");
             }
             configured = added && configured;
             if (added) {
@@ -318,6 +275,97 @@ namespace
             originId,
             destinationCount,
             a_freeRide,
+            buildMs);
+        return destinationCount;
+    }
+
+    std::int32_t BuildWizardRequest(
+        RE::StaticFunctionTag*,
+        const RE::BSFixedString a_requestId,
+        RE::TESObjectREFR* a_source,
+        const std::int32_t a_fare)
+    {
+        const auto startedAt = std::chrono::steady_clock::now();
+        const std::string requestId = a_requestId.c_str();
+        if (requestId.empty() || !a_source || a_fare < 0 ||
+            !DNT::ParchmentMenu::IsAvailable()) {
+            logger::warn(
+                "WIZARD_NATIVE_REQUEST_REJECT request={} source={} fare={} menu_ready={}",
+                requestId,
+                a_source ? a_source->GetFormID() : 0,
+                a_fare,
+                DNT::ParchmentMenu::IsAvailable());
+            return -1;
+        }
+
+        if (!DNT::ParchmentMenu::BeginRequest(
+                requestId,
+                "college",
+                a_source,
+                "Data/textures/terrain/tamriel/skyrim.dds",
+                1.414075F,
+                0.088379F,
+                0.187012F,
+                0.932129F,
+                0.783691F)) {
+            logger::warn("WIZARD_NATIVE_REQUEST_REJECT request={} reason=begin_failed", requestId);
+            return -1;
+        }
+
+        bool configured = true;
+        configured = DNT::ParchmentMenu::SetSourceLabel(requestId, "College of Winterhold") && configured;
+        configured = DNT::ParchmentMenu::SetPaymentLabelPosition(requestId, 0.616470F, 0.924230F) && configured;
+        configured = DNT::ParchmentMenu::SetMarkerTextures(
+                         requestId,
+                         "Data/textures/DiegeticTravel/norden-town.dds",
+                         "Data/textures/DiegeticTravel/norden-town.dds") && configured;
+        configured = DNT::ParchmentMenu::SetOriginMarkerTexture(
+                         requestId,
+                         "Data/textures/DiegeticTravel/norden-winterhold-capital.dds") && configured;
+        configured = DNT::ParchmentMenu::SetSelectionRingTexture(
+                         requestId,
+                         "Data/textures/DiegeticTravel/norden-roundtrip-selection-ring.dds") && configured;
+        configured = DNT::ParchmentMenu::SetRouteOrigin(requestId, 0.750802F, 0.167836F) && configured;
+
+        std::int32_t destinationCount = 0;
+        for (const auto& destination : WizardDestinations) {
+            const auto label = std::format("{} ", destination.name);
+            const bool added = DNT::ParchmentMenu::AddStyledDestination(
+                requestId,
+                destination.id,
+                label,
+                a_fare,
+                destination.normalizedX,
+                destination.normalizedY,
+                destination.texture,
+                destination.markerScale,
+                destination.ringOffsetX,
+                destination.ringOffsetY,
+                destination.ringScale);
+            configured = added && configured;
+            if (added) {
+                ++destinationCount;
+            }
+        }
+
+        if (!configured || destinationCount != static_cast<std::int32_t>(WizardDestinations.size())) {
+            const bool cancelled = DNT::ParchmentMenu::Cancel(requestId);
+            logger::warn(
+                "WIZARD_NATIVE_REQUEST_REJECT request={} reason=destination_setup configured={} destinations={} cancelled={}",
+                requestId,
+                configured,
+                destinationCount,
+                cancelled);
+            return -1;
+        }
+
+        const auto buildMs = std::chrono::duration<double, std::milli>(
+            std::chrono::steady_clock::now() - startedAt).count();
+        logger::info(
+            "WIZARD_NATIVE_REQUEST_READY request={} destinations={} fare={} build_ms={:.3f}",
+            requestId,
+            destinationCount,
+            a_fare,
             buildMs);
         return destinationCount;
     }
@@ -355,16 +403,39 @@ namespace
         return quote ? quote->fare : -1;
     }
 
-    float GetCarriageHours(
+    RE::TESObjectREFR* ResolveCarriageDestinationMarker(
         RE::StaticFunctionTag*,
-        const RE::BSFixedString a_originId,
         const RE::BSFixedString a_destinationId)
     {
-        const auto quote = GetAvailableCarriageQuote(
-            a_originId.c_str(),
-            a_destinationId.c_str(),
-            false);
-        return quote ? quote->hours : -1.0F;
+        const auto destinationId = NormalizeTravelId(a_destinationId.c_str());
+        const auto location = DNT::TravelRuntime::GetLocation(destinationId);
+        if (!location) {
+            logger::warn(
+                "CARRIAGE_NATIVE_MARKER_REJECT destination={} reason=unknown_destination",
+                destinationId);
+            return nullptr;
+        }
+        auto* const marker = ResolveArrivalMarker(*location);
+        if (!marker) {
+            logger::warn(
+                "CARRIAGE_NATIVE_MARKER_REJECT destination={} reason=form_unresolved plugin={} local_form={:06X}",
+                destinationId,
+                location->arrivalMarker.plugin,
+                location->arrivalMarker.localFormId);
+            return nullptr;
+        }
+        if (location->availability == DNT::Travel::Availability::kQuestLocked && marker->IsDisabled()) {
+            logger::warn(
+                "CARRIAGE_NATIVE_MARKER_REJECT destination={} reason=quest_locked marker={:08X}",
+                destinationId,
+                marker->GetFormID());
+            return nullptr;
+        }
+        logger::info(
+            "CARRIAGE_NATIVE_MARKER_READY destination={} marker={:08X}",
+            destinationId,
+            marker->GetFormID());
+        return marker;
     }
 
     std::int32_t GetWizardFare(
@@ -449,18 +520,6 @@ namespace
             a_fare,
             a_normalizedX,
             a_normalizedY);
-    }
-
-    bool SetDestinationMarkerTexture(
-        RE::StaticFunctionTag*,
-        const RE::BSFixedString a_requestId,
-        const RE::BSFixedString a_destinationId,
-        const RE::BSFixedString a_texturePath)
-    {
-        return DNT::ParchmentMenu::SetDestinationMarkerTexture(
-            a_requestId.c_str(),
-            a_destinationId.c_str(),
-            a_texturePath.c_str());
     }
 
     bool SetDestinationSelectionRingTexture(
@@ -601,131 +660,6 @@ namespace
         return DNT::ParchmentMenu::Cancel(a_requestId.c_str());
     }
 
-    float QueuePresentation(
-        RE::TESObjectREFR* a_speaker,
-        DNT::Parchment::Presentation a_presentation)
-    {
-        const auto runtime = REL::Module::get().version();
-        const auto speakerFormId = a_speaker ? a_speaker->GetFormID() : 0;
-        std::string validationReason;
-        if (!DNT::Parchment::ValidatePresentation(
-                a_presentation,
-                validationReason)) {
-            logger::error(
-                "PARCHMENT_PRESENTATION_REJECT speaker={:08X} reason={} path={}",
-                speakerFormId,
-                validationReason,
-                a_presentation.voicePath);
-            return 0.0F;
-        }
-        if (runtime != ExpectedRuntime) {
-            logger::error(
-                "PARCHMENT_PRESENTATION_REJECT runtime={} expected={} reason=unsupported_runtime",
-                runtime,
-                ExpectedRuntime);
-            return 0.0F;
-        }
-        auto* speaker = a_speaker ? a_speaker->As<RE::Actor>() : nullptr;
-        if (!speaker) {
-            logger::error(
-                "PARCHMENT_PRESENTATION_REJECT speaker={:08X} reason=invalid_speaker",
-                speakerFormId);
-            return 0.0F;
-        }
-
-        const auto relocationId = SelectCompileAndRunId(runtime);
-        const auto resolvedAddress = REL::ID(relocationId).address();
-        const auto resolvedOffset = resolvedAddress - REL::Module::get().base();
-        if (relocationId != ModernCompileAndRunId ||
-            resolvedOffset != ExpectedCompileAndRunOffset) {
-            logger::critical(
-                "PARCHMENT_PRESENTATION_REJECT runtime={} relocationId={} offset=0x{:X} expected=0x{:X} reason=relocation_mismatch",
-                runtime,
-                relocationId,
-                resolvedOffset,
-                ExpectedCompileAndRunOffset);
-            return 0.0F;
-        }
-
-        const auto presentationWindow =
-            DNT::Parchment::PresentationWindowSeconds(
-                a_presentation.voiceDurationSeconds);
-        const auto queuedVoicePath = a_presentation.voicePath;
-        const auto speakerHandle = speaker->GetHandle();
-        SKSE::GetTaskInterface()->AddTask(
-            [speakerFormId,
-             speakerHandle,
-             presentation = std::move(a_presentation),
-             relocationId,
-             resolvedOffset]() {
-                const auto speakerReference = speakerHandle.get();
-                auto* speaker = speakerReference ? speakerReference->As<RE::Actor>() : nullptr;
-                if (!speaker) {
-                    logger::error(
-                        "PARCHMENT_PRESENTATION_ABORT speaker={:08X} reason=actor_unavailable",
-                        speakerFormId);
-                    return;
-                }
-
-                auto* const scriptFactory =
-                    RE::IFormFactory::GetConcreteFormFactoryByType<RE::Script>();
-                auto* script = scriptFactory ? scriptFactory->Create() : nullptr;
-                if (!script) {
-                    logger::error(
-                        "PARCHMENT_PRESENTATION_ABORT speaker={:08X} reason=script_factory_failed",
-                        speakerFormId);
-                    return;
-                }
-
-                speaker->PauseCurrentDialogue();
-                script->SetCommand(
-                    std::format("SpeakSound \"{}\"", presentation.voicePath));
-                CompileAndRunWithRuntimeRelocation(script, speaker, relocationId);
-                delete script;
-                const bool subtitleAdded = AddPresentationSubtitle(
-                    speaker,
-                    presentation.subtitle);
-                if (!subtitleAdded) {
-                    logger::error(
-                        "PARCHMENT_PRESENTATION_SUBTITLE speaker={:08X} added=0 reason=subtitle_manager_unavailable",
-                        speakerFormId);
-                }
-                logger::info(
-                    "PARCHMENT_PRESENTATION_DISPATCH speaker={:08X} relocationId={} offset=0x{:X} subtitleAdded={} durationSeconds={} path={}",
-                    speakerFormId,
-                    relocationId,
-                    resolvedOffset,
-                    subtitleAdded,
-                    presentation.voiceDurationSeconds,
-                    presentation.voicePath);
-            });
-
-        logger::info(
-            "PARCHMENT_PRESENTATION_QUEUED speaker={:08X} runtime={} relocationId={} offset=0x{:X} presentationSeconds={} path={}",
-            speakerFormId,
-            runtime,
-            relocationId,
-            resolvedOffset,
-            presentationWindow,
-            queuedVoicePath);
-        return presentationWindow;
-    }
-
-    float PlayPresentation(
-        RE::StaticFunctionTag*,
-        RE::TESObjectREFR* a_speaker,
-        const RE::BSFixedString a_voicePath,
-        const RE::BSFixedString a_subtitleText,
-        const float a_voiceDurationSeconds)
-    {
-        return QueuePresentation(
-            a_speaker,
-            DNT::Parchment::Presentation{
-                a_voicePath.c_str(),
-                a_subtitleText.c_str(),
-                a_voiceDurationSeconds });
-    }
-
 }
 
 bool DNT::Papyrus::Register(RE::BSScript::IVirtualMachine* a_vm)
@@ -733,9 +667,10 @@ bool DNT::Papyrus::Register(RE::BSScript::IVirtualMachine* a_vm)
     a_vm->RegisterFunction("IsAvailable", PapyrusClass, IsAvailable);
     a_vm->RegisterFunction("GetMonotonicSeconds", PapyrusClass, GetMonotonicSeconds);
     a_vm->RegisterFunction("BuildCarriageRequest", PapyrusClass, BuildCarriageRequest);
+    a_vm->RegisterFunction("BuildWizardRequest", PapyrusClass, BuildWizardRequest);
     a_vm->RegisterFunction("ConsumeCarriageSelectionId", PapyrusClass, ConsumeCarriageSelectionId);
     a_vm->RegisterFunction("GetCarriageFare", PapyrusClass, GetCarriageFare);
-    a_vm->RegisterFunction("GetCarriageHours", PapyrusClass, GetCarriageHours);
+    a_vm->RegisterFunction("ResolveCarriageDestinationMarker", PapyrusClass, ResolveCarriageDestinationMarker);
     a_vm->RegisterFunction("GetWizardFare", PapyrusClass, GetWizardFare);
     a_vm->RegisterFunction("ResolveFerryFare", PapyrusClass, ResolveFerryFare);
     a_vm->RegisterFunction("RequestDialogueClose", PapyrusClass, RequestDialogueClose);
@@ -749,12 +684,10 @@ bool DNT::Papyrus::Register(RE::BSScript::IVirtualMachine* a_vm)
     a_vm->RegisterFunction("SetRouteOrigin", PapyrusClass, SetRouteOrigin);
     a_vm->RegisterFunction("AddRouteLandmark", PapyrusClass, AddRouteLandmark);
     a_vm->RegisterFunction("AddDestination", PapyrusClass, AddDestination);
-    a_vm->RegisterFunction("SetDestinationMarkerTexture", PapyrusClass, SetDestinationMarkerTexture);
     a_vm->RegisterFunction("SetDestinationSelectionRingTexture", PapyrusClass, SetDestinationSelectionRingTexture);
     a_vm->RegisterFunction("SetDestinationMarkerScale", PapyrusClass, SetDestinationMarkerScale);
     a_vm->RegisterFunction("SetDestinationSelectionRingStyle", PapyrusClass, SetDestinationSelectionRingStyle);
     a_vm->RegisterFunction("Show", PapyrusClass, Show);
     a_vm->RegisterFunction("Cancel", PapyrusClass, Cancel);
-    a_vm->RegisterFunction("PlayPresentation", PapyrusClass, PlayPresentation);
     return true;
 }

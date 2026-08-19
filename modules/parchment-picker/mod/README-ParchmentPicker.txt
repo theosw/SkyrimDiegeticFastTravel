@@ -28,16 +28,13 @@ visible only after keyboard/controller input. No cursor artwork is copied or
 shipped. The College provider exposes seven destinations: the five previously
 gameplay-proven capitals plus Dawnstar and Morthal.
 
-Mirabelle has a dedicated matching "Very good. Then we're done here."
-subtitle. The rejected actor-targeted voice experiment crashed Skyrim 1.6.1170
-through CommonLibSSE-NG's stale Script::CompileAndRun relocation. This isolated
-candidate resolves the corrected 1.6.1170 relocation itself. A reusable native
-contract validates the live actor, installed FUZ path, subtitle, and measured
-duration, then returns that duration plus a 0.20-second task margin. Mirabelle's
-playback, lip sync, OnBegin timing, and normal forced subtitle are independently
-gameplay-proven; the generalized voice-to-map handoff still needs one focused
-test. A rejected presentation falls back to the map. Other faculty retain
-normal parchment behavior.
+Ordinary College faculty reuse Skyrim's genuine OfCourse SharedInfo and its
+voice-type-specific FUZ. Mirabelle's unique voice has no matching asset, so her
+mutually exclusive exact-speaker response displays the same "Of course."
+subtitle without fake audio or an added wait. Both terminal responses open the
+map from OnBegin and contain no submenu link. The static seven-destination
+College request is assembled in one native call to avoid repeated Papyrus/native
+scheduling stalls.
 
 Requires the user's separately installed Skyrim/SKSE/Address Library, SKSE Menu
 Framework, RUSTIC MAPS for boat providers, Skyrim Paper Map by Caro Tuts for

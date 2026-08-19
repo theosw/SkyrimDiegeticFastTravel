@@ -54,7 +54,7 @@
       "stage": 5,
       "fare_default": 30,
       "return_service_verified": false,
-      "selection_ring": "Data/textures/DiegeticTravel/thin-circle-oneway-selection-ring.dds",
+      "selection_ring": "Data/textures/DiegeticTravel/norden-oneway-selection-ring.dds",
       "map_position": [0.561367, 0.894535],
       "map_position_status": "calibrated"
     }

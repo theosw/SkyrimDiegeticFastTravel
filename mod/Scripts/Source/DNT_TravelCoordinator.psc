@@ -100,11 +100,3 @@ Bool Function PurchaseFromOrigin(String destinationId, ObjectReference speakerRe
     EndIf
     Return WhiterunService.CommitDestinationFromOrigin(destinationId, speakerRef as Actor, sourceOriginId)
 EndFunction
-
-Bool Function Purchase(String destinationId, ObjectReference speakerRef)
-    DNT_OriginService service = GetOriginService(speakerRef as Actor)
-    If !service
-        Return False
-    EndIf
-    Return service.PurchaseDestination(destinationId, speakerRef as Actor)
-EndFunction

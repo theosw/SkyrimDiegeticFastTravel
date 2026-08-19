@@ -79,13 +79,19 @@ coordinates because the two networks use different maps and UV transforms.
 The maintained optional add-on implements this design:
 
 1. adds the parchment option only to the three public captain bases;
-2. leaves Journey's original destination dialogue available as a fallback;
+2. hides Journey's original destination dialogue for those three providers by
+   default, while preserving it for every unsupported Journey captain;
 3. shares Journey's original `Where are you headed?` response record;
 4. puts Raven Rock, Baan Malur, and Cormaris on the calibrated FWMF chart;
 5. delegates selections to the proved original stages `1`, `2`, and `3`;
 6. adds the verified stage-5 trip to Sunmul from all three public captains as
    one-way;
 7. packages no chart, voice assets, native DLL, or copy of the main runtime.
+
+The provider boundary is a static local form list checked directly by the
+overridden INFO. `DNT_ShowBaanMalurNativeDialogue` defaults to `0`; setting it
+to `1` restores the native prompt for diagnosis. This is a dialogue-condition
+gate, not a Papyrus polling or initialization path.
 
 `DiegeticTravelBoatBaanMalur.esp` requires Journey to Baan Malur and the main
 Diegetic Fast Travel installation. Its chart remains a separately installed

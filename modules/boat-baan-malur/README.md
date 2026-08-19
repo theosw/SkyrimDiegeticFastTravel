@@ -12,6 +12,13 @@ Those mappings were proved from the source mod's compiled TIF and quest
 fragments. Journey to Baan Malur therefore remains responsible for its own
 30-septim check, feedback, and arrival logic.
 
+For those three supported captains, the add-on hides Journey's parallel native
+destination prompt by default. The override is provider-scoped: Journey's
+prompt remains unchanged for every captain outside the add-on's provider list.
+No Papyrus is used for this gate. For conflict diagnosis, restore the native
+prompt for the current game with
+`set DNT_ShowBaanMalurNativeDialogue to 1`; set it back to `0` afterward.
+
 The module references the installed Solstheim and Baan Malur Paper Map for
 FWMF texture. It does not package that DDS. The verified stage-5 trip to Sunmul
 is also offered from all three public captains, marked with the one-way

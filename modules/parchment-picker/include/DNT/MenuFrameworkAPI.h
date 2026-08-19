@@ -77,9 +77,7 @@ namespace DNT::MenuFramework
             Vec2 a_uv0 = Vec2{},
             Vec2 a_uv1 = Vec2{ 1.0F, 1.0F },
             Vec4 a_tint = Vec4{ 1.0F, 1.0F, 1.0F, 1.0F }) const;
-        [[nodiscard]] bool Button(std::string_view a_label, Vec2 a_size) const;
         [[nodiscard]] bool InvisibleButton(std::string_view a_label, Vec2 a_size) const;
-        void SetItemDefaultFocus() const;
         [[nodiscard]] bool IsItemHovered() const;
         [[nodiscard]] bool IsItemFocused() const;
         void PushStyleColor(std::int32_t a_styleIndex, Color a_color) const;
@@ -109,32 +107,12 @@ namespace DNT::MenuFramework
             const Vec2* a_points,
             std::int32_t a_pointCount,
             Color a_color) const;
-        void AddTriangle(
-            DrawList a_drawList,
-            Vec2 a_first,
-            Vec2 a_second,
-            Vec2 a_third,
-            Color a_color,
-            float a_thickness) const;
         void AddTriangleFilled(
             DrawList a_drawList,
             Vec2 a_first,
             Vec2 a_second,
             Vec2 a_third,
             Color a_color) const;
-        void AddCircle(
-            DrawList a_drawList,
-            Vec2 a_center,
-            float a_radius,
-            Color a_color,
-            std::int32_t a_segments,
-            float a_thickness) const;
-        void AddCircleFilled(
-            DrawList a_drawList,
-            Vec2 a_center,
-            float a_radius,
-            Color a_color,
-            std::int32_t a_segments) const;
 
     private:
         template <class T>
@@ -157,9 +135,7 @@ namespace DNT::MenuFramework
         using GetMousePosFn = void (*)(Vec2*);
         using SetMouseCursorFn = void (*)(std::int32_t);
         using ImageFn = void (*)(Texture, Vec2, Vec2, Vec2, Vec4, Vec4);
-        using ButtonFn = bool (*)(const char*, Vec2);
         using InvisibleButtonFn = bool (*)(const char*, Vec2, std::int32_t);
-        using ActionFn = void (*)();
         using ItemStateFn = bool (*)(std::int32_t);
         using FocusedFn = bool (*)();
         using PushStyleColorFn = void (*)(std::int32_t, Color);
@@ -172,10 +148,7 @@ namespace DNT::MenuFramework
         using AddImageFn = void (*)(DrawList, Texture, Vec2, Vec2, Vec2, Vec2, Color);
         using AddPolylineFn = void (*)(DrawList, const Vec2*, std::int32_t, Color, std::int32_t, float);
         using AddConcavePolyFilledFn = void (*)(DrawList, const Vec2*, std::int32_t, Color);
-        using AddTriangleFn = void (*)(DrawList, Vec2, Vec2, Vec2, Color, float);
         using AddTriangleFilledFn = void (*)(DrawList, Vec2, Vec2, Vec2, Color);
-        using AddCircleFn = void (*)(DrawList, Vec2, float, Color, std::int32_t, float);
-        using AddCircleFilledFn = void (*)(DrawList, Vec2, float, Color, std::int32_t);
 
         HMODULE module_{ nullptr };
         AddWindowFn addWindow_{ nullptr };
@@ -192,9 +165,7 @@ namespace DNT::MenuFramework
         GetMousePosFn getMousePos_{ nullptr };
         SetMouseCursorFn setMouseCursor_{ nullptr };
         ImageFn image_{ nullptr };
-        ButtonFn button_{ nullptr };
         InvisibleButtonFn invisibleButton_{ nullptr };
-        ActionFn setItemDefaultFocus_{ nullptr };
         ItemStateFn isItemHovered_{ nullptr };
         FocusedFn isItemFocused_{ nullptr };
         PushStyleColorFn pushStyleColor_{ nullptr };
@@ -207,9 +178,6 @@ namespace DNT::MenuFramework
         AddImageFn addImage_{ nullptr };
         AddPolylineFn addPolyline_{ nullptr };
         AddConcavePolyFilledFn addConcavePolyFilled_{ nullptr };
-        AddTriangleFn addTriangle_{ nullptr };
         AddTriangleFilledFn addTriangleFilled_{ nullptr };
-        AddCircleFn addCircle_{ nullptr };
-        AddCircleFilledFn addCircleFilled_{ nullptr };
     };
 }

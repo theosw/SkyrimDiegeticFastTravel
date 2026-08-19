@@ -62,22 +62,17 @@ namespace
             request,
             { 0.750802F, 0.167836F },
             error), "college route origin should validate");
-        const std::pair<DNT::Parchment::Destination, const char*> destinations[]{
-            { { "whiterun", "Whiterun", 250, 0.532756F, 0.548290F }, "norden-whiterun-capital.dds" },
-            { { "riften", "Riften", 250, 0.880078F, 0.833512F }, "norden-riften-capital.dds" },
-            { { "solitude", "Solitude", 250, 0.365471F, 0.191247F }, "norden-solitude-capital.dds" },
-            { { "windhelm", "Windhelm", 250, 0.793249F, 0.410699F }, "norden-windhelm-capital.dds" },
-            { { "markarth", "Markarth", 250, 0.094238F, 0.507741F }, "norden-markarth-capital.dds" },
-            { { "dawnstar", "Dawnstar", 250, 0.557529F, 0.185081F }, "norden-dawnstar-capital.dds" },
-            { { "morthal", "Morthal", 250, 0.400452F, 0.311110F }, "norden-morthal-capital.dds" },
+        const DNT::Parchment::Destination destinations[]{
+            { "whiterun", "Whiterun", 250, 0.532756F, 0.548290F, "Data/textures/DiegeticTravel/norden-whiterun-capital.dds" },
+            { "riften", "Riften", 250, 0.880078F, 0.833512F, "Data/textures/DiegeticTravel/norden-riften-capital.dds" },
+            { "solitude", "Solitude", 250, 0.365471F, 0.191247F, "Data/textures/DiegeticTravel/norden-solitude-capital.dds" },
+            { "windhelm", "Windhelm", 250, 0.793249F, 0.410699F, "Data/textures/DiegeticTravel/norden-windhelm-capital.dds" },
+            { "markarth", "Markarth", 250, 0.094238F, 0.507741F, "Data/textures/DiegeticTravel/norden-markarth-capital.dds" },
+            { "dawnstar", "Dawnstar", 250, 0.557529F, 0.185081F, "Data/textures/DiegeticTravel/norden-dawnstar-capital.dds" },
+            { "morthal", "Morthal", 250, 0.400452F, 0.311110F, "Data/textures/DiegeticTravel/norden-morthal-capital.dds" },
         };
-        for (const auto& [destination, markerFile] : destinations) {
+        for (const auto& destination : destinations) {
             Require(DNT::Parchment::AddDestination(request, destination, error), "college destination should validate");
-            Require(DNT::Parchment::SetDestinationMarkerTexture(
-                request,
-                destination.id,
-                std::string("Data/textures/DiegeticTravel/") + markerFile,
-                error), "college destination marker should validate");
         }
         return request;
     }
@@ -141,17 +136,6 @@ namespace
                 .selectionRingScale = 1.0F,
             },
             error), "atomic styled destinations should reject invalid ring optics");
-        Require(!DNT::Parchment::SetDestinationMarkerTexture(
-            request,
-            "whiterun",
-            "Data/textures/DiegeticTravel/duplicate.dds",
-            error), "destination marker textures may only be set once");
-        Require(!DNT::Parchment::SetDestinationMarkerTexture(
-            request,
-            "missing",
-            "Data/textures/DiegeticTravel/missing.dds",
-            error), "destination marker textures must target an existing destination");
-
         Require(!DNT::Parchment::SetMarkerTextures(
             request,
             "Data/textures/DiegeticTravel/docks-marker.dds",
@@ -522,54 +506,6 @@ namespace
             "zero-length navigation input must be ignored");
     }
 
-    void TestPresentationValidation()
-    {
-        constexpr float mirabelleDuration = 2.147846F;
-        DNT::Parchment::Presentation presentation{
-            .voicePath = "Voice/Skyrim.esm/FemaleUniqueMirabelleErvine/mg01__000d67d1_1.fuz",
-            .subtitle = "Very good. Then we're done here.",
-            .voiceDurationSeconds = mirabelleDuration
-        };
-        std::string error;
-        Require(DNT::Parchment::ValidatePresentation(
-            presentation,
-            error), "the measured Mirabelle presentation should validate");
-        RequireClose(
-            DNT::Parchment::PresentationWindowSeconds(presentation.voiceDurationSeconds),
-            mirabelleDuration + DNT::Parchment::PresentationTaskMarginSeconds,
-            0.0001F,
-            "presentation window should add only the documented task margin");
-
-        auto injection = presentation;
-        injection.voicePath = "Voice/Skyrim.esm/FemaleUnique/test.fuz\"; quit";
-        Require(!DNT::Parchment::ValidatePresentation(
-            injection,
-            error), "console-command delimiters must fail voice-path validation");
-
-        auto traversal = presentation;
-        traversal.voicePath = "Voice/Skyrim.esm/../test.fuz";
-        Require(!DNT::Parchment::ValidatePresentation(
-            traversal,
-            error), "parent traversal must fail voice-path validation");
-
-        auto wrongRoot = presentation;
-        wrongRoot.voicePath = "Sound/Skyrim.esm/test.fuz";
-        Require(!DNT::Parchment::ValidatePresentation(
-            wrongRoot,
-            error), "presentation paths outside Voice must fail");
-
-        auto controlSubtitle = presentation;
-        controlSubtitle.subtitle = "Unsafe\nsubtitle";
-        Require(!DNT::Parchment::ValidatePresentation(
-            controlSubtitle,
-            error), "subtitle control characters must fail");
-
-        auto invalidDuration = presentation;
-        invalidDuration.voiceDurationSeconds = 0.0F;
-        Require(!DNT::Parchment::ValidatePresentation(
-            invalidDuration,
-            error), "zero-duration presentations must fail");
-    }
 }
 
 int main()
@@ -581,7 +517,6 @@ int main()
     TestDestinationHitAreasDoNotOverlap();
     TestDestinationCapacitySupportsFullCarriageSheet();
     TestDirectionalDestinationNavigation();
-    TestPresentationValidation();
     std::cout << "DNTParchmentCoreTests: all checks passed\n";
     return EXIT_SUCCESS;
 }

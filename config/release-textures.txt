@@ -1,0 +1,23 @@
+# Exact DDS inventory shipped by the consolidated main file.
+docks-marker.dds
+shipwreck-marker.dds
+norden-dawnstar-capital.dds
+norden-docks.dds
+norden-falkreath-capital.dds
+norden-farm.dds
+norden-markarth-capital.dds
+norden-mine.dds
+norden-morthal-capital.dds
+norden-oneway-selection-ring.dds
+norden-riften-capital.dds
+norden-roundtrip-selection-ring.dds
+norden-settlement.dds
+norden-shipwreck.dds
+norden-solitude-capital.dds
+norden-town.dds
+norden-whiterun-capital.dds
+norden-windhelm-capital.dds
+norden-winterhold-capital.dds
+norden-wood-mill.dds
+parchment-thin-oneway-selection-ring.dds
+parchment-thin-selection-ring.dds

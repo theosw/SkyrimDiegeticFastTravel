@@ -43,6 +43,14 @@ as separate SVG layers at neutral settings. The thin light and dark contours
 are traced from the shipped 512-square PNG and retain its authored
 irregularities.
 
+The accepted calibrated Norden vector is
+`../../assets/norden-interface/selection-ring/selection-ring-cropped.svg`.
+`Build-NordenSelectionRing.ps1` derives the one-way indicator directly from
+the accepted round-trip raster's complete darker-arrow component, including
+its antialiased shadow, then uses the complete raster as the normalization
+bounds. This keeps the one-way and round-trip variants on the same 105-degree
+rotation, scale, and marker anchor.
+
 ## Editing model
 
 - **Arrow weight** keeps the authored outside contour fixed. For a lower value,

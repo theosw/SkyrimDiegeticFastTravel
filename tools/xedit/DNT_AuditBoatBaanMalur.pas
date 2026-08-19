@@ -4,8 +4,12 @@ uses SysUtils, Classes;
 
 const
   BoatPrompt = 'Could you show me your route map?';
+  NativeDialogueGateEditorID = 'DNT_ShowBaanMalurNativeDialogue';
+  ProviderListEditorID = 'DNT_BaanMalurBoatProviders';
   OnEndFragmentMask = $02;
   GoodbyeResponseFlagsMask = $0001;
+  EqualConditionType = $00;
+  OrEqualConditionType = $01;
 
 var
   BoatFile, JourneyFile: IInterface;
@@ -210,6 +214,173 @@ begin
     raise Exception.Create('Captain condition target mismatch');
 end;
 
+procedure AssertProviderList(
+  ProviderList, RavenCaptain, BaanCaptain, CormarisCaptain: IInterface
+);
+var
+  Entries, ActualRecord: IInterface;
+  ExpectedRecords: array[0..2] of IInterface;
+  i: Integer;
+begin
+  ExpectedRecords[0] := RavenCaptain;
+  ExpectedRecords[1] := BaanCaptain;
+  ExpectedRecords[2] := CormarisCaptain;
+  Entries := ElementByPath(ProviderList, 'FormIDs');
+  if not Assigned(Entries) or (ElementCount(Entries) <> 3) then
+    raise Exception.Create('Baan Malur provider list must contain three actors');
+  for i := 0 to 2 do begin
+    ActualRecord := LinksTo(ElementByIndex(Entries, i));
+    if not Assigned(ActualRecord) or
+      (FormID(ActualRecord) <> FormID(ExpectedRecords[i])) then
+      raise Exception.Create('Baan Malur provider list order mismatch');
+  end;
+end;
+
+procedure AssertNativeGateCondition(
+  InfoRecord: IInterface;
+  Index: Integer;
+  const ExpectedFunction: string;
+  ExpectedType: Integer;
+  ExpectedComparison: Double;
+  ExpectedParameter: IInterface
+);
+var
+  Conditions, ConditionData, ActualParameter: IInterface;
+begin
+  Conditions := ElementByPath(InfoRecord, 'Conditions');
+  if not Assigned(Conditions) or (Index >= ElementCount(Conditions)) then
+    raise Exception.Create('Missing native fallback condition ' + IntToStr(Index));
+  ConditionData := ElementByPath(ElementByIndex(Conditions, Index), 'CTDA');
+  if GetElementEditValues(ConditionData, 'Function') <> ExpectedFunction then
+    raise Exception.Create('Native fallback condition function mismatch');
+  if GetElementNativeValues(ConditionData, 'Type') <> ExpectedType then
+    raise Exception.Create('Native fallback condition OR layout mismatch');
+  if Abs(GetElementNativeValues(
+    ConditionData,
+    'Comparison Value - Float'
+  ) - ExpectedComparison) > 0.001 then
+    raise Exception.Create('Native fallback condition comparison mismatch');
+  if GetElementNativeValues(ConditionData, 'Run On') <> 0 then
+    raise Exception.Create('Native fallback condition is not subject-scoped');
+  ActualParameter := LinksTo(ElementByPath(ConditionData, 'Parameter #1'));
+  if not Assigned(ActualParameter) or
+    (FormID(ActualParameter) <> FormID(ExpectedParameter)) then
+    raise Exception.Create('Native fallback condition parameter mismatch');
+end;
+
+procedure AuditNativeDialogueGate;
+var
+  GateGlobal, ProviderList, SourceTopic, SourceInfo, Winner,
+    SourceConditions, WinnerConditions, SourceConditionData,
+    WinnerConditionData, SourceParameter, WinnerParameter,
+    RavenCaptain, BaanCaptain, CormarisCaptain: IInterface;
+begin
+  GateGlobal := RequireRecordByEditorID(
+    BoatFile,
+    'GLOB',
+    NativeDialogueGateEditorID
+  );
+  if Abs(GetElementNativeValues(GateGlobal, 'FLTV')) > 0.001 then
+    raise Exception.Create('Baan Malur native-dialogue gate must default to zero');
+
+  ProviderList := RequireRecordByEditorID(
+    BoatFile,
+    'FLST',
+    ProviderListEditorID
+  );
+  RavenCaptain := RequireRecordByEditorID(
+    JourneyFile,
+    'NPC_',
+    'RavenRockSailorCaptain'
+  );
+  BaanCaptain := RequireRecordByEditorID(
+    JourneyFile,
+    'NPC_',
+    'BaanSailorCaptain'
+  );
+  CormarisCaptain := RequireRecordByEditorID(
+    JourneyFile,
+    'NPC_',
+    'CormarisSailorCaptain'
+  );
+  AssertProviderList(
+    ProviderList,
+    RavenCaptain,
+    BaanCaptain,
+    CormarisCaptain
+  );
+
+  SourceTopic := RequireRecordByEditorID(
+    JourneyFile,
+    'DIAL',
+    'SOMRFerrySystemGreeting'
+  );
+  SourceInfo := FirstTopicInfo(SourceTopic);
+  Winner := WinningOverride(SourceInfo);
+  if not Assigned(Winner) or (GetFile(Winner) <> BoatFile) then
+    raise Exception.Create('Baan Malur add-on does not win the native greeting');
+
+  SourceConditions := ElementByPath(SourceInfo, 'Conditions');
+  WinnerConditions := ElementByPath(Winner, 'Conditions');
+  if not Assigned(SourceConditions) or (ElementCount(SourceConditions) <> 1) or
+    not Assigned(WinnerConditions) or (ElementCount(WinnerConditions) <> 3) then
+    raise Exception.Create('Native greeting must preserve one source condition and add two gates');
+  SourceConditionData := ElementByPath(
+    ElementByIndex(SourceConditions, 0),
+    'CTDA'
+  );
+  WinnerConditionData := ElementByPath(
+    ElementByIndex(WinnerConditions, 0),
+    'CTDA'
+  );
+  if GetElementEditValues(SourceConditionData, 'Function') <>
+    GetElementEditValues(WinnerConditionData, 'Function') then
+    raise Exception.Create('Native greeting source condition function changed');
+  if GetElementNativeValues(SourceConditionData, 'Type') <>
+    GetElementNativeValues(WinnerConditionData, 'Type') then
+    raise Exception.Create('Native greeting source condition type changed');
+  if GetElementNativeValues(SourceConditionData, 'Run On') <>
+    GetElementNativeValues(WinnerConditionData, 'Run On') then
+    raise Exception.Create('Native greeting source condition scope changed');
+  if Abs(GetElementNativeValues(
+    SourceConditionData,
+    'Comparison Value - Float'
+  ) - GetElementNativeValues(
+    WinnerConditionData,
+    'Comparison Value - Float'
+  )) > 0.001 then
+    raise Exception.Create('Native greeting source comparison changed');
+  SourceParameter := LinksTo(ElementByPath(SourceConditionData, 'Parameter #1'));
+  WinnerParameter := LinksTo(ElementByPath(WinnerConditionData, 'Parameter #1'));
+  if not Assigned(SourceParameter) or not Assigned(WinnerParameter) or
+    (FormID(SourceParameter) <> FormID(WinnerParameter)) then
+    raise Exception.Create('Native greeting source parameter changed');
+
+  AssertNativeGateCondition(
+    Winner,
+    1,
+    'GetGlobalValue',
+    OrEqualConditionType,
+    1.0,
+    GateGlobal
+  );
+  AssertNativeGateCondition(
+    Winner,
+    2,
+    'IsInList',
+    EqualConditionType,
+    0.0,
+    ProviderList
+  );
+  if GetElementEditValues(Winner, 'Responses\Response\NAM1') <>
+    GetElementEditValues(SourceInfo, 'Responses\Response\NAM1') then
+    raise Exception.Create('Native greeting response changed');
+
+  ReportLines.Add(
+    'PASS native_dialogue_gate=provider_scoped_default_off_restorable'
+  );
+end;
+
 procedure AuditDialogue(QuestRecord: IInterface);
 var
   TopicRecord, BranchRecord, InfoRecord, SourceGreetingInfo,
@@ -360,6 +531,7 @@ begin
     ReportLines.Add('PASS quest=start_game_enabled_priority_60');
 
     AuditDialogue(QuestRecord);
+    AuditNativeDialogueGate;
     ReportLines.SaveToFile(ReportPath);
     WriteTextFile(StatusPath, 'success');
   except

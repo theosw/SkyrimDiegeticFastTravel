@@ -56,7 +56,7 @@ reach them and must not create a fake return service:
 
 The carriage network has a separate destination-only classification based on
 CFTO's placed carriage drivers plus LoreRim's installed **Wait Carriage in Inns**
-service. These eight CFTO destinations have neither a physical driver nor an
+service. These nine CFTO destinations have neither a physical driver nor an
 eligible inn from which a return carriage can be requested:
 
 - Darkwater Crossing
@@ -67,6 +67,7 @@ eligible inn from which a return carriage can be requested:
 - Shor's Stone
 - Heartwood Mill
 - Stonehills
+- Thalmor Embassy
 
 Rorikstead is not one-way: Frostfruit Inn is an eligible request origin. The
 same inn-return rule covers Kynesgrove, Riverwood, Old Hroldan, Dragon Bridge,

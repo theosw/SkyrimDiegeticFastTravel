@@ -65,18 +65,6 @@ and commit, so a path that happens to contain a different checkout cannot pass.
 - The current release does not contain the converted derivative; the source is
   retained for provenance and rollback research only.
 
-## Runtime relocation override
-
-CommonLibSSE-NG still maps `RE::Script::CompileAndRun` to AE Address Library ID
-`21890`. That ID does not exist in LoreRim's 1.6.1170 database; its next entry,
-ID `21891`, resolves to `SkyrimSE.exe+0x33D880`, the wrong function reached by
-the rejected crash candidate.
-
-For AE runtime patches 1.6.1130 and newer, the correct ID is `441582`. On the
-locked 1.6.1170 database it resolves to `SkyrimSE.exe+0x33D6A0`. The native
-voice probe must use a runtime-aware wrapper and must never call CommonLib's
-stock `RE::Script::CompileAndRun` method.
-
 ## Required verification
 
 Run before every native candidate build:
@@ -85,9 +73,10 @@ Run before every native candidate build:
 ./tools/Audit-NativeDependencies.ps1
 ```
 
-The audit fails on a runtime hash/version change, CommonLib commit drift,
-missing modern relocation, unexpected legacy relocation, or offset mismatch.
-Updating the lock requires a fresh research and live-compatibility pass.
+The audit fails on a runtime hash/version change or CommonLib commit drift.
+Updating the lock requires a fresh research and live-compatibility pass. The
+retired native voice experiment and its private `Script::CompileAndRun`
+relocation are not part of the release runtime.
 
 ## Distribution boundary
 

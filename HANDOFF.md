@@ -132,32 +132,13 @@ crash report was created, and neither native nor DNT Papyrus logging reported
 an error. Subtitle lifetime/cleanup was not separately reported and remains a
 minor later regression check rather than a blocker.
 
-The currently deployed Candidate restores the parchment handoff. Direct extraction from
-`Skyrim - Voices_en0.bsa` measures the exact MG01 XWM payload at 2.147846
-seconds. After the proven OnBegin voice/subtitle dispatch, the provider now
-reserves 2.35 seconds for playback plus a short queued-task/cleanup margin,
-then enters the existing proven dialogue-close and parchment `Show` path. It
-marks the request as opening before the wait to prevent re-entry. A rejected
-voice dispatch no longer denies travel; it falls back to opening the map. This
-end-to-end voice -> subtitle -> map -> travel sequence is offline-audited and
-needs one focused live test.
-
-The workspace now advances that deployed one-off into a provider-neutral
-offline candidate. `PlayPresentation` accepts a live actor, constrained
-installed FUZ path, subtitle text, and measured duration; it returns the exact
-duration plus a 0.20-second task margin. The queued task retains an
-`ObjectRefHandle`, inserts the provider subtitle through the proven normal
-subtitle path, and preserves the exact 1.6.1170 relocation guard. Mirabelle is
-the first configured provider, while `PlayVoiceProbe` remains a compatibility
-wrapper. This workspace revision is not deployed while another Skyrim test is
-active. It needs the same focused voice -> subtitle -> map -> travel pass after
-the game closes.
-
-The generated DIAL now contains two mutually exclusive INFOs: the general
-faculty response explicitly excludes Mirabelle, while the dedicated response
-requires exact `MirabelleErvine` identity and also sets her exact speaker.
-Both retain the proven OnBegin parchment fragment. The quest script binds
-`MirabelleBase` alongside the existing wizard service.
+The current workspace removes the Mirabelle MG01 voice experiment. Ordinary
+faculty use genuine vanilla SharedInfo `000DBA22` ("Of course.") on a terminal
+INFO with no `Link To`; Mirabelle's unique voice lacks that FUZ, so her
+mutually-exclusive exact-speaker INFO owns the same subtitle without fake
+audio. Both retain the proven OnBegin parchment fragment. The picker quest now
+binds only the wizard service, and one native `BuildWizardRequest` call replaces
+the previous multi-call Papyrus request construction.
 
 Offline evidence:
 
@@ -1336,3 +1317,34 @@ stable artifact checks.
   `462683DC43ABA24BF6E07F17EA88E4BA380BCCC947E74601E0BE285228846FE3`.
 - For compatibility diagnosis only, `set DNT_ShowLegacyTravelDialogue to 1`
   restores the superseded requests without changing travel behavior.
+
+## 2026-08-19 pre-beta architecture hardening checkpoint
+
+- The dormant native voice/subtitle presentation experiment and its
+  Address Library relocation dependency have been removed. Dialogue voice is
+  again entirely record-owned; the native DLL owns only parchment selection.
+- The unused incremental marker-texture setter, three superseded Papyrus
+  purchase wrappers, and five unused Menu Framework exports were removed. The
+  live origin-aware purchase path and atomic destination construction remain.
+- The College prompt is now price-neutral (`Could you show me your travel
+  map?`) so configurable wizard fares cannot contradict spoken dialogue.
+- Release texture packaging is explicit: `config/release-textures.txt` names
+  the 22 live DDS assets, and the package audit rejects missing or unexpected
+  textures. Twelve authoring/deferred textures remain in source but no longer
+  ship.
+- The picker audit now proves ordered parity across all 28 carriage stops and
+  all seven College destinations in JSON, TSV, C++, and Papyrus. It also
+  rejects reintroduction of the retired native/Papyrus/Menu Framework surface.
+- Full release, Baan Malur add-on, LoreRim BCD compatibility, native Release,
+  2/2 CTest, all 22 Papyrus scripts, headless xEdit semantic audits, package
+  audits, dependency audit, repository-scope audit, and `git diff --check`
+  pass.
+- Candidate identity: `0.1.0-beta-20260819T233940Z`. SHA-256: main
+  `833E674FFFF92056E9492D699468F9C777B51F79526FA4745C8CCEEB7E8B6019`;
+  Baan Malur add-on
+  `510BAC17447B64069CB16DB3BD77418831857C8B513732E66D0ACEFA924383E1`;
+  LoreRim BCD compatibility
+  `304F9179E7D3B8D1D38D2F763BE8A8521A2FDB2CB87990127AE03926A4DAF72F`.
+- These artifacts have not been copied into the live LoreRim installation at
+  this checkpoint. The remaining release gate is a new-game smoke test of the
+  exact candidate; create the final release tag only after it passes.

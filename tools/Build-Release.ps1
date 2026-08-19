@@ -2,16 +2,27 @@ param(
     [string]$LoreRimRoot = "D:\Lorerim",
     [string]$XEdit = "build\xedit-patched\SSEEdit64.exe",
     [string]$PackageName = "DiegeticTravel-beta",
+    [string]$Version = "",
+    [string]$BuildTimestampUtc = "",
     [switch]$PackageOnly
 )
 
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
+. (Join-Path $PSScriptRoot "ReleaseIdentity.ps1")
+$releaseIdentity = New-DntReleaseIdentity `
+    -ProjectRoot $projectRoot `
+    -Version $Version `
+    -BuildTimestampUtc $BuildTimestampUtc
 $buildRoot = Join-Path $projectRoot "build"
 $releaseRoot = Join-Path $buildRoot "release"
 $packageRoot = Join-Path $buildRoot $PackageName
 $distRoot = Join-Path $projectRoot "dist"
-$archive = Join-Path $distRoot "$PackageName.zip"
+$archiveBaseName = "DiegeticTravel-$($releaseIdentity.buildId)"
+$archive = Join-Path $distRoot "$archiveBaseName.zip"
+$mo2DisplayName = "DiegeticTravel $($releaseIdentity.buildId)"
+$identityPath = Join-Path $buildRoot "release-identity.json"
+$releaseTextureManifest = Join-Path $projectRoot "config\release-textures.txt"
 $supportedModules = @(
     "wizard-guides",
     "parchment-picker",
@@ -42,6 +53,9 @@ if (-not $PackageOnly) {
     Invoke-BuildStep "native tests" {
         & ctest --preset parchment-ae-release
     }
+    Invoke-BuildStep "source and data parity" {
+        & (Join-Path $PSScriptRoot "Audit-ParchmentPicker.ps1")
+    }
 
     $compilers = @(
         "Compile-Papyrus.ps1",
@@ -64,10 +78,35 @@ if (-not $PackageOnly) {
     }
 }
 
+# Release packaging always proves every borrowed presentation asset, including
+# PackageOnly rebuilds. This prevents a dependency update or stale workspace
+# from producing an archive with a silent shared response.
+Invoke-BuildStep "wizard voice assets" {
+    & (Join-Path $PSScriptRoot "Audit-WizardVoiceAssets.ps1") `
+        -LoreRimRoot $LoreRimRoot
+}
+Invoke-BuildStep "north-coast ferry voice assets" {
+    & (Join-Path $PSScriptRoot "Audit-BoatNorthCoastVoiceAssets.ps1") `
+        -LoreRimRoot $LoreRimRoot -XEdit $XEdit
+}
+Invoke-BuildStep "Solstheim ferry voice assets" {
+    & (Join-Path $PSScriptRoot "Audit-BoatSolstheimVoiceAssets.ps1") `
+        -LoreRimRoot $LoreRimRoot -XEdit $XEdit
+}
+Invoke-BuildStep "Lake Honrich ferry voice assets" {
+    & (Join-Path $PSScriptRoot "Audit-BoatHonrichVoiceAssets.ps1") `
+        -LoreRimRoot $LoreRimRoot -XEdit $XEdit
+}
+Invoke-BuildStep "Lake Ilinalta ferry voice assets" {
+    & (Join-Path $PSScriptRoot "Audit-BoatIlinaltaVoiceAssets.ps1") `
+        -LoreRimRoot $LoreRimRoot -XEdit $XEdit
+}
+
 $required = @(
     (Join-Path $releaseRoot "DiegeticTravel.esp"),
     (Join-Path $releaseRoot "SEQ\DiegeticTravel.seq"),
-    (Join-Path $projectRoot "THIRD_PARTY_NOTICES.txt")
+    (Join-Path $projectRoot "THIRD_PARTY_NOTICES.txt"),
+    $releaseTextureManifest
 )
 foreach ($path in $required) {
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
@@ -143,8 +182,21 @@ Copy-Item -LiteralPath (Join-Path $parchmentMod "SKSE\Plugins\DiegeticTravel.ini
     -Destination (Join-Path $packageRoot "SKSE\Plugins") -Force
 Copy-Item -LiteralPath (Join-Path $parchmentMod "SKSE\Plugins\DiegeticTravel\travel_catalog.tsv") `
     -Destination (Join-Path $packageRoot "SKSE\Plugins\DiegeticTravel") -Force
-Copy-Item -Path (Join-Path $parchmentMod "textures\DiegeticTravel\*.dds") `
-    -Destination (Join-Path $packageRoot "textures\DiegeticTravel") -Force
+$releaseTextureNames = @(Get-Content -LiteralPath $releaseTextureManifest | Where-Object {
+    $_ -and -not $_.StartsWith("#")
+})
+if ($releaseTextureNames.Count -ne 22 -or
+    @($releaseTextureNames | Sort-Object -Unique).Count -ne $releaseTextureNames.Count) {
+    throw "Release texture manifest must contain exactly 22 unique DDS names"
+}
+foreach ($textureName in $releaseTextureNames) {
+    $textureSource = Join-Path $parchmentMod "textures\DiegeticTravel\$textureName"
+    if (-not (Test-Path -LiteralPath $textureSource -PathType Leaf)) {
+        throw "Release texture input not found: $textureSource"
+    }
+    Copy-Item -LiteralPath $textureSource `
+        -Destination (Join-Path $packageRoot "textures\DiegeticTravel") -Force
+}
 
 $manifestLines = Get-ChildItem -LiteralPath $packageRoot -Recurse -File |
     Sort-Object FullName |
@@ -170,6 +222,13 @@ if (Test-Path -LiteralPath $archive -PathType Leaf) {
 }
 Compress-Archive -Path (Join-Path $packageRoot "*") `
     -DestinationPath $archive -CompressionLevel Optimal
+$metaPath = Write-DntMo2ArchiveMeta `
+    -ArchivePath $archive `
+    -DisplayName $mo2DisplayName `
+    -Identity $releaseIdentity
+Write-DntReleaseIdentity -Identity $releaseIdentity -Path $identityPath
 $archiveHash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash
 Write-Host "Consolidated release package: $archive"
+Write-Host "MO2 sidecar metadata: $metaPath"
+Write-Host "MO2 suggested name: $mo2DisplayName"
 Write-Host "SHA-256: $archiveHash"

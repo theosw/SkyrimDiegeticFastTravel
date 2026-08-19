@@ -112,7 +112,7 @@ EndFunction
 Bool Function AddSunmul(Int Fare)
     Bool Added = AddNordenDestination("sunmul", "Sunmul (one way) ", Fare, 0.561367, 0.894535)
     If Added
-        Added = DNT_ParchmentNative.SetDestinationSelectionRingTexture(ActiveRequest, "sunmul", "Data/textures/DiegeticTravel/thin-circle-oneway-selection-ring.dds")
+        Added = DNT_ParchmentNative.SetDestinationSelectionRingTexture(ActiveRequest, "sunmul", "Data/textures/DiegeticTravel/norden-oneway-selection-ring.dds")
     EndIf
     Return Added
 EndFunction

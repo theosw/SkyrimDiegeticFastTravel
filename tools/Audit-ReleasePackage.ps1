@@ -148,9 +148,72 @@ if (($packagedSources -join "`n") -ne ($expectedScripts -join "`n") -or
     throw "Release contains an unexpected or stale DNT script"
 }
 
+$originServiceSourcePath = Join-Path $package "Scripts\Source\DNT_OriginService.psc"
+$nativePapyrusSourcePath = Join-Path $package "Scripts\Source\DNT_ParchmentNative.psc"
+$wizardPickerSourcePath = Join-Path $package "Scripts\Source\DNT_WizardParchmentPicker.psc"
+$coordinatorSourcePath = Join-Path $package "Scripts\Source\DNT_TravelCoordinator.psc"
+$originServiceSource = Get-Content -LiteralPath $originServiceSourcePath -Raw
+$nativePapyrusSource = Get-Content -LiteralPath $nativePapyrusSourcePath -Raw
+$wizardPickerSource = Get-Content -LiteralPath $wizardPickerSourcePath -Raw
+$coordinatorSource = Get-Content -LiteralPath $coordinatorSourcePath -Raw
+if ($originServiceSource -notmatch [regex]::Escape("DNT_ParchmentNative.ResolveCarriageDestinationMarker(destinationId)")) {
+    throw "Packaged carriage purchase does not use the native catalogue marker resolver"
+}
+if ($originServiceSource -match "Function\s+GetCarriageDestinationMarker" -or
+    $originServiceSource -match [regex]::Escape("DNT_ParchmentNative.GetCarriageHours")) {
+    throw "Packaged carriage purchase contains a retired duplicated marker/quote path"
+}
+if ($coordinatorSource -match 'Bool\s+Function\s+Purchase\s*\(' -or
+    $originServiceSource -match 'Bool\s+Function\s+(CommitDestination|PurchaseDestination)\s*\(') {
+    throw "Packaged carriage runtime contains retired purchase wrappers"
+}
+if ($nativePapyrusSource -notmatch [regex]::Escape("ObjectReference Function ResolveCarriageDestinationMarker(String DestinationId) Global Native")) {
+    throw "Packaged native Papyrus contract is missing its ObjectReference marker resolver"
+}
+if ($nativePapyrusSource -notmatch [regex]::Escape("Int Function BuildWizardRequest(String RequestId, ObjectReference SourceRef, Int Fare) Global Native") -or
+    $wizardPickerSource -notmatch [regex]::Escape("DNT_ParchmentNative.BuildWizardRequest(ActiveRequest, SourceRef, Fare)")) {
+    throw "Packaged wizard picker is missing its single-call native request builder"
+}
+if ($wizardPickerSource -match "MirabellePresentation" -or
+    $wizardPickerSource -match [regex]::Escape("DNT_ParchmentNative.PlayPresentation") -or
+    $wizardPickerSource -match [regex]::Escape("DNT_ParchmentNative.BeginRequest")) {
+    throw "Packaged wizard picker contains the retired Mirabelle/slow request path"
+}
+foreach ($retiredNativeName in @("PlayPresentation", "SetDestinationMarkerTexture")) {
+    if ($nativePapyrusSource -match [regex]::Escape($retiredNativeName)) {
+        throw "Packaged native Papyrus contract contains retired API: $retiredNativeName"
+    }
+}
+
+$releaseTextureManifest = Join-Path $projectRoot "config\release-textures.txt"
+$expectedTextureNames = @(Get-Content -LiteralPath $releaseTextureManifest | Where-Object {
+    $_ -and -not $_.StartsWith("#")
+} | Sort-Object)
+$packagedTextures = @(Get-ChildItem -LiteralPath (Join-Path $package "textures\DiegeticTravel") `
+    -File -Filter "*.dds" | Select-Object -ExpandProperty Name | Sort-Object)
+if (($expectedTextureNames -join "`n") -ne ($packagedTextures -join "`n")) {
+    throw "Release DDS inventory does not match config/release-textures.txt"
+}
+$unexpectedMedia = @(Get-ChildItem -LiteralPath $package -Recurse -File | Where-Object {
+    $_.Extension.ToLowerInvariant() -in @(".png", ".jpg", ".jpeg", ".svg", ".wav", ".xwm", ".fuz")
+})
+if ($unexpectedMedia.Count -gt 0) {
+    throw "Release contains unexpected artwork/audio: $($unexpectedMedia.FullName -join ', ')"
+}
+
 $dlls = @(Get-ChildItem -LiteralPath $package -Recurse -File -Filter "*.dll")
 if ($dlls.Count -ne 1 -or $dlls[0].Name -ne "DNTParchmentPicker.dll") {
     throw "Release must contain only DNTParchmentPicker.dll"
+}
+$nativePexPath = Join-Path $package "Scripts\DNT_ParchmentNative.pex"
+foreach ($nativeContractArtifact in @($dlls[0].FullName, $nativePexPath)) {
+    $nativeContractBytes = [IO.File]::ReadAllBytes($nativeContractArtifact)
+    $nativeContractText = [Text.Encoding]::ASCII.GetString($nativeContractBytes)
+    foreach ($nativeContractName in @("ResolveCarriageDestinationMarker", "BuildWizardRequest")) {
+        if (-not $nativeContractText.Contains($nativeContractName)) {
+            throw "Release contains a mismatched DLL/PEX native contract ($nativeContractName): $nativeContractArtifact"
+        }
+    }
 }
 $pricingIniPath = Join-Path $package "SKSE\Plugins\DiegeticTravel.ini"
 if (-not (Test-Path -LiteralPath $pricingIniPath -PathType Leaf)) {
@@ -191,8 +254,12 @@ if ($travelCatalogLines[0] -ne "schema`t1") {
 }
 $travelCatalogPolicies = @($travelCatalogLines | Where-Object { $_.StartsWith("policy`t") })
 $travelCatalogLocations = @($travelCatalogLines | Where-Object { $_.StartsWith("location`t") })
-if ($travelCatalogPolicies.Count -ne 1 -or $travelCatalogLocations.Count -ne 27) {
-    throw "travel_catalog.tsv must contain one policy and 27 carriage locations"
+if ($travelCatalogPolicies.Count -ne 1 -or $travelCatalogLocations.Count -ne 28) {
+    throw "travel_catalog.tsv must contain one policy and 28 carriage locations"
+}
+$embassyRow = "location`tthalmor_embassy`tThalmor Embassy`t0.317566`t0.169034`tCFTO.esp`t0x0B6E54`tone_way"
+if ($travelCatalogLocations -notcontains $embassyRow) {
+    throw "travel_catalog.tsv is missing the authored CFTO Thalmor Embassy handoff"
 }
 foreach ($obsolete in @("runtime.json", "dialogue_runtime.json")) {
     $obsoletePath = Join-Path $package "SKSE\Plugins\DiegeticTravel\$obsolete"
@@ -299,6 +366,7 @@ $lines = @(
     "PASS masters=$($masters -join ',')",
     "PASS seq_quests=17",
     "PASS papyrus_scripts=$($expectedScripts.Count)",
+    "PASS textures=$($expectedTextureNames.Count)",
     "PASS native_dll=DNTParchmentPicker.dll",
     "PASS pricing_ini=DiegeticTravel.ini",
     "PASS xedit_semantic_audit=true"

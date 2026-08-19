@@ -4,12 +4,12 @@ uses SysUtils, Classes;
 
 const
   OutputPluginName = 'DiegeticTravelWizardParchment.esp';
-  ParchmentPrompt =
-    'Could you show me your travel map? (250 gold per trip)';
-  ParchmentResponse = 'Let me show you.';
-  MirabelleParchmentResponse = 'Very good. Then we''re done here.';
+  ParchmentPrompt = 'Could you show me your travel map?';
+  ParchmentResponse = 'Of course.';
   OnBeginFragmentMask = $01;
+  GoodbyeResponseFlagsMask = $0001;
   SilentTerminalResponseFlagsMask = $0A01;
+  MiscDialogueCategory = 7;
   EqualConditionType = $00;
   NotEqualConditionType = $20;
 
@@ -72,6 +72,92 @@ begin
     raise Exception.Create(
       IntToHex(ObjectID, 6) + ' is not ' + ExpectedEditorID
     );
+end;
+
+procedure ConfigureSharedResponse(
+  InfoRecord: IInterface;
+  const ExpectedEditorID, ResponseText: string;
+  SharedInfoFormID, SharedInfoTopicFormID: Cardinal
+);
+var
+  SharedInfo, SharedInfoTopic, SharedInfoGroup, CandidateInfo,
+    SourceResponses, SharedInfoElement, SharedInfoTarget,
+    TargetResponses: IInterface;
+  i: Integer;
+  DonorIsTopicChild: Boolean;
+begin
+  SharedInfo := RequireRecord(
+    SkyrimFile,
+    SharedInfoFormID,
+    'INFO',
+    'OfCourse'
+  );
+  SharedInfoTopic := RequireRecord(
+    SkyrimFile,
+    SharedInfoTopicFormID,
+    'DIAL',
+    'DialogueGenericSharedInfo'
+  );
+  if GetElementNativeValues(
+    SharedInfoTopic,
+    'DATA\Category'
+  ) <> MiscDialogueCategory then
+    raise Exception.Create(
+      ExpectedEditorID + ' donor topic is not Misc dialogue'
+    );
+  if GetElementEditValues(SharedInfoTopic, 'SNAM') <> 'SharedInfo' then
+    raise Exception.Create(
+      ExpectedEditorID + ' donor topic subtype is not SharedInfo'
+    );
+
+  SharedInfoGroup := ChildGroup(SharedInfoTopic);
+  DonorIsTopicChild := False;
+  if Assigned(SharedInfoGroup) then
+    for i := 0 to Pred(ElementCount(SharedInfoGroup)) do begin
+      CandidateInfo := ElementByIndex(SharedInfoGroup, i);
+      if (Signature(CandidateInfo) = 'INFO') and
+        (FormID(CandidateInfo) = FormID(SharedInfo)) then begin
+        DonorIsTopicChild := True;
+        Break;
+      end;
+    end;
+  if not DonorIsTopicChild then
+    raise Exception.Create(
+      ExpectedEditorID + ' donor is not a child of its SharedInfo topic'
+    );
+
+  SourceResponses := ElementByPath(SharedInfo, 'Responses');
+  if not Assigned(SourceResponses) or (ElementCount(SourceResponses) <> 1) then
+    raise Exception.Create(
+      ExpectedEditorID + ' SharedInfo donor must own exactly one response'
+    );
+  if GetElementEditValues(
+    SharedInfo,
+    'Responses\Response\NAM1'
+  ) <> ResponseText then
+    raise Exception.Create(
+      ExpectedEditorID + ' SharedInfo donor text does not match'
+    );
+
+  if Assigned(ElementByPath(InfoRecord, 'Responses')) then
+    RemoveElement(InfoRecord, 'Responses');
+  SharedInfoElement := ElementByPath(InfoRecord, 'DNAM');
+  if not Assigned(SharedInfoElement) then begin
+    Add(InfoRecord, 'DNAM', True);
+    SharedInfoElement := ElementByPath(InfoRecord, 'DNAM');
+  end;
+  if not Assigned(SharedInfoElement) then
+    raise Exception.Create(ExpectedEditorID + ' could not create Shared Info');
+  SetEditValue(SharedInfoElement, Name(SharedInfo));
+  SharedInfoTarget := LinksTo(SharedInfoElement);
+  if not Assigned(SharedInfoTarget) or
+    (FormID(SharedInfoTarget) <> FormID(SharedInfo)) then
+    raise Exception.Create(
+      ExpectedEditorID + ' SharedInfo donor did not read back'
+    );
+  TargetResponses := ElementByPath(InfoRecord, 'Responses');
+  if Assigned(TargetResponses) and (ElementCount(TargetResponses) > 0) then
+    raise Exception.Create(ExpectedEditorID + ' still owns response data');
 end;
 
 function TopicContainingInfo(
@@ -374,15 +460,17 @@ begin
   SetElementEditValues(PickerInfo, 'RNAM', ParchmentPrompt);
   if Assigned(ElementByPath(PickerInfo, 'DNAM')) then
     RemoveElement(PickerInfo, 'DNAM');
-  SetElementEditValues(
+  ConfigureSharedResponse(
     PickerInfo,
-    'Responses\Response\NAM1',
-    ParchmentResponse
+    'DNT_WG_OpenParchment_Faculty',
+    ParchmentResponse,
+    $000DBA22,
+    $0001F319
   );
   SetElementNativeValues(
     PickerInfo,
     'ENAM\Response Flags',
-    SilentTerminalResponseFlagsMask
+    GoodbyeResponseFlagsMask
   );
   if Assigned(ElementByPath(PickerInfo, 'Link To')) then
     RemoveElement(PickerInfo, 'Link To');
@@ -459,7 +547,7 @@ begin
   SetElementEditValues(
     MirabelleInfo,
     'Responses\Response\NAM1',
-    MirabelleParchmentResponse
+    ParchmentResponse
   );
   SetElementNativeValues(
     MirabelleInfo,
@@ -481,11 +569,8 @@ begin
 
   if GetElementEditValues(PickerInfo, 'RNAM') <> ParchmentPrompt then
     raise Exception.Create('Parchment prompt did not read back');
-  if GetElementEditValues(PickerInfo, 'Responses\Response\NAM1') <>
-    ParchmentResponse then
-    raise Exception.Create('Parchment response did not read back');
   if GetElementEditValues(MirabelleInfo, 'Responses\Response\NAM1') <>
-    MirabelleParchmentResponse then
+    ParchmentResponse then
     raise Exception.Create('Mirabelle parchment response did not read back');
   SetElementNativeValues(PickerTopic, 'TIFC', 2);
 end;
@@ -517,7 +602,7 @@ end;
 
 function Initialize: Integer;
 var
-  PickerQuest, PickerScript, WizardService, MirabelleBase: IInterface;
+  PickerQuest, PickerScript, WizardService: IInterface;
 begin
   Result := 1;
   ReleaseMode := FileExists(
@@ -574,13 +659,6 @@ begin
     );
     PickerScript := QuestScript(PickerQuest);
     AddObjectProperty(PickerScript, 'Service', WizardService);
-    MirabelleBase := RequireRecord(
-      SkyrimFile,
-      $0001C1A0,
-      'NPC_',
-      'MirabelleErvine'
-    );
-    AddObjectProperty(PickerScript, 'MirabelleBase', MirabelleBase);
 
     ConfigureParchmentDialogue(PickerQuest);
     SaveGeneratedPlugin;

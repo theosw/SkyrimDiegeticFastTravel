@@ -55,9 +55,10 @@
       "soljunds_sinkhole",
       "shors_stone",
       "heartwood_mill",
-      "stonehills"
+      "stonehills",
+      "thalmor_embassy"
     ],
-    "selection_ring": "Data/textures/DiegeticTravel/thin-circle-oneway-selection-ring.dds",
+    "selection_ring": "Data/textures/DiegeticTravel/norden-oneway-selection-ring.dds",
     "compatibility_note": "Inn return classification depends on WaitCarriageInns.esp; without it, inn-only origins are destination-only under CFTO itself."
   },
   "ui_elements": [
@@ -348,6 +349,26 @@
           -64942.996094,
           104648.0,
           -8426.006836
+        ]
+      }
+    },
+    {
+      "id": "thalmor_embassy",
+      "name": "Thalmor Embassy",
+      "type": "waypoint",
+      "map_position": [
+        0.317566,
+        0.169034
+      ],
+      "placement": "affine_from_map_marker",
+      "marker": {
+        "plugin": "Skyrim.esm",
+        "form": "00033E45",
+        "editor_id": "",
+        "world_position": [
+          -79067.289062,
+          111308.164063,
+          -2601.893554
         ]
       }
     },

@@ -23,6 +23,10 @@ north-coast, and Solstheim ferry services. A separately downloadable Baan Malur
 ESP-FE can add Captain Remyris's merchant network when Journey to Baan Malur
 and its external FWMF chart are installed; neither is required by this main
 file. The legacy Better Carriage Destinations wizard adapter is not included.
+LoreRim users who keep its BCD/CFTO/WCI chain enabled should install the
+separate Diegetic Travel - LoreRim BCD Coexistence optional file after this
+plugin. That optional ESL suppresses BCD's competing dialogue without disabling
+or modifying BCD.
 
 Because this release consolidates records that previously lived in several
 development plugins, begin testing on a new/disposable save. Existing saves

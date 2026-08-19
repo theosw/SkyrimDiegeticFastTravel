@@ -88,6 +88,7 @@ $requiredSources = @(
     (Join-Path $projectRoot "assets\diegetic-travel\selection-rings\parchment-arrows-thin.png")
     (Join-Path $projectRoot "assets\norden-interface\selection-ring\SOURCE.md")
     (Join-Path $projectRoot "assets\norden-interface\selection-ring\norden-roundtrip-selection-ring.svg")
+    (Join-Path $projectRoot "assets\norden-interface\selection-ring\selection-ring-cropped.svg")
     (Join-Path $projectRoot "tools\map-coordinate-calibrator\public\markers\norden-roundtrip-selection-ring-cropped.png")
     (Join-Path $projectRoot "tools\Build-VanillaParchmentMarkers.ps1")
     (Join-Path $projectRoot "tools\Audit-NativeDependencies.ps1")
@@ -102,6 +103,46 @@ if (($requiredSources | Where-Object { $_ -like "*\assets\norden-interface\carri
 foreach ($source in $requiredSources) {
     if (-not (Test-Path -LiteralPath $source -PathType Leaf)) {
         throw "Missing parchment-picker source: $source"
+    }
+}
+
+$travelCatalogPath = Join-Path $moduleRoot "mod\SKSE\Plugins\DiegeticTravel\travel_catalog.tsv"
+$travelCatalogLocations = @(Get-Content -LiteralPath $travelCatalogPath | Where-Object {
+    $_.StartsWith("location`t")
+})
+if ($travelCatalogLocations.Count -ne 28) {
+    throw "Native carriage catalogue must contain exactly 28 locations."
+}
+$embassyRow = "location`tthalmor_embassy`tThalmor Embassy`t0.317566`t0.169034`tCFTO.esp`t0x0B6E54`tone_way"
+if ($travelCatalogLocations -notcontains $embassyRow) {
+    throw "Native carriage catalogue is missing the authored CFTO Thalmor Embassy handoff."
+}
+
+$carriageNetworkPath = Join-Path $projectRoot "modules\carriage-parchment\config\network.json"
+$carriageNetwork = Get-Content -LiteralPath $carriageNetworkPath -Raw | ConvertFrom-Json
+$carriageStops = @($carriageNetwork.stops)
+if ($carriageStops.Count -ne $travelCatalogLocations.Count) {
+    throw "Carriage authoring/runtime stop counts differ: JSON=$($carriageStops.Count) TSV=$($travelCatalogLocations.Count)"
+}
+$oneWayIds = @($carriageNetwork.return_service_model.one_way_destinations)
+$questLockedIds = @($carriageNetwork.return_service_model.conditional_private_origins)
+for ($index = 0; $index -lt $carriageStops.Count; $index += 1) {
+    $stop = $carriageStops[$index]
+    $fields = $travelCatalogLocations[$index] -split "`t"
+    $expectedAvailability = if ($questLockedIds -contains $stop.id) {
+        "quest_locked"
+    } elseif ($oneWayIds -contains $stop.id) {
+        "one_way"
+    } else {
+        "open"
+    }
+    if ($fields.Count -ne 8 -or
+        $fields[1] -ne $stop.id -or
+        $fields[2] -ne $stop.name -or
+        [Math]::Abs(([double]$fields[3]) - ([double]$stop.map_position[0])) -gt 0.0000005 -or
+        [Math]::Abs(([double]$fields[4]) - ([double]$stop.map_position[1])) -gt 0.0000005 -or
+        $fields[7] -ne $expectedAvailability) {
+        throw "Carriage JSON/TSV parity failed at ordered stop $index ($($stop.id))."
     }
 }
 
@@ -131,13 +172,112 @@ if ($unexpectedAssets.Count -gt 0 -or $shippedAssets.Count -ne $expectedAssets.C
     throw "Parchment module contains an unexpected artwork/audio set: $($shippedAssets.FullName -join ', ')"
 }
 
+$selectionRingHashes = [ordered]@{
+    "norden-roundtrip-selection-ring.dds" = "A8CED99555B7A324F629276E9664F043D0E044690E930A1636B905C059D1E9A3"
+    "norden-oneway-selection-ring.dds" = "C0FA0372829E39878FD561A91D889E1649FD6B2074B527EBB24FB262479E4A5A"
+}
+foreach ($selectionRing in $selectionRingHashes.GetEnumerator()) {
+    $selectionRingPath = Join-Path $modRoot "textures\DiegeticTravel\$($selectionRing.Key)"
+    $actualHash = (Get-FileHash -LiteralPath $selectionRingPath -Algorithm SHA256).Hash
+    if ($actualHash -ne $selectionRing.Value) {
+        throw "Calibrated selection-ring hash mismatch: $($selectionRing.Key) expected=$($selectionRing.Value) actual=$actualHash"
+    }
+}
+
 $nativeScript = Get-Content -Raw (Join-Path $modRoot "Scripts\Source\DNT_ParchmentNative.psc")
+$originServiceScript = Get-Content -Raw (Join-Path $projectRoot "mod\Scripts\Source\DNT_OriginService.psc")
 $travelCompatibilityScript = Get-Content -Raw (Join-Path $modRoot "Scripts\Source\DNT_TravelCompatibility.psc")
 $providerScript = Get-Content -Raw (Join-Path $modRoot "Scripts\Source\DNT_WizardParchmentPicker.psc")
-foreach ($requiredToken in @("GetWizardFare", "ResolveFerryFare", "RequestDialogueClose", "BeginRequest", "SetSourceLabel", "SetPaymentLabelPosition", "SetMarkerTextures", "SetOriginMarkerTexture", "SetSelectionRingTexture", "SetRouteOrigin", "AddRouteLandmark", "AddDestination", "SetDestinationMarkerTexture", "SetDestinationMarkerScale", "SetDestinationSelectionRingStyle", "SetDestinationSelectionRingTexture", "Show", "Cancel", "PlayPresentation", "DNT_ParchmentResult")) {
+$papyrusSource = Get-Content -Raw (Join-Path $moduleRoot "src\Papyrus.cpp")
+$coordinatorScript = Get-Content -Raw (Join-Path $projectRoot "mod\Scripts\Source\DNT_TravelCoordinator.psc")
+foreach ($requiredToken in @("BuildWizardRequest", "ResolveCarriageDestinationMarker", "GetWizardFare", "ResolveFerryFare", "RequestDialogueClose", "BeginRequest", "SetSourceLabel", "SetPaymentLabelPosition", "SetMarkerTextures", "SetOriginMarkerTexture", "SetSelectionRingTexture", "SetRouteOrigin", "AddRouteLandmark", "AddDestination", "SetDestinationMarkerScale", "SetDestinationSelectionRingStyle", "SetDestinationSelectionRingTexture", "Show", "Cancel", "DNT_ParchmentResult")) {
     if ($nativeScript -notmatch [regex]::Escape($requiredToken) -and
         $providerScript -notmatch [regex]::Escape($requiredToken)) {
         throw "Parchment Papyrus contract is missing token: $requiredToken"
+    }
+}
+
+$wizardMap = Get-Content -LiteralPath (Join-Path $moduleRoot "config\wizard-map.json") -Raw | ConvertFrom-Json
+$wizardNetwork = Get-Content -LiteralPath (Join-Path $projectRoot "modules\wizard-guides\config\network.json") -Raw | ConvertFrom-Json
+$expectedWizardStops = @($wizardMap.stops | Select-Object -Skip 1)
+$wizardNetworkStops = @($wizardNetwork.destinations | Select-Object -Skip 1)
+$wizardLinks = @($wizardNetwork.destinations[0].links)
+$nativeWizardMatches = [regex]::Matches(
+    $papyrusSource,
+    'WizardDestination\{\s*"([^"]+)",\s*"([^"]+)",\s*([0-9.]+)F,\s*([0-9.]+)F,')
+$papyrusWizardMatches = [regex]::Matches(
+    $providerScript,
+    'SelectionIndex\s*==\s*([0-9]+)\s*\r?\n\s*Return\s+"([^"]+)"')
+if ($expectedWizardStops.Count -ne 7 -or
+    $wizardNetworkStops.Count -ne 7 -or
+    $wizardLinks.Count -ne 7 -or
+    $nativeWizardMatches.Count -ne 7 -or
+    $papyrusWizardMatches.Count -ne 7) {
+    throw "Wizard ordered parity requires exactly seven destinations in every source."
+}
+for ($index = 0; $index -lt 7; $index += 1) {
+    $expected = $expectedWizardStops[$index]
+    $networkStop = $wizardNetworkStops[$index]
+    $nativeMatch = $nativeWizardMatches[$index]
+    $papyrusMatch = $papyrusWizardMatches[$index]
+    $nativeX = [double]::Parse($nativeMatch.Groups[3].Value, [Globalization.CultureInfo]::InvariantCulture)
+    $nativeY = [double]::Parse($nativeMatch.Groups[4].Value, [Globalization.CultureInfo]::InvariantCulture)
+    if ($wizardLinks[$index] -ne $expected.id -or
+        $networkStop.id -ne $expected.id -or
+        $networkStop.name -ne $expected.name -or
+        $nativeMatch.Groups[1].Value -ne $expected.id -or
+        $nativeMatch.Groups[2].Value -ne $expected.name -or
+        [Math]::Abs($nativeX - ([double]$expected.map_position[0])) -gt 0.0000005 -or
+        [Math]::Abs($nativeY - ([double]$expected.map_position[1])) -gt 0.0000005 -or
+        [int]$papyrusMatch.Groups[1].Value -ne $index -or
+        $papyrusMatch.Groups[2].Value -ne $expected.id) {
+        throw "Wizard JSON/C++/Papyrus ordered parity failed at destination $index ($($expected.id))."
+    }
+}
+
+$retiredNativeSurface = @(
+    "PlayPresentation",
+    "QueuePresentation",
+    "ValidatePresentation",
+    "PresentationWindowSeconds",
+    "CompileAndRunWithRuntimeRelocation",
+    "AddPresentationSubtitle",
+    "SetDestinationMarkerTexture"
+)
+$nativeSurface = @(
+    $nativeScript,
+    $papyrusSource,
+    (Get-Content -Raw (Join-Path $moduleRoot "include\DNT\ParchmentCore.h")),
+    (Get-Content -Raw (Join-Path $moduleRoot "include\DNT\ParchmentMenu.h")),
+    (Get-Content -Raw (Join-Path $moduleRoot "src\ParchmentCore.cpp")),
+    (Get-Content -Raw (Join-Path $moduleRoot "src\ParchmentMenu.cpp"))
+) -join "`n"
+foreach ($retiredToken in $retiredNativeSurface) {
+    if ($nativeSurface -match [regex]::Escape($retiredToken)) {
+        throw "Retired native API remains in the maintained runtime: $retiredToken"
+    }
+}
+if ($coordinatorScript -match 'Bool\s+Function\s+Purchase\s*\(' -or
+    $originServiceScript -match 'Bool\s+Function\s+(CommitDestination|PurchaseDestination)\s*\(') {
+    throw "Retired carriage purchase wrappers remain in the Papyrus runtime."
+}
+if ($nativeScript -notmatch [regex]::Escape("ObjectReference Function ResolveCarriageDestinationMarker(String DestinationId) Global Native")) {
+    throw "Native Papyrus contract must return the catalogue marker as an ObjectReference."
+}
+if ($nativeScript -notmatch [regex]::Escape("Int Function BuildWizardRequest(String RequestId, ObjectReference SourceRef, Int Fare) Global Native")) {
+    throw "Native Papyrus contract is missing the single-call wizard request builder."
+}
+if ($originServiceScript -notmatch [regex]::Escape("DNT_ParchmentNative.ResolveCarriageDestinationMarker(destinationId)")) {
+    throw "Carriage purchase must resolve its destination marker through the native catalogue."
+}
+foreach ($retiredMarkerRegistryToken in @(
+    "Function GetCarriageDestinationMarker",
+    "DNT_ParchmentNative.GetCarriageHours",
+    'Game.GetFormFromFile(0x0A7B39, "CFTO.esp")',
+    'Game.GetFormFromFile(0x0B6E43, "CFTO.esp")'
+)) {
+    if ($originServiceScript -match [regex]::Escape($retiredMarkerRegistryToken)) {
+        throw "Carriage purchase still contains retired duplicated marker logic: $retiredMarkerRegistryToken"
     }
 }
 foreach ($compatibilityToken in @(
@@ -161,35 +301,72 @@ if ($travelCompatibilityScript -match 'SetGameSettingFloat' -or
     throw "Apparition compatibility may read the speed override but must not mutate globals or require a hard plugin property."
 }
 foreach ($destination in @("whiterun", "riften", "solitude", "windhelm", "markarth", "dawnstar", "morthal")) {
-    if ($providerScript -notmatch ('"' + [regex]::Escape($destination) + '"')) {
-        throw "Wizard parchment provider is missing destination: $destination"
+    if ($papyrusSource -notmatch ('"' + [regex]::Escape($destination) + '"')) {
+        throw "Native wizard request builder is missing destination: $destination"
     }
 }
-foreach ($artToken in @("textures/terrain/tamriel/skyrim.dds", "norden-winterhold-capital.dds", "norden-whiterun-capital.dds", "norden-riften-capital.dds", "norden-solitude-capital.dds", "norden-windhelm-capital.dds", "norden-markarth-capital.dds", "norden-dawnstar-capital.dds", "norden-morthal-capital.dds", "norden-roundtrip-selection-ring.dds", "SetMarkerTextures", "SetOriginMarkerTexture", "SetSelectionRingTexture", "SetDestinationMarkerTexture", "TextureUvMinX", "TextureUvMaxY", "1.414075", "0.088379", "0.187012", "0.932129", "0.783691", "0.750802", "0.167836")) {
-    if ($providerScript -notmatch [regex]::Escape($artToken)) {
-        throw "Wizard parchment provider is missing artwork contract token: $artToken"
+foreach ($artToken in @("textures/terrain/tamriel/skyrim.dds", "norden-winterhold-capital.dds", "norden-whiterun-capital.dds", "norden-riften-capital.dds", "norden-solitude-capital.dds", "norden-windhelm-capital.dds", "norden-markarth-capital.dds", "norden-dawnstar-capital.dds", "norden-morthal-capital.dds", "norden-roundtrip-selection-ring.dds", "SetMarkerTextures", "SetOriginMarkerTexture", "SetSelectionRingTexture", "AddStyledDestination", "1.414075", "0.088379", "0.187012", "0.932129", "0.783691", "0.750802", "0.167836")) {
+    if ($papyrusSource -notmatch [regex]::Escape($artToken)) {
+        throw "Native wizard request builder is missing artwork contract token: $artToken"
     }
 }
-foreach ($voiceToken in @(
+foreach ($wizardBuilderToken in @(
+    "DNT_ParchmentNative.BuildWizardRequest",
+    'Int DestinationCount = DNT_ParchmentNative.BuildWizardRequest(ActiveRequest, SourceRef, Fare)',
+    'DestinationCount != 7',
+    'destinations=" + DestinationCount'
+)) {
+    if ($providerScript -notmatch [regex]::Escape($wizardBuilderToken)) {
+        throw "Wizard parchment provider is missing native builder contract: $wizardBuilderToken"
+    }
+}
+foreach ($retiredWizardToken in @(
     "MirabelleBase",
-    "Voice/Skyrim.esm/FemaleUniqueMirabelleErvine/mg01__000d67d1_1.fuz",
-    "Very good. Then we're done here.",
-    "MirabellePresentationDurationSeconds = 2.147846",
+    "MirabellePresentation",
     "DNT_ParchmentNative.PlayPresentation",
-    "WIZARD_PARCHMENT_PRESENTATION_QUEUED",
-    "timing=info_on_begin",
-    "mapSuppressed=false",
-    "presentationSeconds=",
-    "fallback=map",
-    "Bool VoiceStarted = False",
+    "DNT_ParchmentNative.BeginRequest",
+    "DNT_ParchmentNative.AddDestination",
+    "DNT_ParchmentNative.SetDestinationMarkerTexture",
+    "DNT_ParchmentNative.SetDestinationMarkerScale",
+    "DNT_ParchmentNative.SetDestinationSelectionRingStyle",
     "presentationVoice="
 )) {
-    if ($providerScript -notmatch [regex]::Escape($voiceToken)) {
-        throw "Wizard parchment provider is missing Mirabelle presentation token: $voiceToken"
+    if ($providerScript -match [regex]::Escape($retiredWizardToken)) {
+        throw "Wizard parchment provider still contains retired slow/presentation path: $retiredWizardToken"
     }
 }
 
-$papyrusSource = Get-Content -Raw (Join-Path $moduleRoot "src\Papyrus.cpp")
+foreach ($nativeMarkerToken in @(
+    "RE::TESObjectREFR* ResolveCarriageDestinationMarker",
+    "DNT::TravelRuntime::GetLocation(destinationId)",
+    "CARRIAGE_NATIVE_MARKER_READY",
+    'RegisterFunction("ResolveCarriageDestinationMarker"'
+)) {
+    if ($papyrusSource -notmatch [regex]::Escape($nativeMarkerToken)) {
+        throw "Native catalogue marker resolver is missing contract: $nativeMarkerToken"
+    }
+}
+foreach ($nativeWizardToken in @(
+    "std::int32_t BuildWizardRequest",
+    "WizardDestinations",
+    "WIZARD_NATIVE_REQUEST_READY",
+    "WIZARD_NATIVE_REQUEST_REJECT",
+    'RegisterFunction("BuildWizardRequest"'
+)) {
+    if ($papyrusSource -notmatch [regex]::Escape($nativeWizardToken)) {
+        throw "Native wizard request builder is missing contract: $nativeWizardToken"
+    }
+}
+if ($papyrusSource -match [regex]::Escape('RegisterFunction("GetCarriageHours"') -or
+    $papyrusSource -match 'float\s+GetCarriageHours\s*\(') {
+    throw "The discarded Papyrus carriage-hours lookup must not remain registered."
+}
+if ($papyrusSource -notmatch [regex]::Escape("Data/textures/DiegeticTravel/norden-oneway-selection-ring.dds")) {
+    throw "Native carriage one-way destinations must use the calibrated Norden one-way selection ring."
+}
+if ($papyrusSource -match [regex]::Escape("Data/textures/DiegeticTravel/thin-circle-oneway-selection-ring.dds")) {
+    throw "Native carriage one-way destinations still reference the retired thin-circle one-way ring."
+}
 foreach ($handoffToken in @(
     "RequestDialogueClose",
     "RE::UI::GetSingleton",
@@ -204,30 +381,6 @@ foreach ($handoffToken in @(
         throw "Native dialogue handoff is missing token: $handoffToken"
     }
 }
-foreach ($voiceToken in @(
-    "ExpectedRuntime{ 1, 6, 1170, 0 }",
-    "ModernCompileAndRunId = 441582",
-    "ExpectedCompileAndRunOffset = 0x33D6A0",
-    "ValidatePresentation",
-    "PresentationWindowSeconds",
-    "CompileAndRunWithRuntimeRelocation",
-    "AddPresentationSubtitle",
-    "SubtitleManager::GetSingleton",
-    "BSSpinLockGuard",
-    "subtitleManager->subtitles.push_back",
-    "subtitle.forceDisplay = true",
-    "REL::ID(a_relocationId)",
-    "PARCHMENT_PRESENTATION_QUEUED",
-    "PARCHMENT_PRESENTATION_DISPATCH",
-    "PARCHMENT_PRESENTATION_REJECT",
-    "subtitleAdded=",
-    "PauseCurrentDialogue",
-    'std::format("SpeakSound \"{}\"", presentation.voicePath)'
-)) {
-    if ($papyrusSource -notmatch [regex]::Escape($voiceToken)) {
-        throw "Native presentation support is missing token: $voiceToken"
-    }
-}
 if ($providerScript -match "ConsoleUtil" -or
     $papyrusSource -match [regex]::Escape("script->CompileAndRun(" ) -or
     $papyrusSource -match [regex]::Escape("RELOCATION_ID(21416, 21890)")) {
@@ -239,6 +392,17 @@ $frameworkSource = @(
     (Get-Content -Raw (Join-Path $moduleRoot "include\DNT\MenuFrameworkAPI.h")),
     (Get-Content -Raw (Join-Path $moduleRoot "src\MenuFrameworkAPI.cpp"))
 ) -join "`n"
+foreach ($unusedFrameworkExport in @(
+    '"igButton"',
+    '"igSetItemDefaultFocus"',
+    '"ImDrawList_AddTriangle"',
+    '"ImDrawList_AddCircle"',
+    '"ImDrawList_AddCircleFilled"'
+)) {
+    if ($frameworkSource -match [regex]::Escape($unusedFrameworkExport)) {
+        throw "Unused Menu Framework export is still a runtime requirement: $unusedFrameworkExport"
+    }
+}
 $presentationSource = $menuSource + "`n" + $frameworkSource
 foreach ($presentationToken in @(
     "focusedDescription = std::format(",
@@ -251,9 +415,7 @@ foreach ($presentationToken in @(
     "igSetWindowFontScale",
     "igCalcTextSize",
     "igGetForegroundDrawList_Nil",
-    "ImDrawList_AddCircle",
     "ImDrawList_AddImage",
-    "ImDrawList_AddCircleFilled",
     "ImDrawList_AddTriangleFilled",
     "ImDrawList_AddPolyline",
     "ImDrawList_AddConcavePolyFilled",
@@ -363,8 +525,16 @@ if ($RequireNativeBuild) {
     if ((Get-Item -LiteralPath $seq).Length -ne 4) {
         throw "Wizard parchment SEQ must contain exactly one 4-byte FormID."
     }
+    foreach ($nativeContractArtifact in @($dll, $nativePex)) {
+        $nativeContractBytes = [IO.File]::ReadAllBytes($nativeContractArtifact)
+        $nativeContractText = [Text.Encoding]::ASCII.GetString($nativeContractBytes)
+        if (-not $nativeContractText.Contains("ResolveCarriageDestinationMarker")) {
+            throw "Native marker resolver is missing from built artifact: $nativeContractArtifact"
+        }
+    }
 }
 
 Write-Host "Parchment-picker audit passed."
-Write-Host "Bundled artwork: 2 user-authored/edited marker assets, 10 Skyrim-derived map markers, 14 open-permission NORDIC UI map markers, and 2 authorized Norden UI selection rings"
-Write-Host "Wizard destinations: 7"
+Write-Host "Carriage parity: 28 ordered JSON/TSV destinations"
+Write-Host "Maintained DDS authoring inventory: $($expectedAssets.Count) assets; release packaging uses its separate 22-texture allowlist"
+Write-Host "Wizard parity: 7 ordered JSON/C++/Papyrus destinations"

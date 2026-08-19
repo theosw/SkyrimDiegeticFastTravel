@@ -7,9 +7,18 @@ const
   ExpectedMasterCount = 6;
   ExpectedStartGameQuestCount = 17;
   ExpectedOriginQuestCount = 9;
+  ParchmentPrompt = 'Could you show me your travel map?';
+  ParchmentResponse = 'Of course.';
+  OnBeginFragmentMask = $01;
+  GoodbyeResponseFlagsMask = $0001;
+  SilentTerminalResponseFlagsMask = $0A01;
+  MiscDialogueCategory = 7;
+  EqualConditionType = $00;
+  NotEqualConditionType = $20;
+  GreaterThanOrEqualConditionType = $60;
 
 var
-  TargetFile, CftoFile: IInterface;
+  TargetFile, SkyrimFile, CftoFile: IInterface;
   ReportLines: TStringList;
   StatusPath, ErrorPath, ReportPath, AuditStage: string;
 
@@ -136,6 +145,192 @@ begin
   end;
 end;
 
+function TopicContainingInfo(
+  PluginFile, InfoRecord: IInterface
+): IInterface;
+var
+  TopicGroup, TopicRecord, InfoGroup, CandidateInfo: IInterface;
+  i, j: Integer;
+begin
+  Result := nil;
+  TopicGroup := GroupBySignature(PluginFile, 'DIAL');
+  if not Assigned(TopicGroup) then
+    Exit;
+  for i := 0 to Pred(ElementCount(TopicGroup)) do begin
+    TopicRecord := ElementByIndex(TopicGroup, i);
+    InfoGroup := ChildGroup(TopicRecord);
+    if not Assigned(InfoGroup) then
+      Continue;
+    for j := 0 to Pred(ElementCount(InfoGroup)) do begin
+      CandidateInfo := ElementByIndex(InfoGroup, j);
+      if (Signature(CandidateInfo) = 'INFO') and
+        (FormID(CandidateInfo) = FormID(InfoRecord)) then begin
+        Result := TopicRecord;
+        Exit;
+      end;
+    end;
+  end;
+end;
+
+function PropertyObject(
+  ScriptEntry: IInterface;
+  const PropertyNameValue: string
+): IInterface;
+var
+  Properties, PropertyEntry: IInterface;
+  i: Integer;
+begin
+  Result := nil;
+  Properties := ElementByPath(ScriptEntry, 'Properties');
+  if not Assigned(Properties) then
+    Exit;
+  for i := 0 to Pred(ElementCount(Properties)) do begin
+    PropertyEntry := ElementByIndex(Properties, i);
+    if GetElementEditValues(PropertyEntry, 'propertyName') =
+      PropertyNameValue then begin
+      Result := LinksTo(
+        ElementByPath(
+          PropertyEntry,
+          'Value\Object Union\Object v2\FormID'
+        )
+      );
+      Exit;
+    end;
+  end;
+end;
+
+procedure AssertProperty(
+  ScriptEntry: IInterface;
+  const PropertyNameValue: string;
+  ExpectedRecord: IInterface
+);
+var
+  ActualRecord: IInterface;
+begin
+  ActualRecord := PropertyObject(ScriptEntry, PropertyNameValue);
+  if not Assigned(ActualRecord) or
+    (FormID(ActualRecord) <> FormID(ExpectedRecord)) then
+    raise Exception.Create(PropertyNameValue + ' property does not match');
+end;
+
+procedure AssertCondition(
+  InfoRecord: IInterface;
+  Index: Integer;
+  const FunctionName: string;
+  ParameterRecord: IInterface;
+  ConditionType: Cardinal;
+  ComparisonValue: Double
+);
+var
+  Conditions, ConditionData, ActualParameter: IInterface;
+begin
+  Conditions := ElementByPath(InfoRecord, 'Conditions');
+  if not Assigned(Conditions) or (Index >= ElementCount(Conditions)) then
+    raise Exception.Create('Missing parchment INFO condition ' +
+      IntToStr(Index));
+  ConditionData := ElementByPath(ElementByIndex(Conditions, Index), 'CTDA');
+  if not Assigned(ConditionData) or
+    (GetElementEditValues(ConditionData, 'Function') <> FunctionName) then
+    raise Exception.Create('Parchment INFO condition function mismatch');
+  if GetElementNativeValues(ConditionData, 'Type') <> ConditionType then
+    raise Exception.Create('Parchment INFO condition type mismatch');
+  if Abs(
+    GetElementNativeValues(ConditionData, 'Comparison Value - Float') -
+    ComparisonValue
+  ) > 0.001 then
+    raise Exception.Create('Parchment INFO comparison mismatch');
+  if GetElementNativeValues(ConditionData, 'Run On') <> 0 then
+    raise Exception.Create('Parchment INFO condition is not subject-scoped');
+  ActualParameter := LinksTo(ElementByPath(ConditionData, 'Parameter #1'));
+  if not Assigned(ActualParameter) or
+    (FormID(ActualParameter) <> FormID(ParameterRecord)) then
+    raise Exception.Create('Parchment INFO condition parameter mismatch');
+end;
+
+procedure AssertInfoFragment(
+  InfoRecord, PickerQuest: IInterface;
+  const LabelValue: string
+);
+var
+  VMAD, Scripts, ScriptEntry, Properties, Fragments, Fragment: IInterface;
+begin
+  VMAD := ElementByPath(InfoRecord, 'VMAD');
+  if not Assigned(VMAD) or
+    (GetElementNativeValues(VMAD, 'Script Fragments\Flags') <>
+      OnBeginFragmentMask) or
+    (GetElementEditValues(VMAD, 'Script Fragments\FileName') <>
+      'DNT_WizardParchmentFragment') then
+    raise Exception.Create(LabelValue + ' fragment metadata mismatch');
+  Scripts := ElementByPath(VMAD, 'Scripts');
+  if not Assigned(Scripts) or (ElementCount(Scripts) <> 1) then
+    raise Exception.Create(LabelValue + ' does not have one script');
+  ScriptEntry := ElementByIndex(Scripts, 0);
+  if GetElementEditValues(ScriptEntry, 'ScriptName') <>
+    'DNT_WizardParchmentFragment' then
+    raise Exception.Create(LabelValue + ' fragment script does not match');
+  Properties := ElementByPath(ScriptEntry, 'Properties');
+  if not Assigned(Properties) or (ElementCount(Properties) <> 1) then
+    raise Exception.Create(LabelValue + ' fragment property count mismatch');
+  AssertProperty(ScriptEntry, 'Picker', PickerQuest);
+  Fragments := ElementByPath(VMAD, 'Script Fragments\Fragments');
+  if not Assigned(Fragments) or (ElementCount(Fragments) <> 1) then
+    raise Exception.Create(LabelValue + ' fragment entry count mismatch');
+  Fragment := ElementByIndex(Fragments, 0);
+  if (GetElementEditValues(Fragment, 'ScriptName') <>
+      'DNT_WizardParchmentFragment') or
+    (GetElementEditValues(Fragment, 'FragmentName') <> 'Fragment_0') then
+    raise Exception.Create(LabelValue + ' fragment entry does not match');
+end;
+
+procedure AssertSharedResponse(
+  InfoRecord: IInterface;
+  const EditorIDValue: string
+);
+var
+  ExpectedSharedInfo, SharedInfo, Responses, SharedInfoTopic,
+    SharedInfoGroup, CandidateInfo: IInterface;
+  i: Integer;
+  DonorIsTopicChild: Boolean;
+begin
+  ExpectedSharedInfo := RequireRecord(SkyrimFile, $000DBA22, 'INFO');
+  if GetElementEditValues(ExpectedSharedInfo, 'EDID') <> 'OfCourse' then
+    raise Exception.Create(EditorIDValue + ' donor EditorID does not match');
+  SharedInfo := LinksTo(ElementByPath(InfoRecord, 'DNAM'));
+  if not Assigned(SharedInfo) or
+    (FormID(SharedInfo) <> FormID(ExpectedSharedInfo)) then
+    raise Exception.Create(EditorIDValue + ' SharedInfo donor does not match');
+  SharedInfoTopic := RequireRecord(SkyrimFile, $0001F319, 'DIAL');
+  if GetElementEditValues(SharedInfoTopic, 'EDID') <>
+    'DialogueGenericSharedInfo' then
+    raise Exception.Create(EditorIDValue + ' donor topic EditorID mismatch');
+  if GetElementNativeValues(SharedInfoTopic, 'DATA\Category') <>
+    MiscDialogueCategory then
+    raise Exception.Create(EditorIDValue + ' donor topic is not Misc dialogue');
+  if GetElementEditValues(SharedInfoTopic, 'SNAM') <> 'SharedInfo' then
+    raise Exception.Create(EditorIDValue + ' donor topic is not SharedInfo');
+  SharedInfoGroup := ChildGroup(SharedInfoTopic);
+  DonorIsTopicChild := False;
+  if Assigned(SharedInfoGroup) then
+    for i := 0 to Pred(ElementCount(SharedInfoGroup)) do begin
+      CandidateInfo := ElementByIndex(SharedInfoGroup, i);
+      if (Signature(CandidateInfo) = 'INFO') and
+        (FormID(CandidateInfo) = FormID(ExpectedSharedInfo)) then begin
+        DonorIsTopicChild := True;
+        Break;
+      end;
+    end;
+  if not DonorIsTopicChild then
+    raise Exception.Create(EditorIDValue + ' donor is not a SharedInfo child');
+  Responses := ElementByPath(InfoRecord, 'Responses');
+  if Assigned(Responses) and (ElementCount(Responses) > 0) then
+    raise Exception.Create(EditorIDValue + ' unexpectedly owns responses');
+  if GetElementEditValues(
+    ExpectedSharedInfo,
+    'Responses\Response\NAM1'
+  ) <> ParchmentResponse then
+    raise Exception.Create(EditorIDValue + ' donor response text mismatch');
+end;
+
 procedure AuditMasters;
 var
   Expected: TStringList;
@@ -250,6 +445,148 @@ begin
   ReportLines.Add('PASS start_game_quests=17');
   ReportLines.Add('PASS origin_services=9');
   ReportLines.Add('PASS critical_quest_scripts=8');
+end;
+
+procedure AuditWizardParchmentDialogue;
+var
+  PickerQuest, PickerQuestScript, PickerQuestProperties, PickerTopic,
+    PickerBranch, TopicQuest, BranchQuest, StartingTopic, InfoGroup,
+    FacultyInfo, MirabelleInfo, MirabelleBase, Speaker, Conditions,
+    CollegeFaction, ArnielSummon, Endrast: IInterface;
+begin
+  PickerQuest := ResolveRecordByEditorID(
+    TargetFile,
+    'QUST',
+    'DNT_WizardParchmentPickerQuest'
+  );
+  PickerQuestScript := ScriptByName(
+    PickerQuest,
+    'DNT_WizardParchmentPicker'
+  );
+  if not Assigned(PickerQuestScript) then
+    raise Exception.Create('Wizard parchment quest script is missing');
+  PickerQuestProperties := ElementByPath(PickerQuestScript, 'Properties');
+  if not Assigned(PickerQuestProperties) or
+    (ElementCount(PickerQuestProperties) <> 1) then
+    raise Exception.Create(
+      'Wizard parchment quest must expose only its Service property'
+    );
+  AssertProperty(
+    PickerQuestScript,
+    'Service',
+    ResolveRecordByEditorID(TargetFile, 'QUST', 'DNT_WizardTravelQuest')
+  );
+  if Assigned(PropertyObject(PickerQuestScript, 'MirabelleBase')) then
+    raise Exception.Create('Obsolete MirabelleBase property is still present');
+
+  FacultyInfo := FindInfoByEditorID(
+    TargetFile,
+    'DNT_WG_OpenParchment_Faculty'
+  );
+  MirabelleInfo := FindInfoByEditorID(
+    TargetFile,
+    'DNT_WG_OpenParchment_Mirabelle'
+  );
+  if not Assigned(FacultyInfo) or not Assigned(MirabelleInfo) then
+    raise Exception.Create('Wizard parchment INFO split is incomplete');
+  PickerTopic := TopicContainingInfo(TargetFile, FacultyInfo);
+  if not Assigned(PickerTopic) or
+    (GetElementEditValues(PickerTopic, 'EDID') <> 'DNT_WG_OpenParchment') then
+    raise Exception.Create('Wizard parchment topic does not match');
+  if FormID(TopicContainingInfo(TargetFile, MirabelleInfo)) <>
+    FormID(PickerTopic) then
+    raise Exception.Create('Mirabelle INFO is not in the parchment topic');
+  if (GetElementEditValues(PickerTopic, 'FULL') <> ParchmentPrompt) or
+    (GetElementNativeValues(PickerTopic, 'TIFC') <> 2) then
+    raise Exception.Create('Wizard parchment topic prompt/count mismatch');
+  InfoGroup := ChildGroup(PickerTopic);
+  if not Assigned(InfoGroup) or (ElementCount(InfoGroup) <> 2) then
+    raise Exception.Create('Wizard parchment topic must contain two INFOs');
+
+  PickerBranch := LinksTo(ElementByPath(PickerTopic, 'BNAM'));
+  if not Assigned(PickerBranch) or
+    (GetElementEditValues(PickerBranch, 'EDID') <>
+      'DNT_WG_OpenParchmentBranch') then
+    raise Exception.Create('Wizard parchment branch does not match');
+  TopicQuest := LinksTo(ElementByPath(PickerTopic, 'QNAM'));
+  BranchQuest := LinksTo(ElementByPath(PickerBranch, 'QNAM'));
+  StartingTopic := LinksTo(ElementByPath(PickerBranch, 'SNAM'));
+  if not Assigned(TopicQuest) or
+    (FormID(TopicQuest) <> FormID(PickerQuest)) or
+    not Assigned(BranchQuest) or
+    (FormID(BranchQuest) <> FormID(PickerQuest)) or
+    not Assigned(StartingTopic) or
+    (FormID(StartingTopic) <> FormID(PickerTopic)) then
+    raise Exception.Create('Wizard parchment topic/branch wiring mismatch');
+  if (GetElementNativeValues(PickerBranch, 'TNAM') <> 0) or
+    (GetElementNativeValues(PickerBranch, 'DNAM') <> 1) then
+    raise Exception.Create('Wizard parchment branch flags do not match');
+
+  if GetElementEditValues(FacultyInfo, 'RNAM') <> ParchmentPrompt then
+    raise Exception.Create('Faculty parchment prompt does not match');
+  if GetElementNativeValues(FacultyInfo, 'ENAM\Response Flags') <>
+    GoodbyeResponseFlagsMask then
+    raise Exception.Create('Faculty parchment flags are not terminal voiced');
+  if Assigned(ElementByPath(FacultyInfo, 'Link To')) then
+    raise Exception.Create('Faculty parchment unexpectedly links a submenu');
+  AssertSharedResponse(FacultyInfo, 'DNT_WG_OpenParchment_Faculty');
+
+  MirabelleBase := RequireRecord(SkyrimFile, $0001C1A0, 'NPC_');
+  if GetElementEditValues(MirabelleBase, 'EDID') <> 'MirabelleErvine' then
+    raise Exception.Create('Mirabelle base record does not match');
+  if GetElementEditValues(MirabelleInfo, 'RNAM') <> ParchmentPrompt then
+    raise Exception.Create('Mirabelle parchment prompt does not match');
+  if Assigned(ElementByPath(MirabelleInfo, 'DNAM')) then
+    raise Exception.Create('Mirabelle parchment unexpectedly uses SharedInfo');
+  if GetElementEditValues(
+    MirabelleInfo,
+    'Responses\Response\NAM1'
+  ) <> ParchmentResponse then
+    raise Exception.Create('Mirabelle parchment subtitle does not match');
+  if not Assigned(ElementByPath(MirabelleInfo, 'Responses')) or
+    (ElementCount(ElementByPath(MirabelleInfo, 'Responses')) <> 1) then
+    raise Exception.Create('Mirabelle parchment must own one response');
+  if GetElementNativeValues(MirabelleInfo, 'ENAM\Response Flags') <>
+    SilentTerminalResponseFlagsMask then
+    raise Exception.Create('Mirabelle parchment flags are not subtitle-only');
+  if Assigned(ElementByPath(MirabelleInfo, 'Link To')) then
+    raise Exception.Create('Mirabelle parchment unexpectedly links a submenu');
+  Speaker := LinksTo(ElementByPath(MirabelleInfo, 'ANAM'));
+  if not Assigned(Speaker) or
+    (FormID(Speaker) <> FormID(MirabelleBase)) then
+    raise Exception.Create('Mirabelle parchment exact speaker does not match');
+
+  CollegeFaction := RequireRecord(SkyrimFile, $0001F259, 'FACT');
+  ArnielSummon := RequireRecord(SkyrimFile, $0006A152, 'NPC_');
+  Endrast := RequireRecord(SkyrimFile, $0003B0E4, 'NPC_');
+  Conditions := ElementByPath(FacultyInfo, 'Conditions');
+  if not Assigned(Conditions) or (ElementCount(Conditions) <> 4) then
+    raise Exception.Create('Faculty parchment condition count mismatch');
+  AssertCondition(FacultyInfo, 0, 'GetFactionRank', CollegeFaction,
+    GreaterThanOrEqualConditionType, 3.0);
+  AssertCondition(FacultyInfo, 1, 'GetIsID', ArnielSummon,
+    NotEqualConditionType, 1.0);
+  AssertCondition(FacultyInfo, 2, 'GetIsID', Endrast,
+    NotEqualConditionType, 1.0);
+  AssertCondition(FacultyInfo, 3, 'GetIsID', MirabelleBase,
+    NotEqualConditionType, 1.0);
+  Conditions := ElementByPath(MirabelleInfo, 'Conditions');
+  if not Assigned(Conditions) or (ElementCount(Conditions) <> 4) then
+    raise Exception.Create('Mirabelle parchment condition count mismatch');
+  AssertCondition(MirabelleInfo, 0, 'GetFactionRank', CollegeFaction,
+    GreaterThanOrEqualConditionType, 3.0);
+  AssertCondition(MirabelleInfo, 1, 'GetIsID', ArnielSummon,
+    NotEqualConditionType, 1.0);
+  AssertCondition(MirabelleInfo, 2, 'GetIsID', Endrast,
+    NotEqualConditionType, 1.0);
+  AssertCondition(MirabelleInfo, 3, 'GetIsID', MirabelleBase,
+    EqualConditionType, 1.0);
+
+  AssertInfoFragment(FacultyInfo, PickerQuest, 'Faculty parchment INFO');
+  AssertInfoFragment(MirabelleInfo, PickerQuest, 'Mirabelle parchment INFO');
+  ReportLines.Add(
+    'PASS wizard_parchment_dialogue=faculty_shared_ofcourse_mirabelle_subtitle'
+  );
 end;
 
 function GateConditionCount(
@@ -434,6 +771,11 @@ begin
     AuditHeader;
     AuditStage := 'quests';
     AuditQuests;
+    AuditStage := 'wizard parchment dialogue';
+    SkyrimFile := FileByPluginName('Skyrim.esm');
+    if not Assigned(SkyrimFile) then
+      raise Exception.Create('Skyrim.esm is not loaded');
+    AuditWizardParchmentDialogue;
     AuditStage := 'legacy dialogue gate';
     CftoFile := FileByPluginName('CFTO.esp');
     if not Assigned(CftoFile) then

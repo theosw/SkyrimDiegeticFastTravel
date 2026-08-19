@@ -19,6 +19,26 @@ set DNT_ShowLegacyTravelDialogue to 1
 This switch changes only dialogue visibility. It does not change fares,
 destination gates, map contents, or the travel implementation.
 
+## Journey to Baan Malur merchant ferries
+
+The optional Baan Malur add-on owns the dialogue boundary for Captain Remyris
+and the public Baan Malur and Cormaris captains. Its provider form list hides
+Journey's parallel `I would like to hire your ship.` prompt for exactly those
+three speakers by default. Journey's native prompt remains available for every
+other Journey captain, including ports the parchment add-on has not curated.
+
+For conflict diagnosis, restore the native prompt on the three supported
+providers with:
+
+```text
+set DNT_ShowBaanMalurNativeDialogue to 1
+```
+
+Set it back to `0` for normal release behavior. The switch changes only
+dialogue visibility; Journey still owns fares, quest stages, arrival handoffs,
+and all native service outside the supported provider list. The gate is made
+of record conditions and has no Papyrus runtime cost.
+
 ## Wait Carriage in Inns
 
 Wait Carriage in Inns support is part of the consolidated runtime and requires
@@ -41,8 +61,8 @@ second, redundant route-map dialogue entry.
 
 ## Better Carriage Destinations
 
-Better Carriage Destinations (BCD) is a strong candidate for a future map-based
-front end, but its CFTO patch is not functionally compatible with this alpha.
+Better Carriage Destinations (BCD) remains a possible future map-based front
+end, but its CFTO and WCI patches compete with the physical parchment handoff.
 
 BCD's native plugin closes the dialogue menu, opens the map, and optionally
 filters its marker collection using a whitelist or blocklist. Its injected
@@ -62,11 +82,21 @@ separate parchment handoff with flat destination gates and configurable
 distance-based carriage fares.
 With the BCD CFTO patch enabled, that handoff is bypassed.
 
-For alpha testing:
+LoreRim testing must keep its curated BCD chain loaded. Do not disable and
+re-enable the BCD base, CFTO adapter, or WCI adapter merely to expose Diegetic
+Travel: MO2 can append the restored plugins and dependent patches to the end of
+the profile, changing the controlled load order.
 
-- Keep the base BCD mod and its CFTO patch disabled unless separately verifying
-  conflicts.
-- Load `DiegeticTravel.esp` after `CFTO.esp`.
+The separately packaged `DiegeticTravelLoreRimBcdCompat.esp` provides the
+physical-parchment coexistence path. It loads after `DiegeticTravel.esp` and
+adds a default-off condition to exactly three BCD dialogue INFOs: generic
+carriage, CFTO ferry, and WCI carriage. The original BCD fragments and
+conditions remain intact, and the diagnostic global
+`DNT_ShowBcdTravelDialogue` can restore them by being set to `1`. BCD's DLL,
+MCM, scripts, and plugin order are otherwise untouched.
+
+This compatibility ESL suppresses competing selectors; it does not reproduce
+BCD's broad eligible-map-marker feature set and is not a claim of BCD parity.
 
 A proper integration should reuse BCD only as the selection surface:
 
@@ -77,9 +107,9 @@ A proper integration should reuse BCD only as the selection surface:
 4. Diegetic Travel revalidates availability, uses its immutable configured
    carriage quote, then performs its normal direct travel handoff.
 
-That design preserves BCD's polished map UI without duplicating service logic.
-It requires a deliberate compatibility patch or a small BCD API
-extension; merely changing load order is not sufficient.
+That future design would preserve BCD's polished map UI without duplicating
+service logic. It requires a BCD API extension or a different deliberate
+compatibility adapter; merely changing load order is not sufficient.
 
 ### Archived wizard-guide experiment
 

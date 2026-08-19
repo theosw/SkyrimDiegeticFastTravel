@@ -21,6 +21,10 @@
 - [ ] Verify conditional endpoints (three Hearthfire manors and intact Helgen).
 - [ ] Eyeball all low-confidence roads in game.
 - [ ] Run the Valtheim reroute smoke test and save/load regression test.
+- [ ] Build and live-test the optional LoreRim BCD coexistence ESL with the
+  complete BCD/CFTO/WCI chain still enabled. Verify that only the physical
+  parchment prompts remain and that setting `DNT_ShowBcdTravelDialogue` to `1`
+  restores all three BCD entries.
 
 ## After beta
 
@@ -96,7 +100,7 @@
 - [x] Soft-detect Wizarding Traversal's Apparition holder effect and use a
   zero-time `MoveTo` arrival for direct DNT travel without adding a master or
   mutating the source mod's fast-travel-speed global.
-- [x] Expand and independently audit the carriage parchment adapter to all 27
+- [x] Expand and independently audit the carriage parchment adapter to all 28
   destinations with a native CFTO handoff. The beta uses an immutable native
   pricing snapshot, revalidates at purchase, and deliberately draws no
   synthetic routes.
@@ -104,6 +108,8 @@
   all expected destinations from one origin, capital/minor marker readability,
   full executable-endpoint visibility, first-open latency, fare/time labels, cancel,
   denial, exact payment, and one completed CFTO ride.
+  - Thalmor Embassy must appear as a dark-arrow one-way destination and land at
+    CFTO's `KmodCarriageEmbassyMarker`.
 - [ ] Define optional compatibility adapters for intervention and Mark/Recall
   mods instead of immediately cloning their spell suites.
 - [ ] Prototype the propylon-style ancient-site loop after discovery, follower,

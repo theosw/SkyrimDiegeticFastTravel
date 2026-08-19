@@ -9,7 +9,7 @@ validate in game.
 
 ## Catalogue contract
 
-`travel_catalog.tsv` contains one schema row, one carriage policy, 27 stable
+`travel_catalog.tsv` contains one schema row, one carriage policy, 28 stable
 locations, and optional direct overrides. A location supplies its stable ID,
 display name, normalized map position, plugin-local arrival FormID, and open,
 one-way, or quest-locked availability class.
@@ -26,8 +26,9 @@ candidate paths, or variable-rate layer.
    destinations directly to the menu.
 4. The menu returns an index; native request state translates it back to the
    stable destination ID and is immediately discarded.
-5. Papyrus re-queries the authoritative native quote, charges the player,
-   resolves the CFTO arrival marker, and travels.
+5. Papyrus re-queries the authoritative native quote and asks native code for
+   the marker from that same catalogue entry. It then charges the player and
+   travels. Papyrus contains no duplicate destination/FormID registry.
 
 The request map is protected by a mutex and erased on selection/cancel. No
 quote or selection data is persisted into the save.

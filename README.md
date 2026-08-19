@@ -28,12 +28,10 @@ spoke wizards travel directly to the College, while permanent College faculty
 link outward to Whiterun, Riften, Solitude, Windhelm, Markarth, Dawnstar, and
 Morthal.
 Voiced INFOs use an explicitly audited short vanilla response whose FUZ exists
-for each eligible voice type. The
-branching faculty hub owns a forced-subtitle response so its custom `LinkTo`
-submenu advances reliably. Mirabelle's provider-specific installed FUZ,
-subtitle, and lip sync are gameplay-proven; the current offline candidate
-generalizes that presentation before the parchment opens. Only the selected
-destination runs a travel fragment.
+for each eligible voice type. The branching faculty hub uses a shared voiced
+response for ordinary faculty and an exact-speaker forced subtitle for
+Mirabelle, whose voice type lacks that FUZ. Only the selected destination runs
+a travel fragment.
 
 The new [`modules/parchment-picker`](modules/parchment-picker) candidate is a
 provider-neutral alternative to the native tween MapMenu. It uses a blocking
@@ -103,19 +101,17 @@ check.
 Carriage parchment work lives in
 [`modules/carriage-parchment`](modules/carriage-parchment). The existing
 flat CFTO service remains the sole availability, fare, payment, and travel
-authority. The adapter draws all 27 native CFTO destinations with fare-only
-labels and returns the stable selection to `DNT_TravelCoordinator.Purchase`
+authority. The adapter draws all 28 native CFTO destinations with fare-only
+labels and returns the stable selection to `DNT_TravelCoordinator.PurchaseFromOrigin`
 for revalidation. Its two
 scripts compile without warnings; the separate ESP/SEQ and both paid/free
 shared-voice INFO paths pass an independent xEdit audit. The map now distinguishes
-eight verified destination-only stops from physical-driver, inn-request, and
+nine verified destination-only stops from physical-driver, inn-request, and
 Hearthfire private-carriage return services. The ordinary destination dialogue
-remains the fallback.
+is available only through the documented diagnostic compatibility global.
 
 The five-pillar scope and reuse decisions are recorded in
-[`docs/PILLAR_RESEARCH.md`](docs/PILLAR_RESEARCH.md). The generic spoken
-provider boundary is specified in
-[`docs/PRESENTATION_CONTRACT.md`](docs/PRESENTATION_CONTRACT.md), and
+[`docs/PILLAR_RESEARCH.md`](docs/PILLAR_RESEARCH.md), and
 [`docs/ASSET_POLICY.md`](docs/ASSET_POLICY.md) defines what must remain an
 external dependency rather than enter a package.
 
@@ -128,7 +124,7 @@ now live-proven and Morthal's replacement arrival is the current candidate.
 
 ## Implementation status
 
-The carriage beta now contains a flat, reproducible CFTO manifest; 27 direct
+The carriage beta now contains a flat, reproducible CFTO manifest; 28 direct
 destinations; nine origin services; CFTO local/standard/extra fare lookup;
 Hearthfire destination gates; direct arrival-marker travel; and the parchment
 picker. No graph runtime, candidate paths, hazard sensors, generated hour
@@ -148,8 +144,11 @@ machine-readable [`config/repository-scope.json`](config/repository-scope.json).
 
 The release build checks the dependency lock, builds and tests the native menu,
 compiles all 22 Papyrus scripts, generates and audits the consolidated
-ESL-flagged `DiegeticTravel.esp`, and writes
-`dist\DiegeticTravel-beta.zip`. The package requires SKSE64, Address Library,
+ESL-flagged `DiegeticTravel.esp`, and writes a versioned archive such as
+`dist\DiegeticTravel-0.1.0-beta-20260819T193802Z.zip`. A matching
+`.zip.meta` sidecar gives MO2 the same build ID as its suggested Quick Install
+name. Keep the two files beside each other when installing the local archive.
+The package requires SKSE64, Address Library,
 SKSE Menu Framework, CFTO, and the external map-art dependencies listed in
 `mod\README.txt`. It does not require JContainers.
 
@@ -158,6 +157,12 @@ reopening xEdit, use `.\tools\Build-Release.ps1 -PackageOnly`. Packaging copies
 only the 22 source/PEX pairs in the release inventory, so stale compiler output
 cannot enter the ZIP. Compiled PEX/DLL files and intermediate module plugins are
 not tracked; see [`docs/ARTIFACT_POLICY.md`](docs/ARTIFACT_POLICY.md).
+
+The semantic version is maintained in `config\release.json`. Every successful
+main package build adds a fresh compact UTC timestamp and records the resulting
+identity in `build\release-identity.json`. The optional Baan Malur and LoreRim
+BCD builders reuse that identity, so every archive belonging to one candidate
+has the same version/timestamp in its filename and MO2 install name.
 
 Stock xEdit 4.1.x does not offer a truly headless `-script` mode: `-script`
 selects Script mode, while `-autoload` and `-autoexit` are parsed only in Edit
@@ -168,16 +173,19 @@ status. Generators and audits copy inputs into ignored workspace staging; they
 do not run through MO2's VFS or write to LoreRim. The stock UI-automation
 fallback remains relevant only if that patched executable is unavailable.
 
-The current alpha is not compatible with the **Better Carriage Destinations -
-CFTO** patch: that patch opens its map picker before CFTO's destination topics,
-so it bypasses Diegetic Travel's own parchment handoff and availability gates.
+The **Better Carriage Destinations - CFTO** patch opens its map picker before
+CFTO's destination topics, so it bypasses Diegetic Travel's parchment handoff
+and availability gates. LoreRim users can keep the complete BCD chain loaded
+and install the separately built `DiegeticTravelLoreRimBcdCompat.esp`, which
+gates the three competing BCD dialogue entries without changing BCD itself.
 See [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md) for the analyzed integration
 path.
 
 Carriage dialogue closes into one native request built from
 `travel_catalog.tsv`. The selected stable destination ID is returned to a small
-Papyrus service, which revalidates fare and availability, charges the player,
-and performs the final world mutation. There is no dialogue listener, quote
+Papyrus service, which revalidates the fare, asks the same native catalogue to
+return the arrival reference, charges the player, and performs the final world
+mutation. There is no dialogue listener, quote
 cache, runtime-generated global set, or Papyrus destination array. The release
 ESP does contain the default-off `DNT_ShowLegacyTravelDialogue` compatibility
 global, which hides only the superseded CFTO request prompts and obsolete

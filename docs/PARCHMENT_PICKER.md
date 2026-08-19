@@ -16,7 +16,7 @@ Each request contains bounded value data:
 - external map texture, UV crop, and aspect ratio;
 - destination IDs, labels, fares, normalized coordinates, and marker optics;
 - optional route origin and inactive landmark markers;
-- optional payment-label position and actor-targeted presentation.
+- optional payment-label position.
 
 The release deliberately excludes the experimental transparent-overlay and
 dynamic route-segment/pathfinding systems. Current maps communicate topology
@@ -37,12 +37,14 @@ inactive dock landmarks.
 Generic provider Papyrus builds the request through `DNT_ParchmentNative` and
 translates the result index through its stable destination list. Carriages use
 the native catalogue builder and consume a stable destination ID, avoiding a
-27-stop Papyrus construction loop.
+28-stop Papyrus construction loop.
 
 The selected destination is revalidated by the provider service immediately
-before payment and travel. Apparition compatibility is evaluated at commit
-time from the current speed override, so adding or removing the effect between
-trips is respected.
+before payment and travel. Carriages resolve the arrival `ObjectReference`
+through the same native catalogue that displayed and quoted the destination;
+Papyrus contains no parallel marker table. Apparition compatibility is
+evaluated at commit time from the current speed override, so adding or removing
+the effect between trips is respected.
 
 ## Artwork policy
 
@@ -57,6 +59,7 @@ project's edited anchor/boat language.
 ## Verification
 
 The native core has offline tests for request validation, layout, hitbox
-separation, controller navigation, presentations, catalogue loading, quotes,
-and stable destination enumeration. Provider and package audits additionally
-enforce exact script/plugin inventories and asset provenance.
+separation, controller navigation, catalogue loading, quotes, and stable
+destination enumeration. Provider and package audits additionally
+enforce the single native marker resolver across source, DLL, and PEX as well
+as exact script/plugin inventories and asset provenance.

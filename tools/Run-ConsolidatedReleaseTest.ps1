@@ -35,9 +35,16 @@ function Assert-ConsolidatedReleaseReady {
 
     $mods = @(Get-Content -LiteralPath $modlistPath)
     $plugins = @(Get-Content -LiteralPath $pluginsPath)
-    if ($mods -notcontains "+DiegeticTravel") {
-        throw "Enable the consolidated 'DiegeticTravel' mod in MO2's left pane"
+    $enabledReleaseMods = @($mods | Where-Object {
+        $_ -match '^\+DiegeticTravel \d+\.\d+\.\d+-beta-\d{8}T\d{6}Z$'
+    })
+    if ($enabledReleaseMods.Count -ne 1) {
+        throw (
+            "Enable exactly one timestamped consolidated DiegeticTravel mod " +
+            "in MO2's left pane. Found: $($enabledReleaseMods -join ', ')"
+        )
     }
+    $enabledReleaseModName = $enabledReleaseMods[0].Substring(1)
     $legacyMods = @(
         "DiegeticTravel - State Gate Test Harness",
         "DiegeticTravel - Baan Malur Boat Test",
@@ -66,15 +73,14 @@ function Assert-ConsolidatedReleaseReady {
         "DiegeticTravelBoatHonrich.esp",
         "DiegeticTravelBoatIlinalta.esp",
         "DiegeticTravelBoatNorthCoast.esp",
-        "DiegeticTravelBoatSolstheim.esp",
-        "DiegeticTravelBoatBaanMalur.esp"
+        "DiegeticTravelBoatSolstheim.esp"
     )) {
         if ($plugins -contains "*$legacyPlugin") {
             throw "Disable legacy development plugin: $legacyPlugin"
         }
     }
 
-    $modRoot = Join-Path (Join-Path $instanceRoot "mods") "DiegeticTravel"
+    $modRoot = Join-Path (Join-Path $instanceRoot "mods") $enabledReleaseModName
     $pluginPath = Join-Path $modRoot "DiegeticTravel.esp"
     $seqPath = Join-Path $modRoot "SEQ\DiegeticTravel.seq"
     foreach ($required in @($pluginPath, $seqPath)) {

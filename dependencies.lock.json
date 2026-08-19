@@ -133,16 +133,5 @@
       "repositorySha256": "A207F90E2A73263FC9AA71EF8E05AE89A37ED609CF1CA634CAB494DC0E59B921",
       "permission": "Use and redistribution permission supplied directly by the Norden UI author to the project owner"
     }
-  },
-  "runtimeRelocations": {
-    "scriptCompileAndRun": {
-      "legacyAeId": 21890,
-      "modernAeMinimumPatch": 1130,
-      "modernAeId": 441582,
-      "targetOffset": "0x33D6A0",
-      "legacyIdMustBeAbsentOnTarget": true,
-      "nextLegacyId": 21891,
-      "nextLegacyOffset": "0x33D880"
-    }
   }
 }

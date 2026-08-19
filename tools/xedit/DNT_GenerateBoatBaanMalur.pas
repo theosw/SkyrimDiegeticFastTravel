@@ -6,13 +6,15 @@ const
   OutputPluginName = 'DiegeticTravelBoatBaanMalur.esp';
   StartObjectID = $000800;
   BoatPrompt = 'Could you show me your route map?';
+  NativeDialogueGateEditorID = 'DNT_ShowBaanMalurNativeDialogue';
+  ProviderListEditorID = 'DNT_BaanMalurBoatProviders';
   OnEndFragmentMask = $02;
   GoodbyeResponseFlagsMask = $0001;
   EqualConditionType = $00;
   OrEqualConditionType = $01;
 
 var
-  OutputFile, JourneyFile: IInterface;
+  OutputFile, SkyrimFile, JourneyFile: IInterface;
   StatusPath, ErrorPath, PluginOutputPath, SeqFormIDsPath: string;
 
 procedure WriteTextFile(const Path, TextValue: string);
@@ -172,6 +174,55 @@ begin
   Add(Result, 'DNAM', True);
   SetElementNativeValues(Result, 'DNAM\Flags', 1);
   SetElementNativeValues(Result, 'DNAM\Priority', 60);
+end;
+
+function NewGateGlobal: IInterface;
+var
+  TemplateGlobal: IInterface;
+begin
+  TemplateGlobal := RequireRecord(
+    SkyrimFile,
+    $000039,
+    'GLOB',
+    'GameDaysPassed'
+  );
+  Result := wbCopyElementToFile(TemplateGlobal, OutputFile, True, False);
+  if not Assigned(Result) then
+    raise Exception.Create('Could not create Baan Malur native-dialogue gate');
+  SetElementEditValues(Result, 'EDID', NativeDialogueGateEditorID);
+  SetElementNativeValues(Result, 'FLTV', 0.0);
+  if GetElementEditValues(Result, 'EDID') <> NativeDialogueGateEditorID then
+    raise Exception.Create('Could not set Baan Malur gate EditorID');
+end;
+
+function NewFormList(const EditorIDValue: string): IInterface;
+begin
+  Result := Add(EnsureTopGroup('FLST'), 'FLST', True);
+  SetElementEditValues(Result, 'EDID', EditorIDValue);
+  if GetElementEditValues(Result, 'EDID') <> EditorIDValue then
+    raise Exception.Create('Could not set FLST EditorID: ' + EditorIDValue);
+end;
+
+procedure AddFormListEntry(ListRecord, EntryRecord: IInterface);
+var
+  Entries, Entry, ReadBack: IInterface;
+begin
+  Entries := ElementByPath(ListRecord, 'FormIDs');
+  if not Assigned(Entries) then begin
+    Add(ListRecord, 'FormIDs', True);
+    Entries := ElementByPath(ListRecord, 'FormIDs');
+  end;
+  if not Assigned(Entries) then
+    raise Exception.Create('Could not create Baan Malur provider entries');
+  if (ElementCount(Entries) = 1) and
+    not Assigned(LinksTo(ElementByIndex(Entries, 0))) then
+    Entry := ElementByIndex(Entries, 0)
+  else
+    Entry := ElementAssign(Entries, HighInteger, nil, False);
+  SetEditValue(Entry, Name(EntryRecord));
+  ReadBack := LinksTo(Entry);
+  if not Assigned(ReadBack) or (FormID(ReadBack) <> FormID(EntryRecord)) then
+    raise Exception.Create('Baan Malur provider entry did not read back');
 end;
 
 procedure AddSubjectCondition(
@@ -385,6 +436,45 @@ begin
   SetElementNativeValues(TopicRecord, 'TIFC', 1);
 end;
 
+procedure ConfigureNativeDialogueGate(
+  GateGlobal, ProviderList: IInterface
+);
+var
+  SourceTopic, SourceInfo, OverrideInfo: IInterface;
+begin
+  SourceTopic := RequireRecordByEditorID(
+    JourneyFile,
+    'DIAL',
+    'SOMRFerrySystemGreeting'
+  );
+  SourceInfo := FirstTopicInfo(SourceTopic);
+  OverrideInfo := wbCopyElementToFile(
+    SourceInfo,
+    OutputFile,
+    False,
+    True
+  );
+  if not Assigned(OverrideInfo) or (GetFile(OverrideInfo) <> OutputFile) then
+    raise Exception.Create('Could not override Journey native ferry greeting');
+
+  // Preserve Journey's faction condition, then require either the diagnostic
+  // global or a speaker outside the three-provider DNT replacement list.
+  AddSubjectCondition(
+    OverrideInfo,
+    'GetGlobalValue',
+    GateGlobal,
+    OrEqualConditionType,
+    1.0
+  );
+  AddSubjectCondition(
+    OverrideInfo,
+    'IsInList',
+    ProviderList,
+    EqualConditionType,
+    0.0
+  );
+end;
+
 procedure SaveGeneratedPlugin;
 var
   OutputStream: TFileStream;
@@ -412,7 +502,8 @@ end;
 
 function Initialize: Integer;
 var
-  BoatQuest, ServiceScript, PickerScript: IInterface;
+  BoatQuest, ServiceScript, PickerScript, GateGlobal, ProviderList,
+    RavenCaptain, BaanCaptain, CormarisCaptain: IInterface;
 begin
   Result := 1;
   StatusPath := ScriptsPath + '..\..\build\boat-baan-malur.status';
@@ -424,8 +515,9 @@ begin
   WriteTextFile(StatusPath, 'running');
 
   try
+    SkyrimFile := FileByPluginName('Skyrim.esm');
     JourneyFile := FileByPluginName('Journey to Baan Malur.esp');
-    if not Assigned(JourneyFile) then
+    if not Assigned(SkyrimFile) or not Assigned(JourneyFile) then
       raise Exception.Create('Required Journey to Baan Malur file is missing');
 
     OutputFile := AddNewFileName(OutputPluginName);
@@ -453,6 +545,29 @@ begin
     AddObjectProperty(PickerScript, 'Service', BoatQuest);
 
     ConfigureDialogue(BoatQuest);
+    // Allocate compatibility records after the existing quest/dialogue records
+    // so their local FormIDs remain stable for upgraded beta saves.
+    GateGlobal := NewGateGlobal;
+    ProviderList := NewFormList(ProviderListEditorID);
+    RavenCaptain := RequireRecordByEditorID(
+      JourneyFile,
+      'NPC_',
+      'RavenRockSailorCaptain'
+    );
+    BaanCaptain := RequireRecordByEditorID(
+      JourneyFile,
+      'NPC_',
+      'BaanSailorCaptain'
+    );
+    CormarisCaptain := RequireRecordByEditorID(
+      JourneyFile,
+      'NPC_',
+      'CormarisSailorCaptain'
+    );
+    AddFormListEntry(ProviderList, RavenCaptain);
+    AddFormListEntry(ProviderList, BaanCaptain);
+    AddFormListEntry(ProviderList, CormarisCaptain);
+    ConfigureNativeDialogueGate(GateGlobal, ProviderList);
     SetIsESL(OutputFile, True);
     if not GetIsESL(OutputFile) then
       raise Exception.Create('Could not set the Baan Malur add-on ESL flag');

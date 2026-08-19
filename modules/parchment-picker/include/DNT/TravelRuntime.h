@@ -21,5 +21,6 @@ namespace DNT::TravelRuntime
         std::string_view a_originId,
         std::string_view a_destinationId,
         Travel::QuoteOptions a_options = {});
+    [[nodiscard]] std::optional<Travel::Location> GetLocation(std::string_view a_locationId);
     [[nodiscard]] std::vector<Travel::Location> GetLocations();
 }

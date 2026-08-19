@@ -44,6 +44,27 @@ if ((Get-Item -LiteralPath $seqPath).Length -ne 4) {
     throw "Baan Malur add-on SEQ must contain exactly one 4-byte FormID."
 }
 
+$pluginPath = Join-Path $PackageRoot "DiegeticTravelBoatBaanMalur.esp"
+$pluginAscii = [Text.Encoding]::ASCII.GetString(
+    [IO.File]::ReadAllBytes($pluginPath)
+)
+foreach ($requiredRecord in @(
+    "DNT_ShowBaanMalurNativeDialogue",
+    "DNT_BaanMalurBoatProviders"
+)) {
+    if (-not $pluginAscii.Contains($requiredRecord)) {
+        throw "Baan Malur add-on is missing compatibility record: $requiredRecord"
+    }
+}
+
+$readmePath = Join-Path $PackageRoot "README-BoatBaanMalur.txt"
+$readme = Get-Content -LiteralPath $readmePath -Raw
+if ($readme -notmatch [regex]::Escape(
+    "set DNT_ShowBaanMalurNativeDialogue to 1"
+)) {
+    throw "Baan Malur README does not document the native-dialogue diagnostic gate."
+}
+
 $forbiddenExtensions = @(
     ".dll", ".pdb", ".dds", ".png", ".jpg", ".jpeg", ".svg",
     ".wav", ".xwm", ".fuz"
@@ -57,4 +78,5 @@ if ($forbidden.Count -gt 0) {
 Write-Host "Baan Malur add-on package audit passed."
 Write-Host "Files: $($actualFiles.Count)"
 Write-Host "Plugin: 1 ESP-FE candidate (semantic ESL audit runs before packaging)"
+Write-Host "Native dialogue: provider-scoped gate present and documented"
 Write-Host "External artwork/audio bundled: 0"
