@@ -1345,6 +1345,12 @@ stable artifact checks.
   `510BAC17447B64069CB16DB3BD77418831857C8B513732E66D0ACEFA924383E1`;
   LoreRim BCD compatibility
   `304F9179E7D3B8D1D38D2F763BE8A8521A2FDB2CB87990127AE03926A4DAF72F`.
-- These artifacts have not been copied into the live LoreRim installation at
-  this checkpoint. The remaining release gate is a new-game smoke test of the
-  exact candidate; create the final release tag only after it passes.
+- Commit `2d7cdc1` freezes this beta candidate. With MO2, Skyrim, SKSE, and
+  USVFS stopped, the three artifacts were copied into new timestamped mods in
+  `UltraDiegeticTravel`; the previous timestamped candidates remain installed
+  but disabled. The BCD stack stayed enabled, plugin ordering was not rewritten,
+  and all three deployed ESP hashes match their package sources.
+- The no-launch consolidated-profile preflight passes. Its recoverable profile
+  backup is `build/profile-backup-20260819-194957-UltraDiegeticTravel`. The
+  remaining release gate is a new-game smoke test of the exact candidate;
+  create the final release tag only after it passes.
