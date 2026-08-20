@@ -1385,7 +1385,12 @@ stable artifact checks.
   unchanged. The recoverable profile backup is
   `D:\Lorerim\profiles\UltraDiegeticTravel\modlist.txt.pre-0.1.0-beta-20260820T015340Z.bak`.
   The no-launch consolidated-profile preflight passes.
-- Remaining targeted gameplay gate: on a fresh/disposable game, open the Lake
-  Honrich parchment at Ivarstead, select Heartwood Mill, and confirm the route
-  caption appears at the same lower-map anchor as the north-coast route before
-  completing the trip.
+- The targeted in-game gate passed: the Lake Honrich Ivarstead-to-Heartwood
+  Mill caption now appears at the north-coast lower-map anchor and the route
+  remains functional. Candidate `0.1.0-beta-20260820T015340Z` is approved for
+  the annotated beta tag `v0.1.0-beta`.
+- All three ZIPs were streamed successfully after deployment and are listed in
+  `dist/DiegeticTravel-0.1.0-beta-20260820T015340Z-SHA256SUMS.txt`. Nexus page,
+  graphics, permissions, and upload work remain governed by their separate
+  unpublished-release checklist; tagging this engineering candidate does not
+  publish it.

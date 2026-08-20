@@ -120,6 +120,9 @@ the symbol-bearing `parchment-ae` preset is reserved for development work.
 - explicit release package inventory and provenance audit;
 - `git diff --check`.
 
-The remaining required validation is one fresh-save in-game smoke test of the
-exact timestamped candidate. The final release tag should be created only after
-that live gate passes.
+The required fresh/disposable-game smoke test passed on the exact timestamped
+candidate `0.1.0-beta-20260820T015340Z`, including the corrected Lake Honrich
+fare-label placement and route completion. All engineering gates required for
+the annotated beta tag `v0.1.0-beta` are complete. Public Nexus publishing is a
+separate step and remains subject to the private page, graphics, permissions,
+requirements, and upload checklist.
