@@ -18,20 +18,25 @@
     "tools/Run-OfflineChecks.ps1"
   ],
   "optional_release_modules": [
-    "modules/boat-baan-malur"
+    "modules/boat-baan-malur",
+    "modules/bcd-lorerim-compat"
   ],
   "optional_release_entrypoints": [
-    "tools/Build-BoatBaanMalur.ps1"
+    "tools/Build-BoatBaanMalur.ps1",
+    "tools/Build-BcdLoreRimCompat.ps1"
   ],
   "optional_release_support_scripts": [
     "tools/Audit-BaanMalurAddonPackage.ps1",
+    "tools/Audit-BaanMalurVoiceAssets.ps1",
     "tools/Audit-BoatBaanMalur.ps1",
     "tools/Compile-BoatBaanMalurPapyrus.ps1",
     "tools/Generate-BoatBaanMalur.ps1"
   ],
   "optional_release_xedit_scripts": [
     "tools/xedit/DNT_GenerateBoatBaanMalur.pas",
-    "tools/xedit/DNT_AuditBoatBaanMalur.pas"
+    "tools/xedit/DNT_AuditBoatBaanMalur.pas",
+    "tools/xedit/DNT_GenerateBcdLoreRimCompat.pas",
+    "tools/xedit/DNT_AuditBcdLoreRimCompat.pas"
   ],
   "release_support_scripts": [
     "tools/Audit-RepositoryScope.ps1",
@@ -46,7 +51,8 @@
     "tools/Compile-BoatIlinaltaPapyrus.ps1",
     "tools/Compile-BoatNorthCoastPapyrus.ps1",
     "tools/Compile-BoatSolstheimPapyrus.ps1",
-    "tools/Generate-ReleasePlugin.ps1"
+    "tools/Generate-ReleasePlugin.ps1",
+    "tools/ReleaseIdentity.ps1"
   ],
   "release_support_inputs": [
     "tools/papyrus-stubs"
@@ -101,10 +107,12 @@
     "tools/Inventory-BoatIlinalta.ps1",
     "tools/Inventory-BoatNorthCoast.ps1",
     "tools/Inventory-BoatSolstheim.ps1",
+    "tools/Inventory-BcdCoexistence.ps1",
     "tools/xedit/DNT_InventoryBoatHonrichVoice.pas",
     "tools/xedit/DNT_InventoryBoatIlinalta.pas",
     "tools/xedit/DNT_InventoryBoatNorthCoast.pas",
-    "tools/xedit/DNT_InventoryBoatSolstheim.pas"
+    "tools/xedit/DNT_InventoryBoatSolstheim.pas",
+    "tools/xedit/DNT_InventoryBcdCoexistence.pas"
   ],
   "retained_test_harnesses": [
     "test-harness/state-gated-release",
