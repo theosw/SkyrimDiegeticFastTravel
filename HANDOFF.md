@@ -1428,3 +1428,40 @@ stable artifact checks.
 - The annotated `v0.1.0-beta` tag deliberately remains on approved commit
   `bd6d15c` until this lower-pricing candidate passes its targeted in-game gate.
   Do not publish or move the tag before that smoke test.
+
+## 2026-08-20 50–400 pricing candidate
+
+- The public carriage rate is now `475.0` gold per normalized map unit with the
+  existing 50-gold minimum and 50-gold rounding. Across all 243 combinations of
+  nine physical origins and 27 destinations, the resulting envelope is exactly
+  50–400 gold, with a 200-gold median/mean and 350-gold 90th percentile.
+- Native regression anchors require Whiterun-to-Falkreath at 150,
+  Whiterun-to-Riften at 200, and Markarth-to-Riften at 400. INI, TSV, C++ safe
+  defaults, package audit, root README, module docs, Nexus draft, architecture,
+  and roadmap agree. Commits: `0248dd9` and `76d9a8b`.
+- Full offline checks, native build and 2/2 CTest, all Papyrus compilers, xEdit
+  generation/semantic audit, every provider/voice audit, and all three package
+  audits pass. Candidate identity: `0.1.0-beta-20260820T174647Z`.
+- Archive SHA-256: main
+  `38DBDFF6A84135338200771E4BF2FE489939BC6D2D9089BF7F4047848C85711C`;
+  Baan Malur add-on
+  `39B495E017569D0D56494C8A6AC7BC26ED281B94DE68892439C504C81BE88675`;
+  LoreRim BCD compatibility
+  `EAB880CD7246888FC3FF7104E99AD5BDC0F8AF728AD12A3118CE3EF16EC48C0A`.
+- The three archives are active in `UltraDiegeticTravel`. The complete
+  BCD/WCI/CFTO chain and DNT plugin order are unchanged; `050936Z` and
+  `015340Z` remain installed but disabled. Rollback profile:
+  `D:\Lorerim\profiles\UltraDiegeticTravel\modlist.txt.pre-0.1.0-beta-20260820T174647Z.bak`.
+- The final `050936Z` gameplay session proved Whiterun-to-Riverwood, a WCI
+  Riverwood-to-Riften trip, insufficient-gold denial at Riften, controller A
+  selection, controller B cancellation, exact single payments, normal timed
+  travel, and complete 12-layer HUD restoration with no DNT error or crash.
+  That evidence transfers to behavior but not the newly deployed price values.
+- Static follow-up found that CFTO's personal Hearthfire carriage operators are
+  correctly detected through `KmodCarriageFreeFaction`, but the picker currently
+  maps only the nine public physical drivers and WCI drivers to an origin. The
+  personal Lakeview/Windstad/Heljarchen operators therefore cannot reach the
+  zero-fare path yet. Do not claim or test personal-carriage return service until
+  those three origin mappings and their live gates are implemented.
+- The annotated `v0.1.0-beta` tag remains on `bd6d15c`; do not move it until the
+  `174647Z` price labels and exact deductions pass an in-game smoke test.
