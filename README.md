@@ -19,6 +19,24 @@ local, regional, and extra fare globals unless the user configures an override.
 Local LoreRim research, downloaded learning sources, and load-order datamines
 remain development evidence rather than redistributed runtime dependencies.
 
+## Public pricing defaults
+
+| Service | Default public price |
+| --- | ---: |
+| Carriages | 50–500 gold from the nine physical drivers |
+| College wizard guides | 250 gold per trip |
+| CFTO local ferries | 30 gold |
+| CFTO regional ferries | 50 gold |
+| CFTO extra-distance ferries | 100 gold |
+| Return from Icewater Jetty | Free |
+| Optional Baan Malur network | 30 gold |
+
+Carriages use `600.0` gold per normalized map unit, a 50-gold minimum, and
+50-gold rounding. CFTO-designated free carriage drivers remain free. Ferry
+prices follow CFTO's live globals by default, so another setup can legitimately
+show different values. All configurable values are read from
+`SKSE\Plugins\DiegeticTravel.ini` once when Skyrim starts.
+
 The project also contains a separate
 [`modules/wizard-guides`](modules/wizard-guides) vertical slice. That module
 starts the Morrowind-style mage-guide pillar without depending on CFTO or
@@ -53,9 +71,9 @@ The first boat-provider slice now lives in
 [`modules/boat-honrich`](modules/boat-honrich). It preserves CFTO's ferrymen,
 live local-fare global, destination markers, time-passing `Game.FastTravel`,
 and Heartwood follower/horse handoff while replacing only the selection
-  surface. Its public lane is Riften, Heartwood Mill, and Ivarstead; the private
-  Honeyside ferryman joins it only while CFTO's placed service actor is enabled.
-  The plugin and three Papyrus scripts build, its exact
+surface. Its public lane is Riften, Heartwood Mill, and Ivarstead; the private
+Honeyside ferryman joins it only while CFTO's placed service actor is enabled.
+The plugin and three Papyrus scripts build, its exact
 CFTO/Dawnguard dialogue links pass an independent headless xEdit audit, and no
 artwork, audio, BCD record, or BCD master is shipped. All three ferrymen resolve
 to `MaleEvenToned`, and the exact Dawnguard shared-response FUZ is verified in
@@ -73,10 +91,10 @@ The second isolated boat slice now lives in
 Brittleshin Pass, Half-Moon Mill, and Guardian Stones. It preserves CFTO's
 live 30-gold local fare and exact arrival markers, including Brittleshin's
 horse marker and Guardian Stones' follower/horse markers. Ilinata's Deep is
-  available as a destination-only 50-gold regional trip from every available
-  provider, including its dedicated follower/horse arrival markers. The private
-  Lakeview Manor ferryman joins only while CFTO's placed service actor is
-  enabled and retains its local fare and dedicated companion markers.
+available as a destination-only 50-gold regional trip from every available
+provider, including its dedicated follower/horse arrival markers. The private
+Lakeview Manor ferryman joins only while CFTO's placed service actor is
+enabled and retains its local fare and dedicated companion markers.
 All three ferrymen and the shared voiced response are independently verified;
 the plugin, scripts, SEQ, package, and byte-identical regeneration pass offline
 audits. Its monitored LoreRim run proved all three providers, a complete
