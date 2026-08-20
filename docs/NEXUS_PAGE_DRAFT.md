@@ -74,7 +74,7 @@ destination. Not every trip promises a ride back.[/i]
 [size=5][color=#d8b46a][b]PRICING[/b][/color][/size]
 
 [list]
-[*][b]Carriages:[/b] direct-distance pricing from 50 to 500 gold with the public
+[*][b]Carriages:[/b] direct-distance pricing from 50 to 400 gold with the public
 defaults. Nearby trips are inexpensive; cross-country trips remain meaningful.
 [*][b]Wizard guides:[/b] 250 gold per trip to or from the College hub.
 [*][b]Ferries:[/b] CFTO's live local/regional/extra prices by default—normally
@@ -207,7 +207,7 @@ Initial public beta:
   networks.
 - Added the College-centred wizard-guide network and seven court-wizard spokes.
 - Added mouse and controller selection/cancellation.
-- Added configurable, public-balanced 50–500 carriage fares/estimates plus CFTO
+- Added configurable, public-balanced 50–400 carriage fares/estimates plus CFTO
   live ferry fares,
   private-service, Hearthfire, and destination-only gates.
 - Added optional Wait Carriage in Inns integration.

@@ -68,9 +68,9 @@ runtime pinned by the native build. JContainers is not required.
 requires a game restart. It controls the carriage distance coefficients,
 minimum/rounding step, the flat College fare, optional local/regional/extra
 ferry overrides, and whether carriage-hour estimates are shown and marked as
-approximate. The public carriage defaults are `600.0` gold per normalized map
+approximate. The public carriage defaults are `475.0` gold per normalized map
 unit, a `50`-gold minimum, and `50`-gold rounding; the resulting physical-driver
-fare envelope is 50–500 gold. Ferry overrides feed both the map and the payment
+fare envelope is 50–400 gold. Ferry overrides feed both the map and the payment
 transaction. With no override, ferries follow CFTO's live fare globals by
 default.
 

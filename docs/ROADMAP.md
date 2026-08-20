@@ -13,7 +13,7 @@ BCD wizard-adapter, and split-plugin experiments are preserved in
   selection, cancellation, HUD restoration, and one-way/return indicators.
 - [x] Native carriage quote and marker resolution with final Papyrus-side
   availability, payment, and travel revalidation.
-- [x] Public-balanced carriage defaults: 50–500 gold from the nine physical
+- [x] Public-balanced carriage defaults: 50–400 gold from the nine physical
   drivers; wizard guides remain 250 gold; ferries retain CFTO's live
   30/50/100 globals and free Icewater return.
 - [x] College hub and seven capital spokes, including corrected Morthal arrival
@@ -30,8 +30,8 @@ BCD wizard-adapter, and split-plugin experiments are preserved in
 
 - [ ] Install the new timestamped three-archive set with the full LoreRim
   BCD/CFTO/WCI chain still enabled and verify the intended plugin order.
-- [ ] Confirm the new carriage envelope in game: representative 150-, 250-,
-  and 500-gold labels, exact one-time payment, insufficient-funds denial, and a
+- [ ] Confirm the new carriage envelope in game: representative 150-, 200-,
+  and 400-gold labels, exact one-time payment, insufficient-funds denial, and a
   CFTO-designated free driver.
 - [ ] Recheck a physical carriage, a WCI summoned carriage, Thalmor Embassy,
   and one conditional Hearthfire or Helgen endpoint after the pricing change.

@@ -12,7 +12,7 @@ It keeps CFTO's actors, destination handoffs, return-service topology, and live
 availability while replacing the selection surface with the physical parchment
 map. A flat native catalogue calculates direct-distance carriage fares and
 approximate hours from the restart-time pricing INI; the public defaults produce
-50–500-gold trips from the nine physical drivers. There is no route graph,
+50–400-gold trips from the nine physical drivers. There is no route graph,
 hazard pricing, or implied road path. Ferries continue to follow CFTO's live
 local, regional, and extra fare globals unless the user configures an override.
 
@@ -23,7 +23,7 @@ remain development evidence rather than redistributed runtime dependencies.
 
 | Service | Default public price |
 | --- | ---: |
-| Carriages | 50–500 gold from the nine physical drivers |
+| Carriages | 50–400 gold from the nine physical drivers |
 | College wizard guides | 250 gold per trip |
 | CFTO local ferries | 30 gold |
 | CFTO regional ferries | 50 gold |
@@ -31,7 +31,7 @@ remain development evidence rather than redistributed runtime dependencies.
 | Return from Icewater Jetty | Free |
 | Optional Baan Malur network | 30 gold |
 
-Carriages use `600.0` gold per normalized map unit, a 50-gold minimum, and
+Carriages use `475.0` gold per normalized map unit, a 50-gold minimum, and
 50-gold rounding. CFTO-designated free carriage drivers remain free. Ferry
 prices follow CFTO's live globals by default, so another setup can legitimately
 show different values. All configurable values are read from

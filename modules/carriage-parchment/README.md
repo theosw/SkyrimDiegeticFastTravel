@@ -16,8 +16,8 @@ charges only after that resolution succeeds, and immediately travels. The beta
 no longer arms CFTO's driver or waits for a carriage-seat link; clicking the
 marker is the travel action.
 
-The public carriage defaults are 600 gold per normalized map unit, a 50-gold
-minimum, and 50-gold rounding. This produces a 50–500-gold fare envelope from
+The public carriage defaults are 475 gold per normalized map unit, a 50-gold
+minimum, and 50-gold rounding. This produces a 50–400-gold fare envelope from
 the nine physical drivers. Approximate hours and all carriage pricing controls
 are read once from `SKSE/Plugins/DiegeticTravel.ini` at game startup.
 
