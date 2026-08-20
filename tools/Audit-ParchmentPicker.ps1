@@ -257,6 +257,32 @@ foreach ($requiredToken in @("BuildWizardRequest", "ResolveCarriageDestinationMa
 
 $wizardMap = Get-Content -LiteralPath (Join-Path $moduleRoot "config\wizard-map.json") -Raw | ConvertFrom-Json
 $wizardNetwork = Get-Content -LiteralPath (Join-Path $projectRoot "modules\wizard-guides\config\network.json") -Raw | ConvertFrom-Json
+$expectedFallbackTexture = "Data/textures/dungeons/imperial/battlemap01.dds"
+$expectedFallbackCrop = @(0.0, 0.0, 1.0, 0.736328)
+$expectedFallbackX = @(1.06506646, 0.03186359, -0.04444646)
+$expectedFallbackY = @(0.0227157, 1.03031003, -0.05573539)
+foreach ($formalMap in @($wizardMap.map, $carriageNetwork.map)) {
+    $fallback = $formalMap.fallback
+    if ($null -eq $fallback -or
+        $fallback.texture -ne $expectedFallbackTexture -or
+        [Math]::Abs([double]$fallback.art_aspect_ratio - 1.35809) -gt 0.0000005 -or
+        @($fallback.uv_crop).Count -ne 4 -or
+        @($fallback.coordinate_transform.x).Count -ne 3 -or
+        @($fallback.coordinate_transform.y).Count -ne 3) {
+        throw "Formal map is missing the calibrated vanilla battle-map fallback profile."
+    }
+    for ($index = 0; $index -lt 4; $index += 1) {
+        if ([Math]::Abs([double]$fallback.uv_crop[$index] - $expectedFallbackCrop[$index]) -gt 0.0000005) {
+            throw "Formal fallback UV crop differs at index $index."
+        }
+    }
+    for ($index = 0; $index -lt 3; $index += 1) {
+        if ([Math]::Abs([double]$fallback.coordinate_transform.x[$index] - $expectedFallbackX[$index]) -gt 0.0000005 -or
+            [Math]::Abs([double]$fallback.coordinate_transform.y[$index] - $expectedFallbackY[$index]) -gt 0.0000005) {
+            throw "Formal fallback coordinate transform differs at index $index."
+        }
+    }
+}
 $expectedWizardStops = @($wizardMap.stops | Select-Object -Skip 1)
 $wizardNetworkStops = @($wizardNetwork.destinations | Select-Object -Skip 1)
 $wizardLinks = @($wizardNetwork.destinations[0].links)
@@ -363,7 +389,7 @@ foreach ($destination in @("whiterun", "riften", "solitude", "windhelm", "markar
         throw "Native wizard request builder is missing destination: $destination"
     }
 }
-foreach ($artToken in @("textures/terrain/tamriel/skyrim.dds", "norden-winterhold-capital.dds", "norden-whiterun-capital.dds", "norden-riften-capital.dds", "norden-solitude-capital.dds", "norden-windhelm-capital.dds", "norden-markarth-capital.dds", "norden-dawnstar-capital.dds", "norden-morthal-capital.dds", "norden-roundtrip-selection-ring.dds", "SetMarkerTextures", "SetOriginMarkerTexture", "SetSelectionRingTexture", "AddStyledDestination", "1.414075", "0.088379", "0.187012", "0.932129", "0.783691", "0.750802", "0.167836")) {
+foreach ($artToken in @("textures/terrain/tamriel/skyrim.dds", "textures/dungeons/imperial/battlemap01.dds", "norden-winterhold-capital.dds", "norden-whiterun-capital.dds", "norden-riften-capital.dds", "norden-solitude-capital.dds", "norden-windhelm-capital.dds", "norden-markarth-capital.dds", "norden-dawnstar-capital.dds", "norden-morthal-capital.dds", "norden-roundtrip-selection-ring.dds", "FormalMapFallbackArtwork", "SetFallbackArtwork", "SetMarkerTextures", "SetOriginMarkerTexture", "SetSelectionRingTexture", "AddStyledDestination", "1.414075", "1.35809", "0.736328", "1.06506646", "0.03186359", "-0.04444646", "0.02271570", "1.03031003", "-0.05573539", "0.088379", "0.187012", "0.932129", "0.783691", "0.750802", "0.167836")) {
     if ($papyrusSource -notmatch [regex]::Escape($artToken)) {
         throw "Native wizard request builder is missing artwork contract token: $artToken"
     }
@@ -462,6 +488,23 @@ foreach ($unusedFrameworkExport in @(
     }
 }
 $presentationSource = $menuSource + "`n" + $frameworkSource
+foreach ($fallbackRuntimeToken in @(
+    "RE::BSResourceNiBinaryStream",
+    "temp_directory_path",
+    "MENU_TEXTURE_ARCHIVE_READY",
+    "MaxArchivedTextureBytes",
+    "PARCHMENT_ART_FALLBACK",
+    "fallbackArtwork",
+    "coordinateTransform",
+    "TransformPoint"
+)) {
+    if ($presentationSource -notmatch [regex]::Escape($fallbackRuntimeToken)) {
+        throw "Native archived/formal artwork fallback is missing contract: $fallbackRuntimeToken"
+    }
+}
+if ($presentationSource -match [regex]::Escape("Map artwork dependency is missing; selection remains available for testing.")) {
+    throw "Runtime still treats a blank dependency map as an acceptable testing fallback."
+}
 foreach ($presentationToken in @(
     "focusedDescription = std::format(",
     '"{} to {}    {} gold"',

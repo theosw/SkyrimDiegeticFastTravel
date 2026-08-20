@@ -28,6 +28,15 @@ function Assert-Hash([string]$Label, [pscustomobject]$Entry) {
     return $path
 }
 
+function Assert-OptionalHash([string]$Label, [pscustomobject]$Entry) {
+    $path = Resolve-LoreRimPath $Entry.path
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+        Write-Host "$Label is not installed; the native fallback will be used."
+        return $null
+    }
+    return Assert-Hash $Label $Entry
+}
+
 $runtime = $lock.targetRuntime
 $skyrimPath = Assert-Hash "Skyrim" $runtime.skyrim
 $skyrimVersion = (Get-Item -LiteralPath $skyrimPath).VersionInfo.ProductVersion
@@ -38,8 +47,12 @@ if ($skyrimVersion -ne $runtime.skyrim.version) {
 $null = Assert-Hash "SKSE" $runtime.skse
 $null = Assert-Hash "Address Library" $runtime.addressLibrary
 $null = Assert-Hash "SKSE Menu Framework" $runtime.menuFramework
-$null = Assert-Hash "RUSTIC MAPS artwork" $runtime.artwork
-$null = Assert-Hash "Caro Tuts wizard artwork" $runtime.wizardArtwork
+$null = Assert-OptionalHash "recommended RUSTIC MAPS artwork" $runtime.artwork
+$null = Assert-OptionalHash "recommended Caro Tuts wizard artwork" $runtime.wizardArtwork
+if ($runtime.artwork.dependencyType -notmatch "optional visual recommendation" -or
+    $runtime.wizardArtwork.dependencyType -notmatch "optional visual recommendation") {
+    throw "RUSTIC MAPS and the Caro Tuts chart must remain optional visual recommendations."
+}
 $null = Assert-Hash "CFTO base" $runtime.cftoBase
 $null = Assert-Hash "CFTO Fixes and Winterhold" $runtime.cftoFixesAndWinterhold
 $null = Assert-Hash "optional Wait Carriage in Inns" $runtime.optionalWaitCarriageInInns

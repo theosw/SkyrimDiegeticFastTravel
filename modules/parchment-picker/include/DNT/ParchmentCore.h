@@ -41,6 +41,27 @@ namespace DNT::Parchment
         float normalizedY{ 0.5F };
     };
 
+    struct CoordinateTransform
+    {
+        float xFromX{ 1.0F };
+        float xFromY{ 0.0F };
+        float xOffset{ 0.0F };
+        float yFromX{ 0.0F };
+        float yFromY{ 1.0F };
+        float yOffset{ 0.0F };
+    };
+
+    struct ArtworkProfile
+    {
+        std::string texturePath;
+        float artAspectRatio{ 1.5F };
+        float textureUvMinX{ 0.0F };
+        float textureUvMinY{ 0.0F };
+        float textureUvMaxX{ 1.0F };
+        float textureUvMaxY{ 1.0F };
+        CoordinateTransform coordinateTransform;
+    };
+
     struct Request
     {
         std::string requestId;
@@ -57,6 +78,7 @@ namespace DNT::Parchment
         float textureUvMinY{ 0.0F };
         float textureUvMaxX{ 1.0F };
         float textureUvMaxY{ 1.0F };
+        std::optional<ArtworkProfile> fallbackArtwork;
         std::optional<RoutePoint> paymentLabelPosition;
         std::optional<RouteOrigin> routeOrigin;
         std::vector<RoutePoint> routeLandmarks;
@@ -75,6 +97,10 @@ namespace DNT::Parchment
 
     [[nodiscard]] bool IsValidIdentifier(std::string_view a_value);
     [[nodiscard]] bool ValidateRequestHeader(const Request& a_request, std::string& a_error);
+    [[nodiscard]] bool SetFallbackArtwork(
+        Request& a_request,
+        ArtworkProfile a_artwork,
+        std::string& a_error);
     [[nodiscard]] bool SetSourceLabel(Request& a_request, std::string a_sourceLabel, std::string& a_error);
     [[nodiscard]] bool SetMarkerTextures(
         Request& a_request,
@@ -120,6 +146,10 @@ namespace DNT::Parchment
         float a_directionX,
         float a_directionY);
     [[nodiscard]] bool ValidateReadyRequest(const Request& a_request, std::string& a_error);
+    [[nodiscard]] RoutePoint TransformPoint(RoutePoint a_point, const CoordinateTransform& a_transform);
     [[nodiscard]] Layout ComputeLayout(float a_viewportWidth, float a_viewportHeight, float a_artAspectRatio);
-    [[nodiscard]] std::vector<float> ComputeDestinationHitSizes(const Request& a_request, const Layout& a_layout);
+    [[nodiscard]] std::vector<float> ComputeDestinationHitSizes(
+        const Request& a_request,
+        const Layout& a_layout,
+        const CoordinateTransform& a_transform = {});
 }

@@ -1,7 +1,135 @@
 #include "DNT/MenuFrameworkAPI.h"
 
+#include <algorithm>
+#include <cctype>
 #include <filesystem>
+#include <format>
+#include <fstream>
+#include <optional>
 #include <string>
+#include <vector>
+
+namespace
+{
+    constexpr std::uint32_t MaxArchivedTextureBytes = 128U * 1024U * 1024U;
+
+    [[nodiscard]] bool EqualsAsciiInsensitive(
+        const std::string_view a_left,
+        const std::string_view a_right)
+    {
+        if (a_left.size() != a_right.size()) {
+            return false;
+        }
+        for (std::size_t index = 0; index < a_left.size(); ++index) {
+            const auto left = static_cast<unsigned char>(a_left[index]);
+            const auto right = static_cast<unsigned char>(a_right[index]);
+            if (std::tolower(left) != std::tolower(right)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    [[nodiscard]] std::optional<std::string> MaterializeArchivedTexture(
+        const std::string_view a_logicalPath)
+    {
+        constexpr std::string_view dataPrefix = "Data/";
+        constexpr std::string_view dataPrefixBackslash = "Data\\";
+        constexpr std::string_view texturePrefix = "textures/";
+        constexpr std::string_view texturePrefixBackslash = "textures\\";
+
+        auto resourcePath = std::string(a_logicalPath);
+        if (resourcePath.size() >= dataPrefix.size() &&
+            (EqualsAsciiInsensitive(resourcePath.substr(0, dataPrefix.size()), dataPrefix) ||
+             EqualsAsciiInsensitive(resourcePath.substr(0, dataPrefixBackslash.size()), dataPrefixBackslash))) {
+            resourcePath.erase(0, dataPrefix.size());
+        }
+        if (resourcePath.size() < texturePrefix.size() ||
+            (!EqualsAsciiInsensitive(resourcePath.substr(0, texturePrefix.size()), texturePrefix) &&
+             !EqualsAsciiInsensitive(resourcePath.substr(0, texturePrefixBackslash.size()), texturePrefixBackslash)) ||
+            resourcePath.find("..") != std::string::npos) {
+            return std::nullopt;
+        }
+        std::ranges::replace(resourcePath, '/', '\\');
+        auto extension = std::filesystem::path(resourcePath).extension().string();
+        std::ranges::transform(extension, extension.begin(), [](const unsigned char a_character) {
+            return static_cast<char>(std::tolower(a_character));
+        });
+        if (extension != ".dds") {
+            return std::nullopt;
+        }
+
+        RE::BSResourceNiBinaryStream stream(resourcePath);
+        if (!stream.good() || !stream.stream) {
+            return std::nullopt;
+        }
+        const auto byteCount = stream.stream->totalSize;
+        if (byteCount == 0 || byteCount > MaxArchivedTextureBytes) {
+            logger::warn(
+                "MENU_TEXTURE_ARCHIVE_REJECT logical={} resource={} bytes={}",
+                a_logicalPath,
+                resourcePath,
+                byteCount);
+            return std::nullopt;
+        }
+
+        std::error_code error;
+        auto cacheRoot = std::filesystem::temp_directory_path(error);
+        if (error) {
+            return std::nullopt;
+        }
+        cacheRoot /= "DiegeticTravel";
+        cacheRoot /= "texture-cache";
+        std::filesystem::create_directories(cacheRoot, error);
+        if (error) {
+            return std::nullopt;
+        }
+
+        std::uint64_t pathHash = 14695981039346656037ULL;
+        for (const auto character : resourcePath) {
+            pathHash ^= static_cast<unsigned char>(std::tolower(static_cast<unsigned char>(character)));
+            pathHash *= 1099511628211ULL;
+        }
+        const auto cachePath = cacheRoot /
+            std::format(
+                "v1-{:016x}-{}-{}",
+                pathHash,
+                byteCount,
+                std::filesystem::path(resourcePath).filename().string());
+        if (!std::filesystem::exists(cachePath, error) ||
+            error || std::filesystem::file_size(cachePath, error) != byteCount) {
+            error.clear();
+            std::vector<std::uint8_t> bytes(byteCount);
+            if (!stream.read(bytes.data(), byteCount)) {
+                logger::warn(
+                    "MENU_TEXTURE_ARCHIVE_READ_FAILED logical={} resource={} bytes={}",
+                    a_logicalPath,
+                    resourcePath,
+                    byteCount);
+                return std::nullopt;
+            }
+            std::ofstream output(cachePath, std::ios::binary | std::ios::trunc);
+            if (!output) {
+                return std::nullopt;
+            }
+            output.write(
+                reinterpret_cast<const char*>(bytes.data()),
+                static_cast<std::streamsize>(bytes.size()));
+            output.close();
+            if (!output) {
+                return std::nullopt;
+            }
+        }
+
+        logger::info(
+            "MENU_TEXTURE_ARCHIVE_READY logical={} resource={} cache={} bytes={}",
+            a_logicalPath,
+            resourcePath,
+            cachePath.string(),
+            byteCount);
+        return cachePath.string();
+    }
+}
 
 DNT::MenuFramework::API& DNT::MenuFramework::API::GetSingleton()
 {
@@ -92,14 +220,52 @@ DNT::MenuFramework::Texture DNT::MenuFramework::API::LoadTexture(const std::stri
     }
     auto requestedSize = Vec2{};
     const auto path = std::string(a_path);
-    return loadTexture_(path.c_str(), &requestedSize);
+    if (auto texture = loadTexture_(path.c_str(), &requestedSize)) {
+        return texture;
+    }
+
+    // SKSE Menu Framework's texture loader only checks the real filesystem.
+    // Skyrim's own resource stream sees loose winners and Bethesda archives,
+    // so materialize an archived DDS into a stable temp cache when no loose
+    // file exists. This keeps vanilla map art usable without redistributing it.
+    std::scoped_lock lock(archivedTextureLock_);
+    if (archivedTextureMisses_.contains(path)) {
+        return nullptr;
+    }
+    if (const auto cached = archivedTexturePaths_.find(path);
+        cached != archivedTexturePaths_.end()) {
+        return loadTexture_(cached->second.c_str(), &requestedSize);
+    }
+
+    const auto materializedPath = MaterializeArchivedTexture(path);
+    if (!materializedPath) {
+        archivedTextureMisses_.insert(path);
+        return nullptr;
+    }
+    auto texture = loadTexture_(materializedPath->c_str(), &requestedSize);
+    if (!texture) {
+        archivedTextureMisses_.insert(path);
+        logger::warn(
+            "MENU_TEXTURE_ARCHIVE_LOAD_FAILED logical={} cache={}",
+            path,
+            *materializedPath);
+        return nullptr;
+    }
+    archivedTexturePaths_.insert_or_assign(path, *materializedPath);
+    return texture;
 }
 
 void DNT::MenuFramework::API::DisposeTexture(const std::string_view a_path) const
 {
     if (!a_path.empty()) {
         const auto path = std::string(a_path);
-        disposeTexture_(path.c_str());
+        std::scoped_lock lock(archivedTextureLock_);
+        if (const auto cached = archivedTexturePaths_.find(path);
+            cached != archivedTexturePaths_.end()) {
+            disposeTexture_(cached->second.c_str());
+        } else {
+            disposeTexture_(path.c_str());
+        }
     }
 }
 

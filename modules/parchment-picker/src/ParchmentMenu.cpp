@@ -362,7 +362,15 @@ namespace
     DNT::MenuFramework::Texture loadedTexture{ nullptr };
     std::string loadedTexturePath;
     std::string loadedRequestId;
-    bool textureLoadAttempted{ false };
+    enum class ArtworkVariant
+    {
+        kUnresolved,
+        kPreferred,
+        kFallback,
+        kMissing
+    };
+    ArtworkVariant loadedArtworkVariant{ ArtworkVariant::kUnresolved };
+    std::unordered_set<std::string> unavailableArtworkPaths;
     constexpr std::string_view defaultSelectedMarkerTexturePath =
         "Data/textures/DiegeticTravel/shipwreck-marker.dds";
     constexpr std::string_view defaultIdleMarkerTexturePath =
@@ -601,11 +609,6 @@ namespace
         const auto screen = RE::BSGraphics::Renderer::GetScreenSize();
         const auto viewportWidth = static_cast<float>(screen.width ? screen.width : 1920);
         const auto viewportHeight = static_cast<float>(screen.height ? screen.height : 1080);
-        const auto layout = DNT::Parchment::ComputeLayout(
-            viewportWidth,
-            viewportHeight,
-            snapshot.request.artAspectRatio);
-
         framework.SetNextWindowPos({ 0.0F, 0.0F });
         framework.SetNextWindowSize({ viewportWidth, viewportHeight });
         framework.SetNextWindowBgAlpha(0.0F);
@@ -630,23 +633,69 @@ namespace
                 loadedDestinationMarkerTextures.clear();
                 destinationMarkerTextureLoadAttempts.clear();
                 loadedRequestId = snapshot.request.requestId;
-                textureLoadAttempted = false;
+                loadedArtworkVariant = ArtworkVariant::kUnresolved;
             }
-            if (snapshot.request.texturePath != loadedTexturePath) {
+            const DNT::Parchment::ArtworkProfile preferredArtwork{
+                .texturePath = snapshot.request.texturePath,
+                .artAspectRatio = snapshot.request.artAspectRatio,
+                .textureUvMinX = snapshot.request.textureUvMinX,
+                .textureUvMinY = snapshot.request.textureUvMinY,
+                .textureUvMaxX = snapshot.request.textureUvMaxX,
+                .textureUvMaxY = snapshot.request.textureUvMaxY
+            };
+            const auto tryLoadArtwork = [&](const DNT::Parchment::ArtworkProfile& a_artwork) {
+                if (a_artwork.texturePath.empty() ||
+                    unavailableArtworkPaths.contains(a_artwork.texturePath)) {
+                    return false;
+                }
+                if (loadedTexture && loadedTexturePath == a_artwork.texturePath) {
+                    return true;
+                }
                 if (loadedTexture && !loadedTexturePath.empty()) {
                     framework.DisposeTexture(loadedTexturePath);
                 }
                 loadedTexture = nullptr;
-                loadedTexturePath = snapshot.request.texturePath;
-                textureLoadAttempted = false;
-            }
-            if (!loadedTexture && !loadedTexturePath.empty() && !textureLoadAttempted) {
-                textureLoadAttempted = true;
+                loadedTexturePath = a_artwork.texturePath;
                 loadedTexture = framework.LoadTexture(loadedTexturePath);
                 if (!loadedTexture) {
-                    logger::warn("PARCHMENT_ART_MISSING path={}", loadedTexturePath);
+                    unavailableArtworkPaths.insert(loadedTexturePath);
+                    return false;
+                }
+                return true;
+            };
+            if (loadedArtworkVariant == ArtworkVariant::kUnresolved) {
+                if (tryLoadArtwork(preferredArtwork)) {
+                    loadedArtworkVariant = ArtworkVariant::kPreferred;
+                    logger::info(
+                        "PARCHMENT_ART_READY request={} path={} profile=preferred",
+                        snapshot.request.requestId,
+                        preferredArtwork.texturePath);
+                } else if (snapshot.request.fallbackArtwork &&
+                           tryLoadArtwork(*snapshot.request.fallbackArtwork)) {
+                    loadedArtworkVariant = ArtworkVariant::kFallback;
+                    logger::info(
+                        "PARCHMENT_ART_FALLBACK request={} preferred={} fallback={}",
+                        snapshot.request.requestId,
+                        preferredArtwork.texturePath,
+                        snapshot.request.fallbackArtwork->texturePath);
+                } else {
+                    loadedArtworkVariant = ArtworkVariant::kMissing;
+                    logger::warn(
+                        "PARCHMENT_ART_MISSING request={} preferred={} fallback={}",
+                        snapshot.request.requestId,
+                        preferredArtwork.texturePath,
+                        snapshot.request.fallbackArtwork ?
+                            snapshot.request.fallbackArtwork->texturePath : std::string("<none>"));
                 }
             }
+            const auto& artwork =
+                loadedArtworkVariant == ArtworkVariant::kFallback && snapshot.request.fallbackArtwork ?
+                    *snapshot.request.fallbackArtwork : preferredArtwork;
+            const auto& coordinateTransform = artwork.coordinateTransform;
+            const auto layout = DNT::Parchment::ComputeLayout(
+                viewportWidth,
+                viewportHeight,
+                artwork.artAspectRatio);
             const std::string desiredSelectedMarkerTexturePath =
                 snapshot.request.selectedMarkerTexturePath.empty() ?
                     std::string(defaultSelectedMarkerTexturePath) :
@@ -799,11 +848,11 @@ namespace
                 framework.Image(
                     loadedTexture,
                     { layout.width, layout.height },
-                    { snapshot.request.textureUvMinX, snapshot.request.textureUvMinY },
-                    { snapshot.request.textureUvMaxX, snapshot.request.textureUvMaxY });
+                    { artwork.textureUvMinX, artwork.textureUvMinY },
+                    { artwork.textureUvMaxX, artwork.textureUvMaxY });
             } else {
                 framework.SetCursorScreenPos({ layout.left + 24.0F, layout.top + 24.0F });
-                framework.TextUnformatted("Map artwork dependency is missing; selection remains available for testing.");
+                framework.TextUnformatted("Map artwork could not be loaded.");
             }
             std::string focusedDescription;
             const auto drawList = framework.GetForegroundDrawList();
@@ -811,13 +860,17 @@ namespace
             destinationVisuals.reserve(snapshot.request.destinations.size());
             const auto hitSizes = DNT::Parchment::ComputeDestinationHitSizes(
                 snapshot.request,
-                layout);
+                layout,
+                coordinateTransform);
             std::optional<std::size_t> hoveredIndex;
             std::optional<std::size_t> focusedIndex;
             for (std::size_t index = 0; index < snapshot.request.destinations.size(); ++index) {
                 const auto& destination = snapshot.request.destinations[index];
-                const auto centerX = layout.left + destination.normalizedX * layout.width;
-                const auto centerY = layout.top + destination.normalizedY * layout.height;
+                const auto destinationPoint = DNT::Parchment::TransformPoint(
+                    { destination.normalizedX, destination.normalizedY },
+                    coordinateTransform);
+                const auto centerX = layout.left + destinationPoint.normalizedX * layout.width;
+                const auto centerY = layout.top + destinationPoint.normalizedY * layout.height;
                 const auto hitSize = hitSizes[index];
                 framework.SetCursorScreenPos({
                     centerX - hitSize * 0.5F,
@@ -874,18 +927,25 @@ namespace
                 "carriage");
             const auto isFormalMapProvider = isCollegeProvider || isCarriageProvider;
             if (snapshot.request.routeOrigin) {
+                const auto routeOriginPoint = DNT::Parchment::TransformPoint(
+                    { snapshot.request.routeOrigin->normalizedX,
+                      snapshot.request.routeOrigin->normalizedY },
+                    coordinateTransform);
                 const DNT::MenuFramework::Vec2 routeOrigin{
-                    layout.left + snapshot.request.routeOrigin->normalizedX * layout.width,
-                    layout.top + snapshot.request.routeOrigin->normalizedY * layout.height
+                    layout.left + routeOriginPoint.normalizedX * layout.width,
+                    layout.top + routeOriginPoint.normalizedY * layout.height
                 };
                 for (const auto& landmark : snapshot.request.routeLandmarks) {
+                    const auto landmarkPoint = DNT::Parchment::TransformPoint(
+                        landmark,
+                        coordinateTransform);
                     DrawRouteLandmark(
                         framework,
                         drawList,
                         loadedIdleMarkerTexture,
                         {
-                            layout.left + landmark.normalizedX * layout.width,
-                            layout.top + landmark.normalizedY * layout.height
+                            layout.left + landmarkPoint.normalizedX * layout.width,
+                            layout.top + landmarkPoint.normalizedY * layout.height
                         },
                         std::clamp(layout.markerHeight * 0.68F, 17.0F, 34.0F));
                 }
@@ -952,8 +1012,10 @@ namespace
                 constexpr auto inventoryIvory = MakeColor(238, 229, 207, 255);
                 constexpr auto wizardMapInk = MakeColor(69, 44, 13, 255);
                 const auto textColor = isFormalMapProvider ? wizardMapInk : inventoryIvory;
-                const auto paymentLabelPosition = snapshot.request.paymentLabelPosition.value_or(
-                    DNT::Parchment::RoutePoint{ .normalizedX = 0.080F, .normalizedY = 0.760F });
+                const auto paymentLabelPosition = DNT::Parchment::TransformPoint(
+                    snapshot.request.paymentLabelPosition.value_or(
+                        DNT::Parchment::RoutePoint{ .normalizedX = 0.080F, .normalizedY = 0.760F }),
+                    coordinateTransform);
                 framework.SetWindowFontScale(1.08F);
                 const auto textSize = framework.CalcTextSize(focusedDescription);
                 constexpr float edgePadding = 12.0F;
@@ -1094,6 +1156,36 @@ bool DNT::ParchmentMenu::BeginRequest(
         a_textureUvMaxX,
         a_textureUvMaxY);
     return true;
+}
+
+bool DNT::ParchmentMenu::SetFallbackArtwork(
+    const std::string_view a_requestId,
+    Parchment::ArtworkProfile a_artwork)
+{
+    std::scoped_lock lock(requestLock);
+    if (!activeRequest || activeRequest->request.requestId != a_requestId || activeRequest->visible) {
+        return false;
+    }
+
+    const auto texturePath = a_artwork.texturePath;
+    std::string error;
+    const auto added = Parchment::SetFallbackArtwork(
+        activeRequest->request,
+        std::move(a_artwork),
+        error);
+    if (!added) {
+        logger::warn(
+            "PARCHMENT_ART_FALLBACK_REJECT request={} path={} reason={}",
+            a_requestId,
+            texturePath,
+            error);
+    } else {
+        logger::info(
+            "PARCHMENT_ART_FALLBACK_SET request={} path={}",
+            a_requestId,
+            texturePath);
+    }
+    return added;
 }
 
 bool DNT::ParchmentMenu::SetMarkerTextures(

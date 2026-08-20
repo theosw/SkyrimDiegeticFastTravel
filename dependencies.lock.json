@@ -26,13 +26,15 @@
       "name": "RUSTIC MAPS",
       "version": "2.0.0.0",
       "path": "mods/RUSTIC MAPS/textures/dungeons/imperial/battlemap01.dds",
-      "sha256": "C77E6B93129577CD23C6AC733310A5EA6A028F4BE00B472F9AA62018C4C239F8"
+      "sha256": "C77E6B93129577CD23C6AC733310A5EA6A028F4BE00B472F9AA62018C4C239F8",
+      "dependencyType": "optional visual recommendation; overrides vanilla physical-map paths when installed"
     },
     "wizardArtwork": {
       "name": "Skyrim Paper Map by Caro Tuts for FWMF",
       "version": "1.72.0.0",
       "path": "mods/Skyrim Paper Map by Caro Tuts for FWMF/textures/terrain/tamriel/skyrim.dds",
-      "sha256": "6C53FA2E7D036C9F2C07F180AB6B6684A2D2AAFCCA27360D2C507B682229F30E"
+      "sha256": "6C53FA2E7D036C9F2C07F180AB6B6684A2D2AAFCCA27360D2C507B682229F30E",
+      "dependencyType": "optional visual recommendation; preferred formal chart with a calibrated vanilla battle-map fallback"
     },
     "cftoBase": {
       "name": "Carriage and Ferry Travel Overhaul",

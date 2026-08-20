@@ -77,6 +77,74 @@ namespace
         return request;
     }
 
+    DNT::Parchment::ArtworkProfile FormalMapFallback()
+    {
+        return {
+            .texturePath = "Data/textures/dungeons/imperial/battlemap01.dds",
+            .artAspectRatio = 1.35809F,
+            .textureUvMinX = 0.0F,
+            .textureUvMinY = 0.0F,
+            .textureUvMaxX = 1.0F,
+            .textureUvMaxY = 0.736328F,
+            .coordinateTransform = {
+                .xFromX = 1.06506646F,
+                .xFromY = 0.03186359F,
+                .xOffset = -0.04444646F,
+                .yFromX = 0.02271570F,
+                .yFromY = 1.03031003F,
+                .yOffset = -0.05573539F
+            }
+        };
+    }
+
+    void TestFallbackArtworkProfile()
+    {
+        auto request = CollegeRequest();
+        std::string error;
+        Require(DNT::Parchment::SetFallbackArtwork(
+            request,
+            FormalMapFallback(),
+            error), "formal maps should accept the calibrated battle-map fallback");
+        Require(request.fallbackArtwork.has_value(), "fallback artwork should be retained");
+        Require(!DNT::Parchment::SetFallbackArtwork(
+            request,
+            FormalMapFallback(),
+            error), "fallback artwork may only be set once");
+        Require(DNT::Parchment::ValidateReadyRequest(
+            request,
+            error), "the calibrated fallback should keep every request point on its artwork");
+
+        const auto& transform = request.fallbackArtwork->coordinateTransform;
+        const auto college = DNT::Parchment::TransformPoint({ 0.750802F, 0.167836F }, transform);
+        RequireClose(college.normalizedX, 0.760555F, 0.000002F,
+            "fallback transform should place the College at the battle-map anchor");
+        RequireClose(college.normalizedY, 0.134243F, 0.000002F,
+            "fallback transform should place the College at the battle-map anchor");
+        const auto markarth = DNT::Parchment::TransformPoint({ 0.094238F, 0.507741F }, transform);
+        RequireClose(markarth.normalizedX, 0.072102F, 0.000002F,
+            "fallback transform should preserve the western hold placement");
+        RequireClose(markarth.normalizedY, 0.469536F, 0.000002F,
+            "fallback transform should preserve the western hold placement");
+        const auto fareLabel = DNT::Parchment::TransformPoint(
+            *request.paymentLabelPosition,
+            transform);
+        RequireClose(fareLabel.normalizedX, 0.641584F, 0.000002F,
+            "fallback transform should move the payment label with the map profile");
+        RequireClose(fareLabel.normalizedY, 0.910512F, 0.000002F,
+            "fallback transform should move the payment label with the map profile");
+
+        auto invalidTransform = CollegeRequest();
+        auto invalidArtwork = FormalMapFallback();
+        invalidArtwork.coordinateTransform.xOffset = 1.0F;
+        Require(DNT::Parchment::SetFallbackArtwork(
+            invalidTransform,
+            std::move(invalidArtwork),
+            error), "finite transforms should validate before destinations are considered");
+        Require(!DNT::Parchment::ValidateReadyRequest(
+            invalidTransform,
+            error), "ready validation must reject fallback points outside the artwork");
+    }
+
     void TestRequestValidation()
     {
         auto request = CollegeRequest();
@@ -436,6 +504,46 @@ namespace
         const auto singleSize = DNT::Parchment::ComputeDestinationHitSizes(oneDestination, layout);
         Require(singleSize.size() == 1 && singleSize[0] >= 84.0F,
             "a lone destination should receive the preferred enlarged hit area");
+
+        auto fallbackRequest = CollegeRequest();
+        std::string error;
+        Require(DNT::Parchment::SetFallbackArtwork(
+            fallbackRequest,
+            FormalMapFallback(),
+            error), "fallback hit-area fixture should validate");
+        const auto& fallback = *fallbackRequest.fallbackArtwork;
+        const auto fallbackLayout = DNT::Parchment::ComputeLayout(
+            5120.0F,
+            1440.0F,
+            fallback.artAspectRatio);
+        const auto fallbackSizes = DNT::Parchment::ComputeDestinationHitSizes(
+            fallbackRequest,
+            fallbackLayout,
+            fallback.coordinateTransform);
+        Require(fallbackSizes.size() == fallbackRequest.destinations.size(),
+            "fallback artwork needs one transformed hit area per destination");
+        for (std::size_t index = 0; index < fallbackSizes.size(); ++index) {
+            const auto destination = DNT::Parchment::TransformPoint(
+                { fallbackRequest.destinations[index].normalizedX,
+                  fallbackRequest.destinations[index].normalizedY },
+                fallback.coordinateTransform);
+            for (std::size_t otherIndex = index + 1;
+                 otherIndex < fallbackSizes.size();
+                 ++otherIndex) {
+                const auto other = DNT::Parchment::TransformPoint(
+                    { fallbackRequest.destinations[otherIndex].normalizedX,
+                      fallbackRequest.destinations[otherIndex].normalizedY },
+                    fallback.coordinateTransform);
+                const auto horizontal = std::abs(destination.normalizedX - other.normalizedX) *
+                    fallbackLayout.width;
+                const auto vertical = std::abs(destination.normalizedY - other.normalizedY) *
+                    fallbackLayout.height;
+                const auto requiredSeparation =
+                    (fallbackSizes[index] + fallbackSizes[otherIndex]) * 0.5F;
+                Require(horizontal >= requiredSeparation || vertical >= requiredSeparation,
+                    "transformed fallback hit-area squares must not overlap");
+            }
+        }
     }
 
     void TestDestinationCapacitySupportsFullCarriageSheet()
@@ -511,6 +619,7 @@ namespace
 int main()
 {
     TestRequestValidation();
+    TestFallbackArtworkProfile();
     TestRouteMarkers();
     TestAspectSafeLayouts();
     TestMarkerCentersRemainOnArt();

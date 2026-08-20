@@ -55,6 +55,58 @@ namespace
         return std::isfinite(a_scale) && a_scale >= 0.5F && a_scale <= 2.0F;
     }
 
+    bool IsValidCoordinateTransform(const DNT::Parchment::CoordinateTransform& a_transform)
+    {
+        constexpr float coefficientLimit = 4.0F;
+        return std::isfinite(a_transform.xFromX) &&
+               std::isfinite(a_transform.xFromY) &&
+               std::isfinite(a_transform.xOffset) &&
+               std::isfinite(a_transform.yFromX) &&
+               std::isfinite(a_transform.yFromY) &&
+               std::isfinite(a_transform.yOffset) &&
+               std::abs(a_transform.xFromX) <= coefficientLimit &&
+               std::abs(a_transform.xFromY) <= coefficientLimit &&
+               std::abs(a_transform.xOffset) <= coefficientLimit &&
+               std::abs(a_transform.yFromX) <= coefficientLimit &&
+               std::abs(a_transform.yFromY) <= coefficientLimit &&
+               std::abs(a_transform.yOffset) <= coefficientLimit;
+    }
+
+    bool ValidateArtworkProfile(
+        const DNT::Parchment::ArtworkProfile& a_artwork,
+        std::string& a_error,
+        const bool a_requireTexture)
+    {
+        if (a_artwork.texturePath.size() > 512 ||
+            (a_requireTexture && a_artwork.texturePath.empty())) {
+            a_error = a_requireTexture ?
+                "fallback artwork texture path must contain 1-512 characters" :
+                "artwork texture path exceeds 512 characters";
+            return false;
+        }
+        if (!std::isfinite(a_artwork.artAspectRatio) || a_artwork.artAspectRatio < 0.5F ||
+            a_artwork.artAspectRatio > 3.0F) {
+            a_error = "art aspect ratio must be between 0.5 and 3.0";
+            return false;
+        }
+        if (!std::isfinite(a_artwork.textureUvMinX) ||
+            !std::isfinite(a_artwork.textureUvMinY) ||
+            !std::isfinite(a_artwork.textureUvMaxX) ||
+            !std::isfinite(a_artwork.textureUvMaxY) ||
+            a_artwork.textureUvMinX < 0.0F || a_artwork.textureUvMinY < 0.0F ||
+            a_artwork.textureUvMaxX > 1.0F || a_artwork.textureUvMaxY > 1.0F ||
+            a_artwork.textureUvMaxX <= a_artwork.textureUvMinX ||
+            a_artwork.textureUvMaxY <= a_artwork.textureUvMinY) {
+            a_error = "texture UV crop must be an ordered rectangle inside [0, 1]";
+            return false;
+        }
+        if (!IsValidCoordinateTransform(a_artwork.coordinateTransform)) {
+            a_error = "artwork coordinate transform is invalid";
+            return false;
+        }
+        return true;
+    }
+
     constexpr float RoutePointTolerance = 0.0001F;
 
     bool SameRoutePoint(
@@ -91,8 +143,19 @@ bool DNT::Parchment::ValidateRequestHeader(const Request& a_request, std::string
         a_error = "provider ID must contain 1-64 letters, digits, dots, underscores, or hyphens";
         return false;
     }
-    if (a_request.texturePath.size() > 512) {
-        a_error = "texture path exceeds 512 characters";
+    const ArtworkProfile primaryArtwork{
+        .texturePath = a_request.texturePath,
+        .artAspectRatio = a_request.artAspectRatio,
+        .textureUvMinX = a_request.textureUvMinX,
+        .textureUvMinY = a_request.textureUvMinY,
+        .textureUvMaxX = a_request.textureUvMaxX,
+        .textureUvMaxY = a_request.textureUvMaxY
+    };
+    if (!ValidateArtworkProfile(primaryArtwork, a_error, false)) {
+        return false;
+    }
+    if (a_request.fallbackArtwork &&
+        !ValidateArtworkProfile(*a_request.fallbackArtwork, a_error, true)) {
         return false;
     }
     if (a_request.idleMarkerTexturePath.size() > 512 ||
@@ -111,20 +174,6 @@ bool DNT::Parchment::ValidateRequestHeader(const Request& a_request, std::string
         a_error = "selection-ring scale must be between 0.5 and 4.0";
         return false;
     }
-    if (!std::isfinite(a_request.artAspectRatio) || a_request.artAspectRatio < 0.5F ||
-        a_request.artAspectRatio > 3.0F) {
-        a_error = "art aspect ratio must be between 0.5 and 3.0";
-        return false;
-    }
-    if (!std::isfinite(a_request.textureUvMinX) || !std::isfinite(a_request.textureUvMinY) ||
-        !std::isfinite(a_request.textureUvMaxX) || !std::isfinite(a_request.textureUvMaxY) ||
-        a_request.textureUvMinX < 0.0F || a_request.textureUvMinY < 0.0F ||
-        a_request.textureUvMaxX > 1.0F || a_request.textureUvMaxY > 1.0F ||
-        a_request.textureUvMaxX <= a_request.textureUvMinX ||
-        a_request.textureUvMaxY <= a_request.textureUvMinY) {
-        a_error = "texture UV crop must be an ordered rectangle inside [0, 1]";
-        return false;
-    }
     if (a_request.routeOrigin &&
         !IsNormalizedPoint(a_request.routeOrigin->normalizedX, a_request.routeOrigin->normalizedY)) {
         a_error = "route origin coordinates must be normalized to [0, 1]";
@@ -137,6 +186,22 @@ bool DNT::Parchment::ValidateRequestHeader(const Request& a_request, std::string
         a_error = "payment label coordinates must be normalized to [0, 1]";
         return false;
     }
+    return true;
+}
+
+bool DNT::Parchment::SetFallbackArtwork(
+    Request& a_request,
+    ArtworkProfile a_artwork,
+    std::string& a_error)
+{
+    if (a_request.fallbackArtwork) {
+        a_error = "fallback artwork is already set";
+        return false;
+    }
+    if (!ValidateArtworkProfile(a_artwork, a_error, true)) {
+        return false;
+    }
+    a_request.fallbackArtwork = std::move(a_artwork);
     return true;
 }
 
@@ -452,6 +517,25 @@ bool DNT::Parchment::ValidateReadyRequest(const Request& a_request, std::string&
         a_error = "route landmark coordinates must be normalized to [0, 1]";
         return false;
     }
+    if (a_request.fallbackArtwork) {
+        const auto& transform = a_request.fallbackArtwork->coordinateTransform;
+        const auto pointFallsOutsideArtwork = [&](const RoutePoint a_point) {
+            const auto transformed = TransformPoint(a_point, transform);
+            return !IsNormalizedPoint(transformed.normalizedX, transformed.normalizedY);
+        };
+        if ((a_request.paymentLabelPosition &&
+             pointFallsOutsideArtwork(*a_request.paymentLabelPosition)) ||
+            (a_request.routeOrigin && pointFallsOutsideArtwork(
+                { a_request.routeOrigin->normalizedX, a_request.routeOrigin->normalizedY })) ||
+            std::ranges::any_of(a_request.routeLandmarks, pointFallsOutsideArtwork) ||
+            std::ranges::any_of(a_request.destinations, [&](const Destination& a_destination) {
+                return pointFallsOutsideArtwork(
+                    { a_destination.normalizedX, a_destination.normalizedY });
+            })) {
+            a_error = "fallback artwork transform places a request point outside [0, 1]";
+            return false;
+        }
+    }
     return true;
 }
 
@@ -545,9 +629,22 @@ DNT::Parchment::Layout DNT::Parchment::ComputeLayout(
     };
 }
 
+DNT::Parchment::RoutePoint DNT::Parchment::TransformPoint(
+    const RoutePoint a_point,
+    const CoordinateTransform& a_transform)
+{
+    return RoutePoint{
+        .normalizedX = a_point.normalizedX * a_transform.xFromX +
+            a_point.normalizedY * a_transform.xFromY + a_transform.xOffset,
+        .normalizedY = a_point.normalizedX * a_transform.yFromX +
+            a_point.normalizedY * a_transform.yFromY + a_transform.yOffset
+    };
+}
+
 std::vector<float> DNT::Parchment::ComputeDestinationHitSizes(
     const Request& a_request,
-    const Layout& a_layout)
+    const Layout& a_layout,
+    const CoordinateTransform& a_transform)
 {
     std::vector<float> sizes;
     sizes.reserve(a_request.destinations.size());
@@ -560,16 +657,22 @@ std::vector<float> DNT::Parchment::ComputeDestinationHitSizes(
     constexpr float separationMargin = 0.88F;
     for (std::size_t index = 0; index < a_request.destinations.size(); ++index) {
         const auto& destination = a_request.destinations[index];
+        const auto destinationPoint = TransformPoint(
+            { destination.normalizedX, destination.normalizedY },
+            a_transform);
         auto nearestSeparation = std::numeric_limits<float>::infinity();
         for (std::size_t otherIndex = 0; otherIndex < a_request.destinations.size(); ++otherIndex) {
             if (index == otherIndex) {
                 continue;
             }
             const auto& other = a_request.destinations[otherIndex];
+            const auto otherPoint = TransformPoint(
+                { other.normalizedX, other.normalizedY },
+                a_transform);
             const auto horizontal = std::abs(
-                destination.normalizedX - other.normalizedX) * a_layout.width;
+                destinationPoint.normalizedX - otherPoint.normalizedX) * a_layout.width;
             const auto vertical = std::abs(
-                destination.normalizedY - other.normalizedY) * a_layout.height;
+                destinationPoint.normalizedY - otherPoint.normalizedY) * a_layout.height;
             nearestSeparation = std::min(
                 nearestSeparation,
                 std::max(horizontal, vertical));

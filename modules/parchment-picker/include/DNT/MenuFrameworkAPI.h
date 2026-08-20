@@ -6,7 +6,11 @@
 
 #include <atomic>
 #include <cstdint>
+#include <mutex>
+#include <string>
 #include <string_view>
+#include <unordered_map>
+#include <unordered_set>
 
 namespace DNT::MenuFramework
 {
@@ -179,5 +183,8 @@ namespace DNT::MenuFramework
         AddPolylineFn addPolyline_{ nullptr };
         AddConcavePolyFilledFn addConcavePolyFilled_{ nullptr };
         AddTriangleFilledFn addTriangleFilled_{ nullptr };
+        mutable std::mutex archivedTextureLock_;
+        mutable std::unordered_map<std::string, std::string> archivedTexturePaths_;
+        mutable std::unordered_set<std::string> archivedTextureMisses_;
     };
 }

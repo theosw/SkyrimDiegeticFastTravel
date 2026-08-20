@@ -62,6 +62,30 @@ namespace
         WizardDestination{ "morthal", "Morthal", 0.400452F, 0.311110F, "Data/textures/DiegeticTravel/norden-morthal-capital.dds", 0.95F, 0.0F, -0.0896F, 0.92F }
     };
 
+    [[nodiscard]] DNT::Parchment::ArtworkProfile FormalMapFallbackArtwork()
+    {
+        // The preferred Caro chart and Bethesda battle map use different
+        // crops. This affine transform is the composition of the checked-in
+        // formal-map world fit and the 15-anchor physical-map world fit.
+        // It applies uniformly to destinations, origins, and payment labels.
+        return DNT::Parchment::ArtworkProfile{
+            .texturePath = "Data/textures/dungeons/imperial/battlemap01.dds",
+            .artAspectRatio = 1.35809F,
+            .textureUvMinX = 0.0F,
+            .textureUvMinY = 0.0F,
+            .textureUvMaxX = 1.0F,
+            .textureUvMaxY = 0.736328F,
+            .coordinateTransform = {
+                .xFromX = 1.06506646F,
+                .xFromY = 0.03186359F,
+                .xOffset = -0.04444646F,
+                .yFromX = 0.02271570F,
+                .yFromY = 1.03031003F,
+                .yOffset = -0.05573539F
+            }
+        };
+    }
+
     [[nodiscard]] CarriageMarkerStyle GetCarriageMarkerStyle(const std::string_view a_id)
     {
         if (a_id == "dawnstar") return { "Data/textures/DiegeticTravel/norden-dawnstar-capital.dds", 1.01F, 0.0F, -0.0474F, 0.86F };
@@ -188,6 +212,9 @@ namespace
         }
 
         bool configured = true;
+        configured = DNT::ParchmentMenu::SetFallbackArtwork(
+                         requestId,
+                         FormalMapFallbackArtwork()) && configured;
         configured = DNT::ParchmentMenu::SetSourceLabel(requestId, originLocation->name) && configured;
         configured = DNT::ParchmentMenu::SetPaymentLabelPosition(requestId, 0.615551F, 0.922189F) && configured;
         configured = DNT::ParchmentMenu::SetMarkerTextures(
@@ -313,6 +340,9 @@ namespace
         }
 
         bool configured = true;
+        configured = DNT::ParchmentMenu::SetFallbackArtwork(
+                         requestId,
+                         FormalMapFallbackArtwork()) && configured;
         configured = DNT::ParchmentMenu::SetSourceLabel(requestId, "College of Winterhold") && configured;
         configured = DNT::ParchmentMenu::SetPaymentLabelPosition(requestId, 0.616470F, 0.924230F) && configured;
         configured = DNT::ParchmentMenu::SetMarkerTextures(

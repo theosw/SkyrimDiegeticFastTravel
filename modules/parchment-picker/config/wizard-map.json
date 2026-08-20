@@ -11,7 +11,32 @@
     ],
     "art_aspect_ratio": 1.414075,
     "selection_ring_scale": 2.0,
-    "asset_policy": "reference-only; do not package the DDS"
+    "asset_policy": "preferred external chart; not packaged and not required",
+    "fallback": {
+      "texture": "Data/textures/dungeons/imperial/battlemap01.dds",
+      "uv_crop": [
+        0.0,
+        0.0,
+        1.0,
+        0.736328
+      ],
+      "art_aspect_ratio": 1.35809,
+      "source": "vanilla archive or loose visual override",
+      "archive_loading": "materialized through Skyrim's resource stream when Menu Framework cannot see a loose file",
+      "coordinate_transform": {
+        "method": "formal-map world fit composed with 15-anchor physical-map world fit",
+        "x": [
+          1.06506646,
+          0.03186359,
+          -0.04444646
+        ],
+        "y": [
+          0.0227157,
+          1.03031003,
+          -0.05573539
+        ]
+      }
+    }
   },
   "icon_themes": {
     "default": "norden",
