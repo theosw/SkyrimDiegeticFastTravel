@@ -1,6 +1,6 @@
 # Diegetic Travel handoff
 
-Updated: 2026-08-16
+Updated: 2026-08-20
 
 ## 2026-08-16 selection-ring web-vector checkpoint
 
@@ -1394,3 +1394,37 @@ stable artifact checks.
   graphics, permissions, and upload work remain governed by their separate
   unpublished-release checklist; tagging this engineering candidate does not
   publish it.
+
+## 2026-08-20 public-pricing beta candidate
+
+- Public carriage defaults are now `600.0` gold per normalized map unit, a
+  50-gold minimum, and 50-gold rounding. The nine physical drivers therefore
+  expose a 50–500-gold envelope (median 250); CFTO-designated free drivers
+  remain free. Wizard travel remains 250, CFTO ferries remain live 30/50/100
+  by default with free Icewater return, and Baan Malur remains 30.
+- The INI, TSV policy, C++ safe defaults, exact package contract, and native
+  tests agree. Tests enumerate every destination from all nine physical origins,
+  require the public envelope, and anchor Whiterun-to-Riften at 250 and
+  Markarth-to-Riften at 500. Runtime commit: `5bcbacc`.
+- The root/mod/module/Nexus/dependency/architecture documentation now describes
+  the native carriage quote authority and the correct RUSTIC/Caro artwork split.
+  The retired graph/global plan was removed from the current roadmap. Commits:
+  `99246ce` and `add4a08`.
+- Full offline checks pass: 2/2 CTest, 28-stop carriage parity, seven-destination
+  wizard parity, dependency locking, and the explicit package boundary. All 41
+  tracked Markdown files pass the local-link audit.
+- Candidate identity: `0.1.0-beta-20260820T050936Z`. Archive SHA-256: main
+  `135FD77F274ED78B4CD606A38259570FB59EC6F5084E767592B92E40F0EC4A46`;
+  Baan Malur add-on
+  `416477B440E476ED77197956DECCBAF8FD8A36C1E6B2A36157BB0E24E2FD4EA6`;
+  LoreRim BCD compatibility
+  `4C19C40FFB3BF24011B913373E2B011599E4F9DEE9823BF738DD2A412D4AFD44`.
+- All three hash-verified archives are deployed as new timestamped mods in
+  `UltraDiegeticTravel`; their ESP hashes match the staged build artifacts.
+  The full BCD base/WCI/CFTO chain remains enabled, the three DNT plugins retain
+  their prior order, and the `015340Z` candidate remains installed but disabled.
+  Rollback profile:
+  `D:\Lorerim\profiles\UltraDiegeticTravel\modlist.txt.pre-0.1.0-beta-20260820T050936Z.bak`.
+- The annotated `v0.1.0-beta` tag deliberately remains on approved commit
+  `bd6d15c` until this lower-pricing candidate passes its targeted in-game gate.
+  Do not publish or move the tag before that smoke test.
