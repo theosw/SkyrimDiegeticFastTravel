@@ -45,11 +45,18 @@ permission.
 
 ## Referenced, not bundled
 
-- Boat providers currently resolve to RUSTIC MAPS'
-  `textures/dungeons/imperial/battlemap01.dds`.
-- Wizard and carriage providers resolve to Skyrim Paper Map by Caro Tuts for FWMF's
+- Boat providers use Bethesda physical-map paths such as
+  `textures/dungeons/imperial/battlemap01.dds`. RUSTIC MAPS is a recommended
+  loose visual override at those same paths, not a runtime requirement.
+- Wizard and carriage providers prefer Skyrim Paper Map by Caro Tuts for FWMF's
   `textures/terrain/tamriel/skyrim.dds`. It is referenced only and is not
-  redistributed.
+  redistributed. If it is absent, both providers switch to a separately
+  calibrated Bethesda `battlemap01.dds` artwork profile.
+- SKSE Menu Framework loads only filesystem files. When a requested Bethesda
+  DDS has no loose winner, the native DLL reads it through Skyrim's
+  archive-aware resource stream and writes a bounded copy to the operating
+  system's DiegeticTravel texture cache for Menu Framework to load. This is a
+  runtime interoperability cache, not packaged redistribution.
 - The optional Baan Malur merchant-ferry add-on resolves to Caites' Solstheim
   and Baan Malur Paper Map for FWMF at
   `textures/terrain/dlc2solstheimworld/solstheim.dds`. It is referenced only,
@@ -57,10 +64,10 @@ permission.
 - Provider voice paths resolve to FUZ files in the user's installed Bethesda
   archives or other separately installed dependencies.
 - Better Carriage Destinations remains a separate optional adapter dependency.
-- SKSE Menu Framework, SKSE, Address Library, RUSTIC MAPS, Skyrim Paper Map by
-  Caro Tuts for FWMF, and the optional Baan Malur chart are installed by the
-  user and listed as requirements by the eventual mod manager manifest or
-  Nexus dependency metadata.
+- SKSE Menu Framework, SKSE, Address Library, and CFTO are installed by the
+  user and listed as main-file requirements. RUSTIC MAPS and Skyrim Paper Map
+  by Caro Tuts for FWMF are listed as visual recommendations. The optional Baan
+  Malur chart remains a requirement of that separate add-on only.
 
 Packages reject unallowlisted `.png`, `.jpg`, `.jpeg`, `.dds`, `.svg`, `.wav`,
 `.xwm`, and `.fuz` payloads. Each permitted runtime asset is named explicitly
@@ -74,8 +81,9 @@ by Git and must never be copied into `modules/*/mod` or `dist`.
 - A dependency relationship does not grant redistribution rights. Reference
   installed assets by path only unless the asset author has explicitly granted
   redistribution permission.
-- If external art is missing, the picker must retain usable buttons and the
-  dialogue fallback; missing optional presentation audio must fall back to the
+- If preferred external art is missing, the picker must select and transform a
+  usable archived-art profile; a blank diagnostic canvas is not the supported
+  public fallback. Missing optional presentation audio must fall back to the
   picker.
 - Generated patches may require another mod, but must not contain that mod's
   loose artwork/audio.

@@ -34,8 +34,11 @@ source. Windstad joins only while CFTO's placed service ref is enabled.
 Icewater/Volkihar joins when `KmodFerryVolkihar >= 1`, retains CFTO's 100-gold
 outbound fare, and remains free when leaving from its Enthralled Ferryman.
 
-The module references the installed `battlemap01.dds`; the shared picker ships
-no dependency artwork, route overlay, or audio. The minimal beta presentation,
-dialogue handoff, payment, and ordinary public-provider travel are live-proven.
-The complete private/destination-only matrix remains tracked separately from
-this module's core-flow proof.
+The module references `battlemap01.dds`; the shared native picker honors a
+loose RUSTIC MAPS override when installed and otherwise reads Bethesda's
+archived original through Skyrim's resource system. RUSTIC is therefore a
+visual recommendation, not a requirement. The picker ships no dependency
+artwork, route overlay, or audio. The minimal beta presentation, dialogue
+handoff, payment, and ordinary public-provider travel are live-proven. The
+complete private/destination-only matrix remains tracked separately from this
+module's core-flow proof.

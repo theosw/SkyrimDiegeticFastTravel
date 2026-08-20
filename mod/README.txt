@@ -6,8 +6,10 @@ Requirements:
 - Address Library for SKSE Plugins
 - SKSE Menu Framework
 - Carriage and Ferry Travel Overhaul (CFTO)
-- RUSTIC MAPS (physical ferry parchment artwork)
-- Skyrim Paper Map by Caro Tuts for FWMF (wizard and carriage parchment artwork)
+
+Recommended map style (not required):
+- RUSTIC MAPS for the physical ferry parchments
+- Skyrim Paper Map by Caro Tuts for FWMF for wizard and carriage parchments
 
 Plugin layout:
 - Enable DiegeticTravel.esp after CFTO.esp.
@@ -32,9 +34,13 @@ Because this release consolidates records that previously lived in several
 development plugins, begin testing on a new/disposable save. Existing saves
 that have seen the modular development plugins are not a valid migration test.
 
-Map artwork remains supplied by its separately installed dependency; this
-package contains only the code and permitted/derived marker assets described
-in THIRD_PARTY_NOTICES.txt.
+The preferred screenshots use the two recommended map mods above, but the main
+file works without either. Physical ferries fall back to Bethesda's archived
+maps. Wizard and carriage sheets fall back to the archived Skyrim battle map
+with a separately calibrated crop and marker transform. The native DLL bridges
+those archived DDS files into Menu Framework's filesystem-only texture loader;
+it does not redistribute them. This package contains only code and the
+permitted/derived marker assets described in THIRD_PARTY_NOTICES.txt.
 
 Configuration:
 - SKSE\Plugins\DiegeticTravel.ini controls carriage price/time coefficients,

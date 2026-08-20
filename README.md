@@ -57,9 +57,12 @@ The new [`modules/parchment-picker`](modules/parchment-picker) candidate is a
 provider-neutral alternative to the native tween MapMenu. It uses a blocking
 SKSE Menu Framework window, provider-defined artwork/aspect/marker positions,
 and returns only a selection index to Papyrus. The wizard provider maps that
-index to the same stable core destination IDs. The module intentionally ships
-no map artwork or audio: a separate mod-manager dependency supplies the
-configured texture. Its native/Papyrus builds and structural audits pass. At
+index to the same stable core destination IDs. The module ships no background
+map artwork or audio. It first honors loose visual replacers, then uses Skyrim's
+resource stream to materialize an archived Bethesda DDS for Menu Framework's
+filesystem-only loader. Formal Caro-chart layouts have a separately calibrated
+vanilla battle-map profile, so selection coordinates, origins, hitboxes, and
+fare text all switch together. Its native/Papyrus builds and structural audits pass. At
 32:9, gameplay tests prove the parchment layout, gold idle/red hover
 presentation, Norden-style cursor, no-default startup, Escape/button
 cancellation, HUD restoration, service handoff, fare handling, and completed
@@ -166,9 +169,10 @@ ESL-flagged `DiegeticTravel.esp`, and writes a versioned archive such as
 `dist\DiegeticTravel-0.1.0-beta-20260819T193802Z.zip`. A matching
 `.zip.meta` sidecar gives MO2 the same build ID as its suggested Quick Install
 name. Keep the two files beside each other when installing the local archive.
-The package requires SKSE64, Address Library,
-SKSE Menu Framework, CFTO, and the external map-art dependencies listed in
-`mod\README.txt`. It does not require JContainers.
+The package requires SKSE64, Address Library, SKSE Menu Framework, and CFTO.
+RUSTIC MAPS and Skyrim Paper Map by Caro Tuts for FWMF are the recommended
+visual setup used in screenshots, but the native archived-art fallbacks make
+both optional. It does not require JContainers.
 
 To repackage already-generated, already-validated build artifacts without
 reopening xEdit, use `.\tools\Build-Release.ps1 -PackageOnly`. Packaging copies

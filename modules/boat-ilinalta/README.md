@@ -45,7 +45,9 @@ as grey anchors; while either of those networks is active, the three Lake
 Ilinalta docks remain visible in the same inactive style.
 
 No artwork or audio is shipped. The module relies on the existing parchment
-runtime and external RUSTIC MAPS texture.
+runtime. RUSTIC MAPS is the recommended loose visual override; if absent, the
+native runtime bridges Bethesda's archived DDS into Menu Framework at the same
+path and coordinates.
 
 ## Focused gameplay checklist
 

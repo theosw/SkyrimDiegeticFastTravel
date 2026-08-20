@@ -13,7 +13,9 @@ LoreRim build), uses CFTO's arrival markers, and passes time through
 
 The menu references Dragonborn's existing physical map at
 `textures/dlc02/clutter/dlc2mapsolstheim02.dds`; texture replacers such as
-RUSTIC MAPS are picked up automatically. The source stores the map in a narrow
+RUSTIC MAPS are picked up automatically and are not required. If no loose
+winner exists, the native runtime bridges the archived Dragonborn DDS into
+Menu Framework. The source stores the map in a narrow
 1:2 panel whose geography and folds both look horizontally compressed. A live
 1.5:1 correction proved too wide, so this candidate presents it square at 1:1
 for visual evaluation. No artwork is bundled. A purpose-built tattered

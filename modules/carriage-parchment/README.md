@@ -38,9 +38,13 @@ path.
 The carriage module itself has no BCD master or runtime dependency. LoreRim's
 BCD adapters intercept the same dialogue and therefore require the separate
 coexistence ESL to leave this parchment authoritative while BCD stays loaded.
-The module reuses the generic native parchment runtime and references the same
+The module reuses the generic native parchment runtime and prefers the same
 external Skyrim Paper Map/FWMF
 `textures/terrain/tamriel/skyrim.dds` illustration used by the wizard provider.
+Without it, the request switches atomically to Bethesda's archived battle map,
+including the fallback aspect, UV crop, destination/origin transform, hitboxes,
+and fare-label position. Caro's chart is therefore a visual recommendation,
+not a carriage requirement.
 The carriage sheet defaults to NORDIC UI destination symbols and the exact
 Norden UI round-trip loading symbol as its selection ring. No background map
 artwork is packaged.

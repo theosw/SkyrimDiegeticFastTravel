@@ -2,6 +2,27 @@
 
 Updated: 2026-08-20
 
+## 2026-08-20 optional map-art fallback checkpoint
+
+- RUSTIC MAPS and Skyrim Paper Map by Caro Tuts for FWMF are now visual
+  recommendations rather than requirements for the main file. Their exact
+  tested hashes remain audited when either mod is installed.
+- The native picker first asks Menu Framework to load the winning loose DDS.
+  If no loose file exists, it reads Bethesda's DDS through Skyrim's
+  archive-aware resource stream, materializes a bounded copy in the operating
+  system's temporary DiegeticTravel texture cache, and gives that real path to
+  Menu Framework. No Bethesda or third-party map artwork is packaged.
+- Ferry requests keep their existing coordinates because the recommended
+  RUSTIC files override the same Bethesda paths. College and carriage requests
+  prefer Caro's formal chart and fall back to a separately calibrated
+  `battlemap01.dds` artwork profile whose affine transform is applied to every
+  destination, hitbox, route point, landmark, and fare label.
+- Core tests cover the fallback contract, calibration anchors, bounds, and
+  transformed hitbox separation. Dependency and picker audits enforce the
+  optional classification, identical formal profiles, archive bridge, and
+  renderer behavior. The full offline suite passes; live preferred/fallback
+  visual verification is still required for the release candidate.
+
 ## 2026-08-16 selection-ring web-vector checkpoint
 
 - The map-coordinate calibrator's `/icon-alignment` page now renders the thin
@@ -86,9 +107,10 @@ not the fix.
 
 The new isolated Candidate retains official CommonLib and bypasses only the
 stale convenience method. `dependencies.lock.json` pins the exact Skyrim,
-SKSE, Address Library, Menu Framework, RUSTIC MAPS, Skyrim Paper Map by Caro
-Tuts for FWMF, wizard-core, CommonLib, and
-vcpkg inputs. Its read-only audit decodes the locked Address Library database
+SKSE, Address Library, Menu Framework, wizard-core, CommonLib, and vcpkg
+inputs, plus the tested hashes for the optional RUSTIC MAPS and Skyrim Paper
+Map by Caro Tuts for FWMF visual recommendations when installed. Its read-only
+audit decodes the locked Address Library database
 and proves legacy ID `21890` is absent, ID `21891` maps to the rejected crash
 offset `0x33D880`, and modern ID `441582` maps to the required `0x33D6A0`.
 The native bridge refuses every runtime except Skyrim 1.6.1170, refuses any

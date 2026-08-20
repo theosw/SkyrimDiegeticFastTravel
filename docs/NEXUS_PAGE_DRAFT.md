@@ -103,13 +103,25 @@ Ferry Travel Overhaul (CFTO)[/url].
 [*][url=https://www.nexusmods.com/skyrimspecialedition/mods/40651]Carriage and
 Ferry Travel Overhaul - Fixes and Winterhold[/url] 3.0 — install after the base
 mod; this supplies the supported CFTO.esp record layout.
-[*][url=https://www.nexusmods.com/skyrimspecialedition/mods/42614]RUSTIC
-MAPS[/url] — ferry-map artwork.
-[*][url=https://www.nexusmods.com/skyrimspecialedition/mods/62705]Skyrim Paper
-Map by Caro Tuts for FWMF[/url] — wizard and carriage map artwork.
 [/list]
 
 [b]Initial beta target:[/b] Skyrim 1.6.1170 / SKSE 2.2.6.
+
+[size=5][color=#d8b46a][b]RECOMMENDED MAP STYLE[/b][/color][/size]
+
+The screenshots and my personal setup use these two map mods, but neither is
+required:
+
+[list]
+[*][url=https://www.nexusmods.com/skyrimspecialedition/mods/42614]RUSTIC
+MAPS[/url] — recommended physical ferry-map artwork.
+[*][url=https://www.nexusmods.com/skyrimspecialedition/mods/62705]Skyrim Paper
+Map by Caro Tuts for FWMF[/url] — preferred wizard and carriage chart.
+[/list]
+
+Without them, ferry sheets use Bethesda's archived physical maps and wizard /
+carriage sheets use a separately calibrated Bethesda battle-map layout. No map
+DDS is redistributed by Diegetic Travel.
 
 [size=5][color=#d8b46a][b]OPTIONAL INTEGRATIONS[/b][/color][/size]
 
@@ -163,7 +175,7 @@ it with:
 [list]
 [*]Bethesda Game Studios; the SKSE team; meh321; Thiago / SkyrimThiago; Kinaga.
 [*]Gamwich — RUSTIC MAPS; Caro Tuts and Caites — Skyrim Paper Map for FWMF.
-Their separately installed map textures are referenced, not redistributed.
+The recommended map textures are referenced, not redistributed.
 [*]outobugi — [url=https://www.nexusmods.com/skyrimspecialedition/mods/49881]NORDIC UI[/url]
 marker artwork; the SkyUI and SkyHUD teams are also credited in accordance with
 its author instructions.

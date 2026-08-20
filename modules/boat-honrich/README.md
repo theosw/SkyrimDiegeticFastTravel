@@ -37,8 +37,10 @@ without cloning its prerequisite quests.
   already-closed, confirmation-tick, and timeout paths are logged.
 
 The candidate requires CFTO plus the existing Diegetic Travel parchment native
-runtime. It does not require Better Carriage Destinations and does not ship the
-external RUSTIC MAPS texture or the deferred route artwork.
+runtime. It does not require Better Carriage Destinations or RUSTIC MAPS and
+does not ship the external texture or deferred route artwork. RUSTIC remains
+the recommended loose override; without it, the native runtime bridges the
+archived Bethesda DDS into Menu Framework.
 
 ## Evidence
 

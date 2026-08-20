@@ -14,11 +14,20 @@ verifies it without launching Skyrim.
 - Carriage and Ferry Travel Overhaul - Fixes and Winterhold `3.0.0.0`
   (Nexus 40651), installed after the base mod; this supplies the pinned
   `CFTO.esp` master and record layout
-- RUSTIC MAPS `2.0.0.0` for boat-provider physical map textures, including
-  `battlemap01.dds`
-- Skyrim Paper Map by Caro Tuts for FWMF `1.72.0.0` for the wizard and carriage
-  `textures/terrain/tamriel/skyrim.dds`
 - `DiegeticTravel.esp` as the consolidated ESL-flagged travel authority
+
+The tested visual setup also includes two recommendations whose hashes remain
+pinned when present, but whose absence no longer fails the dependency audit:
+
+- RUSTIC MAPS `2.0.0.0`, which overrides the physical-map paths used by boat
+  providers;
+- Skyrim Paper Map by Caro Tuts for FWMF `1.72.0.0`, the preferred wizard and
+  carriage chart at `textures/terrain/tamriel/skyrim.dds`.
+
+Without either mod, the native picker reads Bethesda's physical maps through
+Skyrim's archive-aware resource stream. Wizard and carriage requests switch to
+a calibrated `battlemap01.dds` profile; boat requests retain their existing
+coordinates because the loose replacer and archived original share a path.
 
 The tested profile also includes Wait Carriage in Inns `1.3.0.0` (Nexus
 83044). That integration is optional and uses soft plugin lookups, but its
@@ -81,8 +90,8 @@ relocation are not part of the release runtime.
 
 ## Distribution boundary
 
-Pinned runtime hashes describe separately installed requirements; they are not
-redistribution permission. The repository and release package contain no
+Pinned runtime hashes describe separately installed requirements and tested
+optional recommendations; they are not redistribution permission. The repository and release package contain no
 RUSTIC MAPS texture, Caro Tuts map texture, Baan Malur map texture, Bethesda
 FUZ/XWM, BCD asset, or Menu Framework binary. See `docs/ASSET_POLICY.md` for
 the packaging rules and fallbacks.

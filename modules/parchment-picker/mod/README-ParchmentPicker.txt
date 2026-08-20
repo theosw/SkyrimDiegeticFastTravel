@@ -1,16 +1,18 @@
 DNT Parchment Picker - development spike
 
 This payload contains no background map artwork. The College and carriage
-providers reference the separately installed Skyrim Paper Map by Caro Tuts for
+providers prefer the separately installed Skyrim Paper Map by Caro Tuts for
 FWMF texture:
 
   Data/textures/terrain/tamriel/skyrim.dds
 
 It displays the illustration crop (0.088379,0.187012)-(0.932129,0.783691) of
-that 8192-square texture at aspect 1.414075. If the file is
-absent, the picker shows a diagnostic fallback while keeping destination
-selection available. The core parchment flow has passed its first gameplay
-test. The old dialogue destination menu is retained only behind the default-off
+that 8192-square texture at aspect 1.414075. If the file is absent, the picker
+loads Bethesda's archived `battlemap01.dds` through Skyrim's resource stream
+and switches to its 1.35809 aspect, UV crop, and affine marker/text transform.
+Boat providers use the same archive bridge when no loose physical-map replacer
+is installed. The core parchment flow has passed its first gameplay test. The
+old dialogue destination menu is retained only behind the default-off
 diagnostic compatibility global.
 
 The current revision hides vanilla, TrueHUD, and common LoreRim widget movies
@@ -37,8 +39,8 @@ College request is assembled in one native call to avoid repeated Papyrus/native
 scheduling stalls.
 
 Requires the user's separately installed Skyrim/SKSE/Address Library, SKSE Menu
-Framework, RUSTIC MAPS for boat providers, Skyrim Paper Map by Caro Tuts for
-FWMF for the College and carriage providers, and DiegeticTravelWizardGuides.esp. This
+Framework, and DiegeticTravelWizardGuides.esp. RUSTIC MAPS and Skyrim Paper Map
+by Caro Tuts for FWMF are recommended visual overrides, not requirements. This
 package excludes the deferred ferry-route artwork for the beta. It includes
 AI-assisted/user-edited Docks and Ship markers, nine vanilla-derived hold-capital markers, and one
 vanilla-derived neutral town marker. It also includes fourteen exact NORDIC UI
