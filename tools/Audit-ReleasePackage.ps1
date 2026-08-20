@@ -220,11 +220,16 @@ if (-not (Test-Path -LiteralPath $pricingIniPath -PathType Leaf)) {
     throw "Release is missing DiegeticTravel.ini"
 }
 $pricingIni = Get-Content -LiteralPath $pricingIniPath -Raw
+$pricingIniContractLines = @($pricingIni -split "\r?\n" | ForEach-Object {
+    $_.Trim()
+} | Where-Object {
+    $_ -and -not $_.StartsWith(";") -and -not $_.StartsWith("#")
+})
 foreach ($pricingToken in @(
     "[Carriage]",
     "HoursPerMapUnit=10.0",
-    "FarePerMapUnit=1600.0",
-    "MinimumFare=100",
+    "FarePerMapUnit=600.0",
+    "MinimumFare=50",
     "FareStep=50",
     "[Wizard]",
     "FarePerTrip=250",
@@ -237,8 +242,9 @@ foreach ($pricingToken in @(
     "ShowEstimatedHours=true",
     "MarkHoursAsApproximate=true"
 )) {
-    if ($pricingIni -notmatch [regex]::Escape($pricingToken)) {
-        throw "DiegeticTravel.ini is missing default contract: $pricingToken"
+    $contractMatches = @($pricingIniContractLines | Where-Object { $_ -eq $pricingToken })
+    if ($contractMatches.Count -ne 1) {
+        throw "DiegeticTravel.ini must contain exactly one default contract line: $pricingToken"
     }
 }
 $travelCatalogPath = Join-Path $package `
@@ -256,6 +262,10 @@ $travelCatalogPolicies = @($travelCatalogLines | Where-Object { $_.StartsWith("p
 $travelCatalogLocations = @($travelCatalogLines | Where-Object { $_.StartsWith("location`t") })
 if ($travelCatalogPolicies.Count -ne 1 -or $travelCatalogLocations.Count -ne 28) {
     throw "travel_catalog.tsv must contain one policy and 28 carriage locations"
+}
+$expectedCarriagePolicy = "policy`tcarriage`t10.0`t600.0`t50`t50"
+if ($travelCatalogPolicies[0] -ne $expectedCarriagePolicy) {
+    throw "travel_catalog.tsv has the wrong public carriage policy: $($travelCatalogPolicies[0])"
 }
 $embassyRow = "location`tthalmor_embassy`tThalmor Embassy`t0.317566`t0.169034`tCFTO.esp`t0x0B6E54`tone_way"
 if ($travelCatalogLocations -notcontains $embassyRow) {

@@ -2,7 +2,7 @@
 # policy: id, hours per normalized map unit, fare per unit, minimum fare, fare step
 # location: id, display name, map x, map y, marker plugin, local form ID, availability
 schema	1
-policy	carriage	10.0	1600.0	100	50
+policy	carriage	10.0	600.0	50	50
 location	windhelm	Windhelm	0.793249	0.410699	CFTO.esp	0x0A7B39	open
 location	darkwater_crossing	Darkwater Crossing	0.759376	0.633099	CFTO.esp	0x0B6E4B	one_way
 location	kynesgrove	Kynesgrove	0.794486	0.488185	CFTO.esp	0x0B6E4C	open

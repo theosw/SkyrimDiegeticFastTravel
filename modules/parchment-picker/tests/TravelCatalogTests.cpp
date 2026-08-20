@@ -1,6 +1,7 @@
 #include "DNT/PricingConfig.h"
 #include "DNT/TravelCatalog.h"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdlib>
@@ -157,6 +158,8 @@ namespace
         Require(config.Load(invalid, warnings), "invalid fields should retain safe defaults");
         Require(warnings.size() == 3, "each invalid field should produce a warning");
         Require(config.Get().carriageHoursPerMapUnit == 10.0F &&
+                config.Get().carriageFarePerMapUnit == 600.0F &&
+                config.Get().carriageMinimumFare == 50 &&
                 config.Get().carriageFareStep == 50 && config.Get().wizardFarePerTrip == 250,
             "invalid fields must retain defaults");
     }
@@ -206,6 +209,49 @@ namespace
             "modules/parchment-picker/mod/SKSE/Plugins/DiegeticTravel.ini";
         Require(pricing.LoadFile(pricingPath, pricingWarnings), "shipped pricing INI must load");
         Require(pricingWarnings.empty(), "shipped pricing INI must not warn");
+        const auto& shippedPricing = pricing.Get();
+        Require(shippedPricing.carriageHoursPerMapUnit == 10.0F &&
+                shippedPricing.carriageFarePerMapUnit == 600.0F &&
+                shippedPricing.carriageMinimumFare == 50 &&
+                shippedPricing.carriageFareStep == 50,
+            "shipped carriage pricing must use the public 600/50/50 policy");
+        const auto* shippedPolicy = catalog.FindPolicy("carriage");
+        Require(shippedPolicy != nullptr &&
+                shippedPolicy->hoursPerMapUnit == shippedPricing.carriageHoursPerMapUnit &&
+                shippedPolicy->farePerMapUnit == shippedPricing.carriageFarePerMapUnit &&
+                shippedPolicy->minimumFare == shippedPricing.carriageMinimumFare &&
+                shippedPolicy->fareStep == shippedPricing.carriageFareStep,
+            "shipped INI and catalogue carriage policies must remain identical");
+
+        const std::array physicalDriverOrigins{
+            "dawnstar",
+            "falkreath",
+            "markarth",
+            "morthal",
+            "riften",
+            "solitude",
+            "whiterun",
+            "windhelm",
+            "winterhold"
+        };
+        std::int32_t minimumPhysicalFare = 1000000;
+        std::int32_t maximumPhysicalFare = 0;
+        for (const auto originId : physicalDriverOrigins) {
+            for (const auto& destination : catalog.Locations()) {
+                if (destination.id == originId) continue;
+                const auto quote = catalog.EstimateQuote("carriage", originId, destination.id);
+                Require(quote.has_value(),
+                    std::string("physical-driver route must quote: ") + originId + " -> " + destination.id);
+                minimumPhysicalFare = std::min(minimumPhysicalFare, quote->fare);
+                maximumPhysicalFare = std::max(maximumPhysicalFare, quote->fare);
+            }
+        }
+        Require(minimumPhysicalFare == 50 && maximumPhysicalFare == 500,
+            "public physical-driver fare envelope must remain 50-500 gold");
+        Require(catalog.EstimateQuote("carriage", "whiterun", "riften")->fare == 250,
+            "Whiterun-to-Riften public balance anchor must remain 250 gold");
+        Require(catalog.EstimateQuote("carriage", "markarth", "riften")->fare == 500,
+            "Markarth-to-Riften public balance anchor must remain 500 gold");
 
         const std::vector<std::string_view> liveFalkreathDestinationIds{
             "DARKWATER_CROSSING",
