@@ -51,7 +51,9 @@ permission.
 - Wizard and carriage providers prefer Skyrim Paper Map by Caro Tuts for FWMF's
   `textures/terrain/tamriel/skyrim.dds`. It is referenced only and is not
   redistributed. If it is absent, both providers switch to a separately
-  calibrated Bethesda `battlemap01.dds` artwork profile.
+  calibrated Bethesda `battlemap01.dds` artwork profile. Users may select that
+  same physical profile first with `PreferFormalMapArtwork=false`; this changes
+  only Diegetic Travel's resolution order and does not edit FWMF or its map.
 - SKSE Menu Framework loads only filesystem files. When a requested Bethesda
   DDS has no loose winner, the native DLL reads it through Skyrim's
   archive-aware resource stream and writes a bounded copy to the operating

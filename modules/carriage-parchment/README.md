@@ -44,7 +44,8 @@ external Skyrim Paper Map/FWMF
 Without it, the request switches atomically to Bethesda's archived battle map,
 including the fallback aspect, UV crop, destination/origin transform, hitboxes,
 and fare-label position. Caro's chart is therefore a visual recommendation,
-not a carriage requirement.
+not a carriage requirement. `PreferFormalMapArtwork=false` in the shared INI
+selects that physical profile first without changing FWMF's world-map assets.
 The carriage sheet defaults to NORDIC UI destination symbols and the exact
 Norden UI round-trip loading symbol as its selection ring. No background map
 artwork is packaged.

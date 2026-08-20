@@ -60,11 +60,14 @@ read or written by the runtime travel path.
 - `modules/parchment-picker/mod/SKSE/Plugins/DiegeticTravel/travel_catalog.tsv`
   is the small runtime catalogue used by native code.
 - `modules/parchment-picker/mod/SKSE/Plugins/DiegeticTravel.ini` holds supported
-  user-facing fare and estimate settings. Invalid individual values retain
+  user-facing fare, estimate, and formal-map preference settings. Invalid individual values retain
   defaults; settings are never reloaded mid-session. The public carriage policy
   is 475 gold per normalized map unit, a 50-gold minimum, and 50-gold rounding,
   yielding 50–400-gold trips from the nine physical drivers. Ferries follow
   CFTO's live fare globals unless explicitly overridden.
+  `PreferFormalMapArtwork=false` reverses only the native College/carriage
+  artwork resolution order; the atomic transformed fallback profile is reused,
+  and FWMF's world-map files are not modified.
 
 Destination IDs are stable strings at the UI/service boundary. The native
 catalogue is the sole destination/FormID registry and returns the resolved

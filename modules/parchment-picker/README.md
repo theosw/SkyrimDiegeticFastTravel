@@ -13,8 +13,9 @@ the player, advance game time, or move actors.
   mouse/controller input, rendering, and mod-event result delivery.
 - `TravelCatalog` loads the flat carriage catalogue from
   `travel_catalog.tsv`.
-- `PricingConfig` loads and validates user-tunable fares and estimate display
-  settings from `SKSE/Plugins/DiegeticTravel.ini`, retaining per-field safe
+- `PricingConfig` loads and validates user-tunable fares, estimate display, and
+  formal-versus-physical artwork preference settings from
+  `SKSE/Plugins/DiegeticTravel.ini`, retaining per-field safe
   defaults when a value is missing or invalid.
 - `TravelRuntime` resolves carriage origins, builds the native request, quotes
   fare/hours, exposes the immutable wizard/ferry pricing snapshot, maps the

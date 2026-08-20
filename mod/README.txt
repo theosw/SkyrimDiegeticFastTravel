@@ -45,7 +45,9 @@ permitted/derived marker assets described in THIRD_PARTY_NOTICES.txt.
 Configuration:
 - SKSE\Plugins\DiegeticTravel.ini controls carriage price/time coefficients,
   the College fare, optional CFTO ferry-fare overrides, and carriage estimate
-  display. It is read once when Skyrim starts, so restart after editing it.
+  display. PreferFormalMapArtwork=false makes College and carriage sheets use
+  the calibrated physical-map profile first without altering the FWMF world
+  map. The INI is read once when Skyrim starts, so restart after editing it.
 - Public carriage defaults are 475 gold per normalized map unit, a 50-gold
   minimum, and 50-gold rounding. Across the nine physical drivers this yields
   50–400-gold trips; CFTO-designated free drivers remain free.

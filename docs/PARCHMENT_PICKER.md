@@ -34,6 +34,9 @@ inactive dock landmarks.
 - HUD layers hidden for the picker are restored on every close path.
 - Missing preferred map artwork selects the fallback profile once per request;
   marker art still degrades to its provider fallback and logs a warning.
+- `PreferFormalMapArtwork=false` reverses that resolution order for College
+  and carriage requests: the calibrated physical profile is tried first and
+  the formal chart remains a safety fallback.
 
 ## Provider boundary
 
@@ -61,7 +64,9 @@ marker provenance and permissions are recorded in `ASSET_POLICY.md` and
 Formal wizard/carriage maps use the calibrated FWMF paper-map crop and Norden
 symbols by default. If that preferred chart is missing, the complete request
 switches to a calibrated vanilla battle-map profile; destinations, route
-origins, fare text, and hitboxes all use the same affine transform. Ferry maps
+origins, fare text, and hitboxes all use the same affine transform. The
+restart-time display preference selects the same physical profile without
+hiding or renaming FWMF assets. Ferry maps
 use the rough parchment profile and the project's edited anchor/boat language;
 RUSTIC MAPS overrides the same Bethesda paths when installed.
 

@@ -35,7 +35,10 @@ Carriages use `475.0` gold per normalized map unit, a 50-gold minimum, and
 50-gold rounding. CFTO-designated free carriage drivers remain free. Ferry
 prices follow CFTO's live globals by default, so another setup can legitimately
 show different values. All configurable values are read from
-`SKSE\Plugins\DiegeticTravel.ini` once when Skyrim starts.
+`SKSE\Plugins\DiegeticTravel.ini` once when Skyrim starts. Its
+`PreferFormalMapArtwork` display setting defaults to `true`; setting it to
+`false` makes College and carriage sheets prefer the calibrated physical-map
+profile without changing the normal FWMF world map.
 
 The project also contains a separate
 [`modules/wizard-guides`](modules/wizard-guides) vertical slice. That module
@@ -62,7 +65,8 @@ map artwork or audio. It first honors loose visual replacers, then uses Skyrim's
 resource stream to materialize an archived Bethesda DDS for Menu Framework's
 filesystem-only loader. Formal Caro-chart layouts have a separately calibrated
 vanilla battle-map profile, so selection coordinates, origins, hitboxes, and
-fare text all switch together. Its native/Papyrus builds and structural audits pass. At
+fare text all switch together. The restart-time INI can explicitly reverse
+the two artwork profiles' resolution order. Its native/Papyrus builds and structural audits pass. At
 32:9, gameplay tests prove the parchment layout, gold idle/red hover
 presentation, Norden-style cursor, no-default startup, Escape/button
 cancellation, HUD restoration, service handoff, fare handling, and completed

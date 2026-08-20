@@ -75,7 +75,8 @@ start-game quests.
 
 The build creates a candidate such as
 `dist\DiegeticTravel-0.1.0-beta-20260819T193802Z.zip`. The archive also contains
-the restart-time `SKSE\Plugins\DiegeticTravel.ini` pricing configuration.
+the restart-time `SKSE\Plugins\DiegeticTravel.ini` pricing, estimate, and
+formal-map preference configuration.
 Packaging rejects any legacy module plugin/SEQ, test harness, PDB, or
 unexpected executable. It then runs
 xEdit Check for Errors against an isolated copy of the release plugin and its

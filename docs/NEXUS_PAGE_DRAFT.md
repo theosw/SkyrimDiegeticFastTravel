@@ -83,9 +83,11 @@ defaults. Nearby trips are inexpensive; cross-country trips remain meaningful.
 fare.
 [/list]
 
-Carriage coefficients, wizard fare, ferry overrides, and estimate display can
-be changed in [b]SKSE/Plugins/DiegeticTravel.ini[/b]. Restart Skyrim after
-editing it.
+Carriage coefficients, wizard fare, ferry overrides, estimate display, and the
+preferred formal-versus-physical College/carriage artwork can be changed in
+[b]SKSE/Plugins/DiegeticTravel.ini[/b]. Set
+[b]PreferFormalMapArtwork=false[/b] to prefer the calibrated physical map
+without changing your normal FWMF world map. Restart Skyrim after editing it.
 
 [line]
 
