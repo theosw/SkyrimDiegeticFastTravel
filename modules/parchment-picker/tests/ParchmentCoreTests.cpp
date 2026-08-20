@@ -114,6 +114,24 @@ namespace
             request,
             error), "the calibrated fallback should keep every request point on its artwork");
 
+        auto fallbackFirst = CollegeRequest();
+        Require(DNT::Parchment::SetFallbackArtwork(
+            fallbackFirst,
+            FormalMapFallback(),
+            error,
+            true), "formal maps should support an explicit fallback-first preference");
+        Require(fallbackFirst.preferFallbackArtwork,
+            "fallback-first preference should be retained on the request");
+        Require(DNT::Parchment::ValidateReadyRequest(
+            fallbackFirst,
+            error), "fallback-first requests should retain the calibrated ready contract");
+
+        auto missingPreferredFallback = CollegeRequest();
+        missingPreferredFallback.preferFallbackArtwork = true;
+        Require(!DNT::Parchment::ValidateRequestHeader(
+            missingPreferredFallback,
+            error), "fallback artwork cannot be preferred before it is configured");
+
         const auto& transform = request.fallbackArtwork->coordinateTransform;
         const auto college = DNT::Parchment::TransformPoint({ 0.750802F, 0.167836F }, transform);
         RequireClose(college.normalizedX, 0.760555F, 0.000002F,

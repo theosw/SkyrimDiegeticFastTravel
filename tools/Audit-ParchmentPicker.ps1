@@ -247,6 +247,10 @@ $originServiceScript = Get-Content -Raw (Join-Path $projectRoot "mod\Scripts\Sou
 $travelCompatibilityScript = Get-Content -Raw (Join-Path $modRoot "Scripts\Source\DNT_TravelCompatibility.psc")
 $providerScript = Get-Content -Raw (Join-Path $modRoot "Scripts\Source\DNT_WizardParchmentPicker.psc")
 $papyrusSource = Get-Content -Raw (Join-Path $moduleRoot "src\Papyrus.cpp")
+$settingsHeader = Get-Content -Raw (Join-Path $moduleRoot "include\DNT\PricingConfig.h")
+$settingsSource = Get-Content -Raw (Join-Path $moduleRoot "src\PricingConfig.cpp")
+$runtimeSource = Get-Content -Raw (Join-Path $moduleRoot "src\TravelRuntime.cpp")
+$pricingIni = Get-Content -Raw (Join-Path $modRoot "SKSE\Plugins\DiegeticTravel.ini")
 $coordinatorScript = Get-Content -Raw (Join-Path $projectRoot "mod\Scripts\Source\DNT_TravelCoordinator.psc")
 foreach ($requiredToken in @("BuildWizardRequest", "ResolveCarriageDestinationMarker", "GetWizardFare", "ResolveFerryFare", "RequestDialogueClose", "BeginRequest", "SetSourceLabel", "SetPaymentLabelPosition", "SetMarkerTextures", "SetOriginMarkerTexture", "SetSelectionRingTexture", "SetRouteOrigin", "AddRouteLandmark", "AddDestination", "SetDestinationMarkerScale", "SetDestinationSelectionRingStyle", "SetDestinationSelectionRingTexture", "Show", "Cancel", "DNT_ParchmentResult")) {
     if ($nativeScript -notmatch [regex]::Escape($requiredToken) -and
@@ -394,6 +398,20 @@ foreach ($artToken in @("textures/terrain/tamriel/skyrim.dds", "textures/dungeon
         throw "Native wizard request builder is missing artwork contract token: $artToken"
     }
 }
+$preferenceSource = $settingsHeader + "`n" + $settingsSource + "`n" +
+    $runtimeSource + "`n" + $pricingIni + "`n" + $papyrusSource
+foreach ($preferenceToken in @(
+    "bool preferFormalMapArtwork{ true }",
+    'qualifiedKey == "display.preferformalmapartwork"',
+    "loadedSettings.preferFormalMapArtwork",
+    "PreferFormalMapArtwork=true",
+    "!pricing.preferFormalMapArtwork",
+    "!settings.preferFormalMapArtwork"
+)) {
+    if ($preferenceSource -notmatch [regex]::Escape($preferenceToken)) {
+        throw "Native formal-map preference is missing contract: $preferenceToken"
+    }
+}
 foreach ($wizardBuilderToken in @(
     "DNT_ParchmentNative.BuildWizardRequest",
     'Int DestinationCount = DNT_ParchmentNative.BuildWizardRequest(ActiveRequest, SourceRef, Fare)',
@@ -495,6 +513,10 @@ foreach ($fallbackRuntimeToken in @(
     "MaxArchivedTextureBytes",
     "PARCHMENT_ART_FALLBACK",
     "fallbackArtwork",
+    "preferFallbackArtwork",
+    'reason={}',
+    '"preference"',
+    '"preferred-missing"',
     "coordinateTransform",
     "TransformPoint"
 )) {

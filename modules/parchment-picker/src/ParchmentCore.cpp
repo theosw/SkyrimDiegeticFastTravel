@@ -158,6 +158,10 @@ bool DNT::Parchment::ValidateRequestHeader(const Request& a_request, std::string
         !ValidateArtworkProfile(*a_request.fallbackArtwork, a_error, true)) {
         return false;
     }
+    if (a_request.preferFallbackArtwork && !a_request.fallbackArtwork) {
+        a_error = "fallback artwork cannot be preferred before it is configured";
+        return false;
+    }
     if (a_request.idleMarkerTexturePath.size() > 512 ||
         a_request.selectedMarkerTexturePath.size() > 512 ||
         a_request.originMarkerTexturePath.size() > 512 ||
@@ -192,7 +196,8 @@ bool DNT::Parchment::ValidateRequestHeader(const Request& a_request, std::string
 bool DNT::Parchment::SetFallbackArtwork(
     Request& a_request,
     ArtworkProfile a_artwork,
-    std::string& a_error)
+    std::string& a_error,
+    const bool a_preferFallback)
 {
     if (a_request.fallbackArtwork) {
         a_error = "fallback artwork is already set";
@@ -202,6 +207,7 @@ bool DNT::Parchment::SetFallbackArtwork(
         return false;
     }
     a_request.fallbackArtwork = std::move(a_artwork);
+    a_request.preferFallbackArtwork = a_preferFallback;
     return true;
 }
 

@@ -24,6 +24,7 @@ namespace DNT::Pricing
 
         bool showEstimatedHours{ true };
         bool markHoursAsApproximate{ true };
+        bool preferFormalMapArtwork{ true };
     };
 
     class Config

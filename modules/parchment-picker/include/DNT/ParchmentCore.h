@@ -79,6 +79,7 @@ namespace DNT::Parchment
         float textureUvMaxX{ 1.0F };
         float textureUvMaxY{ 1.0F };
         std::optional<ArtworkProfile> fallbackArtwork;
+        bool preferFallbackArtwork{ false };
         std::optional<RoutePoint> paymentLabelPosition;
         std::optional<RouteOrigin> routeOrigin;
         std::vector<RoutePoint> routeLandmarks;
@@ -100,7 +101,8 @@ namespace DNT::Parchment
     [[nodiscard]] bool SetFallbackArtwork(
         Request& a_request,
         ArtworkProfile a_artwork,
-        std::string& a_error);
+        std::string& a_error,
+        bool a_preferFallback = false);
     [[nodiscard]] bool SetSourceLabel(Request& a_request, std::string a_sourceLabel, std::string& a_error);
     [[nodiscard]] bool SetMarkerTextures(
         Request& a_request,

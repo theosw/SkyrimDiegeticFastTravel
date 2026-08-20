@@ -664,28 +664,48 @@ namespace
                 return true;
             };
             if (loadedArtworkVariant == ArtworkVariant::kUnresolved) {
-                if (tryLoadArtwork(preferredArtwork)) {
+                const auto loadPreferred = [&]() {
+                    if (!tryLoadArtwork(preferredArtwork)) {
+                        return false;
+                    }
                     loadedArtworkVariant = ArtworkVariant::kPreferred;
-                    logger::info(
-                        "PARCHMENT_ART_READY request={} path={} profile=preferred",
-                        snapshot.request.requestId,
-                        preferredArtwork.texturePath);
-                } else if (snapshot.request.fallbackArtwork &&
-                           tryLoadArtwork(*snapshot.request.fallbackArtwork)) {
+                    return true;
+                };
+                const auto loadFallback = [&]() {
+                    if (!snapshot.request.fallbackArtwork ||
+                        !tryLoadArtwork(*snapshot.request.fallbackArtwork)) {
+                        return false;
+                    }
                     loadedArtworkVariant = ArtworkVariant::kFallback;
-                    logger::info(
-                        "PARCHMENT_ART_FALLBACK request={} preferred={} fallback={}",
-                        snapshot.request.requestId,
-                        preferredArtwork.texturePath,
-                        snapshot.request.fallbackArtwork->texturePath);
-                } else {
+                    return true;
+                };
+                const auto fallbackFirst = snapshot.request.preferFallbackArtwork &&
+                    snapshot.request.fallbackArtwork.has_value();
+                const auto loaded = fallbackFirst ?
+                    (loadFallback() || loadPreferred()) :
+                    (loadPreferred() || loadFallback());
+                if (!loaded) {
                     loadedArtworkVariant = ArtworkVariant::kMissing;
                     logger::warn(
-                        "PARCHMENT_ART_MISSING request={} preferred={} fallback={}",
+                        "PARCHMENT_ART_MISSING request={} preferred={} fallback={} fallback_first={}",
                         snapshot.request.requestId,
                         preferredArtwork.texturePath,
                         snapshot.request.fallbackArtwork ?
-                            snapshot.request.fallbackArtwork->texturePath : std::string("<none>"));
+                            snapshot.request.fallbackArtwork->texturePath : std::string("<none>"),
+                        fallbackFirst);
+                } else if (loadedArtworkVariant == ArtworkVariant::kFallback) {
+                    logger::info(
+                        "PARCHMENT_ART_FALLBACK request={} preferred={} fallback={} reason={}",
+                        snapshot.request.requestId,
+                        preferredArtwork.texturePath,
+                        snapshot.request.fallbackArtwork->texturePath,
+                        fallbackFirst ? "preference" : "preferred-missing");
+                } else {
+                    logger::info(
+                        "PARCHMENT_ART_READY request={} path={} profile=preferred reason={}",
+                        snapshot.request.requestId,
+                        preferredArtwork.texturePath,
+                        fallbackFirst ? "fallback-missing" : "preference");
                 }
             }
             const auto& artwork =
@@ -1160,7 +1180,8 @@ bool DNT::ParchmentMenu::BeginRequest(
 
 bool DNT::ParchmentMenu::SetFallbackArtwork(
     const std::string_view a_requestId,
-    Parchment::ArtworkProfile a_artwork)
+    Parchment::ArtworkProfile a_artwork,
+    const bool a_preferFallback)
 {
     std::scoped_lock lock(requestLock);
     if (!activeRequest || activeRequest->request.requestId != a_requestId || activeRequest->visible) {
@@ -1172,7 +1193,8 @@ bool DNT::ParchmentMenu::SetFallbackArtwork(
     const auto added = Parchment::SetFallbackArtwork(
         activeRequest->request,
         std::move(a_artwork),
-        error);
+        error,
+        a_preferFallback);
     if (!added) {
         logger::warn(
             "PARCHMENT_ART_FALLBACK_REJECT request={} path={} reason={}",
@@ -1181,9 +1203,10 @@ bool DNT::ParchmentMenu::SetFallbackArtwork(
             error);
     } else {
         logger::info(
-            "PARCHMENT_ART_FALLBACK_SET request={} path={}",
+            "PARCHMENT_ART_FALLBACK_SET request={} path={} preferred={}",
             a_requestId,
-            texturePath);
+            texturePath,
+            a_preferFallback);
     }
     return added;
 }

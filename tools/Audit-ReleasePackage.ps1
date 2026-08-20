@@ -240,7 +240,8 @@ foreach ($pricingToken in @(
     "ExtraFareOverride=-1",
     "[Display]",
     "ShowEstimatedHours=true",
-    "MarkHoursAsApproximate=true"
+    "MarkHoursAsApproximate=true",
+    "PreferFormalMapArtwork=true"
 )) {
     $contractMatches = @($pricingIniContractLines | Where-Object { $_ -eq $pricingToken })
     if ($contractMatches.Count -ne 1) {

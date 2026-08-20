@@ -211,10 +211,12 @@ namespace
             return -1;
         }
 
+        const auto pricing = DNT::TravelRuntime::GetPricingSettings();
         bool configured = true;
         configured = DNT::ParchmentMenu::SetFallbackArtwork(
                          requestId,
-                         FormalMapFallbackArtwork()) && configured;
+                         FormalMapFallbackArtwork(),
+                         !pricing.preferFormalMapArtwork) && configured;
         configured = DNT::ParchmentMenu::SetSourceLabel(requestId, originLocation->name) && configured;
         configured = DNT::ParchmentMenu::SetPaymentLabelPosition(requestId, 0.615551F, 0.922189F) && configured;
         configured = DNT::ParchmentMenu::SetMarkerTextures(
@@ -225,7 +227,6 @@ namespace
                          requestId,
                          "Data/textures/DiegeticTravel/norden-roundtrip-selection-ring.dds") && configured;
 
-        const auto pricing = DNT::TravelRuntime::GetPricingSettings();
         std::vector<std::string> destinationIds;
         destinationIds.reserve(locations.size());
         for (const auto& location : locations) {
@@ -339,10 +340,12 @@ namespace
             return -1;
         }
 
+        const auto settings = DNT::TravelRuntime::GetPricingSettings();
         bool configured = true;
         configured = DNT::ParchmentMenu::SetFallbackArtwork(
                          requestId,
-                         FormalMapFallbackArtwork()) && configured;
+                         FormalMapFallbackArtwork(),
+                         !settings.preferFormalMapArtwork) && configured;
         configured = DNT::ParchmentMenu::SetSourceLabel(requestId, "College of Winterhold") && configured;
         configured = DNT::ParchmentMenu::SetPaymentLabelPosition(requestId, 0.616470F, 0.924230F) && configured;
         configured = DNT::ParchmentMenu::SetMarkerTextures(

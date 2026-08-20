@@ -151,6 +151,10 @@ bool DNT::Pricing::Config::Load(std::istream& a_input, std::vector<std::string>&
             bool parsed = false;
             valid = ParseBool(value, parsed);
             if (valid) settings.markHoursAsApproximate = parsed;
+        } else if (qualifiedKey == "display.preferformalmapartwork") {
+            bool parsed = false;
+            valid = ParseBool(value, parsed);
+            if (valid) settings.preferFormalMapArtwork = parsed;
         } else {
             a_warnings.push_back(Warning(lineNumber, "unknown setting '" + qualifiedKey + "' ignored"));
             continue;

@@ -29,7 +29,8 @@ namespace DNT::ParchmentMenu
         std::string_view a_selectedTexturePath);
     [[nodiscard]] bool SetFallbackArtwork(
         std::string_view a_requestId,
-        Parchment::ArtworkProfile a_artwork);
+        Parchment::ArtworkProfile a_artwork,
+        bool a_preferFallback = false);
     [[nodiscard]] bool SetOriginMarkerTexture(
         std::string_view a_requestId,
         std::string_view a_texturePath);

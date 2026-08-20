@@ -131,7 +131,8 @@ namespace
             "ExtraFareOverride=125\n"
             "[Display]\n"
             "ShowEstimatedHours=false\n"
-            "MarkHoursAsApproximate=on\n");
+            "MarkHoursAsApproximate=on\n"
+            "PreferFormalMapArtwork=off\n");
         DNT::Pricing::Config config;
         std::vector<std::string> warnings;
         Require(config.Load(input, warnings), "valid pricing config should load");
@@ -146,7 +147,8 @@ namespace
         Require(!settings.useCftoFares && settings.localFerryFareOverride == 40 &&
                 settings.regionalFerryFareOverride == -1 && settings.extraFerryFareOverride == 125,
             "configured ferry settings mismatch");
-        Require(!settings.showEstimatedHours && settings.markHoursAsApproximate,
+        Require(!settings.showEstimatedHours && settings.markHoursAsApproximate &&
+                !settings.preferFormalMapArtwork,
             "configured display settings mismatch");
 
         std::istringstream invalid(
@@ -154,13 +156,16 @@ namespace
             "HoursPerMapUnit=0\n"
             "FareStep=0\n"
             "[Wizard]\n"
-            "FarePerTrip=-4\n");
+            "FarePerTrip=-4\n"
+            "[Display]\n"
+            "PreferFormalMapArtwork=perhaps\n");
         Require(config.Load(invalid, warnings), "invalid fields should retain safe defaults");
-        Require(warnings.size() == 3, "each invalid field should produce a warning");
+        Require(warnings.size() == 4, "each invalid field should produce a warning");
         Require(config.Get().carriageHoursPerMapUnit == 10.0F &&
                 config.Get().carriageFarePerMapUnit == 475.0F &&
                 config.Get().carriageMinimumFare == 50 &&
-                config.Get().carriageFareStep == 50 && config.Get().wizardFarePerTrip == 250,
+                config.Get().carriageFareStep == 50 && config.Get().wizardFarePerTrip == 250 &&
+                config.Get().preferFormalMapArtwork,
             "invalid fields must retain defaults");
     }
 

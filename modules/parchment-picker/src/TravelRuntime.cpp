@@ -67,7 +67,7 @@ bool DNT::TravelRuntime::InitializeCatalog()
         catalogReady = true;
     }
     logger::info(
-        "PRICING_CONFIG_READY path={} file_loaded={} carriage_hours_per_unit={} carriage_fare_per_unit={} carriage_minimum={} carriage_step={} wizard_fare={} use_cfto={} ferry_overrides={}/{}/{} show_hours={} approximate_hours={}",
+        "PRICING_CONFIG_READY path={} file_loaded={} carriage_hours_per_unit={} carriage_fare_per_unit={} carriage_minimum={} carriage_step={} wizard_fare={} use_cfto={} ferry_overrides={}/{}/{} show_hours={} approximate_hours={} prefer_formal_artwork={}",
         PricingPath,
         pricingFileLoaded,
         loadedSettings.carriageHoursPerMapUnit,
@@ -80,7 +80,8 @@ bool DNT::TravelRuntime::InitializeCatalog()
         loadedSettings.regionalFerryFareOverride,
         loadedSettings.extraFerryFareOverride,
         loadedSettings.showEstimatedHours,
-        loadedSettings.markHoursAsApproximate);
+        loadedSettings.markHoursAsApproximate,
+        loadedSettings.preferFormalMapArtwork);
     logger::info(
         "TRAVEL_CATALOG_READY schema={} locations={} policies={} overrides={} load_ms={:.3f}",
         catalog.SchemaVersion(),
