@@ -11,7 +11,7 @@ namespace DNT::Pricing
     struct Settings
     {
         float carriageHoursPerMapUnit{ 10.0F };
-        float carriageFarePerMapUnit{ 600.0F };
+        float carriageFarePerMapUnit{ 475.0F };
         std::int32_t carriageMinimumFare{ 50 };
         std::int32_t carriageFareStep{ 50 };
 

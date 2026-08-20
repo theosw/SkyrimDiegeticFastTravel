@@ -158,7 +158,7 @@ namespace
         Require(config.Load(invalid, warnings), "invalid fields should retain safe defaults");
         Require(warnings.size() == 3, "each invalid field should produce a warning");
         Require(config.Get().carriageHoursPerMapUnit == 10.0F &&
-                config.Get().carriageFarePerMapUnit == 600.0F &&
+                config.Get().carriageFarePerMapUnit == 475.0F &&
                 config.Get().carriageMinimumFare == 50 &&
                 config.Get().carriageFareStep == 50 && config.Get().wizardFarePerTrip == 250,
             "invalid fields must retain defaults");
@@ -211,10 +211,10 @@ namespace
         Require(pricingWarnings.empty(), "shipped pricing INI must not warn");
         const auto& shippedPricing = pricing.Get();
         Require(shippedPricing.carriageHoursPerMapUnit == 10.0F &&
-                shippedPricing.carriageFarePerMapUnit == 600.0F &&
+                shippedPricing.carriageFarePerMapUnit == 475.0F &&
                 shippedPricing.carriageMinimumFare == 50 &&
                 shippedPricing.carriageFareStep == 50,
-            "shipped carriage pricing must use the public 600/50/50 policy");
+            "shipped carriage pricing must use the public 475/50/50 policy");
         const auto* shippedPolicy = catalog.FindPolicy("carriage");
         Require(shippedPolicy != nullptr &&
                 shippedPolicy->hoursPerMapUnit == shippedPricing.carriageHoursPerMapUnit &&
@@ -246,12 +246,14 @@ namespace
                 maximumPhysicalFare = std::max(maximumPhysicalFare, quote->fare);
             }
         }
-        Require(minimumPhysicalFare == 50 && maximumPhysicalFare == 500,
-            "public physical-driver fare envelope must remain 50-500 gold");
-        Require(catalog.EstimateQuote("carriage", "whiterun", "riften")->fare == 250,
-            "Whiterun-to-Riften public balance anchor must remain 250 gold");
-        Require(catalog.EstimateQuote("carriage", "markarth", "riften")->fare == 500,
-            "Markarth-to-Riften public balance anchor must remain 500 gold");
+        Require(minimumPhysicalFare == 50 && maximumPhysicalFare == 400,
+            "public physical-driver fare envelope must remain 50-400 gold");
+        Require(catalog.EstimateQuote("carriage", "whiterun", "falkreath")->fare == 150,
+            "Whiterun-to-Falkreath public balance anchor must remain 150 gold");
+        Require(catalog.EstimateQuote("carriage", "whiterun", "riften")->fare == 200,
+            "Whiterun-to-Riften public balance anchor must remain 200 gold");
+        Require(catalog.EstimateQuote("carriage", "markarth", "riften")->fare == 400,
+            "Markarth-to-Riften public balance anchor must remain 400 gold");
 
         const std::vector<std::string_view> liveFalkreathDestinationIds{
             "DARKWATER_CROSSING",

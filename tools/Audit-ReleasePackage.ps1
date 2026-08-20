@@ -228,7 +228,7 @@ $pricingIniContractLines = @($pricingIni -split "\r?\n" | ForEach-Object {
 foreach ($pricingToken in @(
     "[Carriage]",
     "HoursPerMapUnit=10.0",
-    "FarePerMapUnit=600.0",
+    "FarePerMapUnit=475.0",
     "MinimumFare=50",
     "FareStep=50",
     "[Wizard]",
@@ -263,7 +263,7 @@ $travelCatalogLocations = @($travelCatalogLines | Where-Object { $_.StartsWith("
 if ($travelCatalogPolicies.Count -ne 1 -or $travelCatalogLocations.Count -ne 28) {
     throw "travel_catalog.tsv must contain one policy and 28 carriage locations"
 }
-$expectedCarriagePolicy = "policy`tcarriage`t10.0`t600.0`t50`t50"
+$expectedCarriagePolicy = "policy`tcarriage`t10.0`t475.0`t50`t50"
 if ($travelCatalogPolicies[0] -ne $expectedCarriagePolicy) {
     throw "travel_catalog.tsv has the wrong public carriage policy: $($travelCatalogPolicies[0])"
 }
