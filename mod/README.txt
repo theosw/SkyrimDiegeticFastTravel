@@ -6,8 +6,8 @@ Requirements:
 - Address Library for SKSE Plugins
 - SKSE Menu Framework
 - Carriage and Ferry Travel Overhaul (CFTO)
-- RUSTIC MAPS (physical carriage/ferry parchment artwork)
-- Skyrim Paper Map by Caro Tuts for FWMF (wizard parchment artwork)
+- RUSTIC MAPS (physical ferry parchment artwork)
+- Skyrim Paper Map by Caro Tuts for FWMF (wizard and carriage parchment artwork)
 
 Plugin layout:
 - Enable DiegeticTravel.esp after CFTO.esp.
@@ -40,6 +40,11 @@ Configuration:
 - SKSE\Plugins\DiegeticTravel.ini controls carriage price/time coefficients,
   the College fare, optional CFTO ferry-fare overrides, and carriage estimate
   display. It is read once when Skyrim starts, so restart after editing it.
+- Public carriage defaults are 600 gold per normalized map unit, a 50-gold
+  minimum, and 50-gold rounding. Across the nine physical drivers this yields
+  50–500-gold trips; CFTO-designated free drivers remain free.
+- College wizard travel costs 250 gold per trip.
 - Missing or invalid individual values keep safe defaults. By default ferries
-  continue to follow CFTO's live local/regional/extra fare globals.
-- The optional Baan Malur add-on retains its externally owned fixed fare.
+  continue to follow CFTO's live 30/50/100 local/regional/extra fare globals;
+  leaving Icewater Jetty remains free.
+- The optional Baan Malur add-on retains its externally owned 30-gold fare.

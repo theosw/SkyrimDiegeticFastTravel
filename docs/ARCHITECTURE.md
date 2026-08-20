@@ -61,7 +61,10 @@ read or written by the runtime travel path.
   is the small runtime catalogue used by native code.
 - `modules/parchment-picker/mod/SKSE/Plugins/DiegeticTravel.ini` holds supported
   user-facing fare and estimate settings. Invalid individual values retain
-  defaults; settings are never reloaded mid-session.
+  defaults; settings are never reloaded mid-session. The public carriage policy
+  is 600 gold per normalized map unit, a 50-gold minimum, and 50-gold rounding,
+  yielding 50–500-gold trips from the nine physical drivers. Ferries follow
+  CFTO's live fare globals unless explicitly overridden.
 
 Destination IDs are stable strings at the UI/service boundary. The native
 catalogue is the sole destination/FormID registry and returns the resolved

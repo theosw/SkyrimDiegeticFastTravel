@@ -35,6 +35,7 @@ Icewater/Volkihar joins when `KmodFerryVolkihar >= 1`, retains CFTO's 100-gold
 outbound fare, and remains free when leaving from its Enthralled Ferryman.
 
 The module references the installed `battlemap01.dds`; the shared picker ships
-no dependency artwork, route overlay, or audio. The minimal beta presentation
-is offline-proven and awaits a live regression pass. The prior package hash is
-retired until the destination-only candidate is repackaged.
+no dependency artwork, route overlay, or audio. The minimal beta presentation,
+dialogue handoff, payment, and ordinary public-provider travel are live-proven.
+The complete private/destination-only matrix remains tracked separately from
+this module's core-flow proof.

@@ -71,6 +71,22 @@ wizards and their hold capitals.
 [i]Speak to a supported provider, ask to see their route map, then select a
 destination. Not every trip promises a ride back.[/i]
 
+[size=5][color=#d8b46a][b]PRICING[/b][/color][/size]
+
+[list]
+[*][b]Carriages:[/b] direct-distance pricing from 50 to 500 gold with the public
+defaults. Nearby trips are inexpensive; cross-country trips remain meaningful.
+[*][b]Wizard guides:[/b] 250 gold per trip to or from the College hub.
+[*][b]Ferries:[/b] CFTO's live local/regional/extra prices by default—normally
+30/50/100 gold—with the return trip from Icewater Jetty free.
+[*][b]Baan Malur optional file:[/b] its external service owns a fixed 30-gold
+fare.
+[/list]
+
+Carriage coefficients, wizard fare, ferry overrides, and estimate display can
+be changed in [b]SKSE/Plugins/DiegeticTravel.ini[/b]. Restart Skyrim after
+editing it.
+
 [line]
 
 [size=5][color=#d8b46a][b]REQUIREMENTS[/b][/color][/size]
@@ -191,7 +207,8 @@ Initial public beta:
   networks.
 - Added the College-centred wizard-guide network and seven court-wizard spokes.
 - Added mouse and controller selection/cancellation.
-- Added configurable carriage fares/estimates plus CFTO live ferry fares,
+- Added configurable, public-balanced 50–500 carriage fares/estimates plus CFTO
+  live ferry fares,
   private-service, Hearthfire, and destination-only gates.
 - Added optional Wait Carriage in Inns integration.
 - Added optional Wizarding Traversal Apparition Travel compatibility.

@@ -6,13 +6,15 @@ services whose routes, costs, and limitations make geography matter. The first
 gameplay-proven pillar is a College-centred wizard-guide network with a reusable
 physical parchment destination picker.
 
-The repository also contains a carriage-network beta built on
+The consolidated beta includes a carriage network built on
 [Carriage and Ferry Travel Overhaul (CFTO)](https://www.nexusmods.com/skyrimspecialedition/mods/8379).
-It keeps CFTO's actors, destination numbers, return-service topology, and live
-fare globals while replacing the selection surface with the physical parchment
-map. The beta deliberately has no route graph, hazard pricing, or estimated
-hours. Carriage fares use CFTO's own local, standard, and extra tiers, including
-any compatible patch that changes those globals.
+It keeps CFTO's actors, destination handoffs, return-service topology, and live
+availability while replacing the selection surface with the physical parchment
+map. A flat native catalogue calculates direct-distance carriage fares and
+approximate hours from the restart-time pricing INI; the public defaults produce
+50–500-gold trips from the nine physical drivers. There is no route graph,
+hazard pricing, or implied road path. Ferries continue to follow CFTO's live
+local, regional, and extra fare globals unless the user configures an override.
 
 Local LoreRim research, downloaded learning sources, and load-order datamines
 remain development evidence rather than redistributed runtime dependencies.
@@ -40,13 +42,12 @@ and returns only a selection index to Papyrus. The wizard provider maps that
 index to the same stable core destination IDs. The module intentionally ships
 no map artwork or audio: a separate mod-manager dependency supplies the
 configured texture. Its native/Papyrus builds and structural audits pass. At
-32:9, gameplay tests prove the original five-route parchment layout, gold idle/red hover
+32:9, gameplay tests prove the parchment layout, gold idle/red hover
 presentation, Norden-style cursor, no-default startup, Escape/button
 cancellation, HUD restoration, service handoff, fare handling, and completed
-travel. Dawnstar and both new service flows passed a monitored run. Morthal's
-first map-marker arrival landed on rebuilt roof geometry; its verified
-ground-level carriage-marker replacement still needs a focused retest. The BCD adapter remains an unchanged five-city fallback; the
-core dialogue fallback now contains seven destinations.
+travel. All seven College spokes and the corrected ground-level Morthal arrival
+are live-proven. The obsolete BCD wizard adapter is not part of the consolidated
+release.
 
 The first boat-provider slice now lives in
 [`modules/boat-honrich`](modules/boat-honrich). It preserves CFTO's ferrymen,
@@ -94,18 +95,19 @@ drivers resolve to `MaleEvenToned`; the exact shared-response FUZ, ESP, scripts,
 SEQ, source topology, and no-asset package pass independent offline audits. A
 first monitored gameplay pass proved automatic dialogue handoff, cancel,
 low-gold denial, and two completed 50-gold trips. A follow-up proved that saved
-auto-property values could retain stale map settings; the current candidate
-moves presentation constants into executable code and awaits a 1:1 visual
-check.
+auto-property values could retain stale map settings; presentation constants
+now live in executable code, and the corrected 1:1 map presentation is
+live-proven.
 
 Carriage parchment work lives in
-[`modules/carriage-parchment`](modules/carriage-parchment). The existing
-flat CFTO service remains the sole availability, fare, payment, and travel
-authority. The adapter draws all 28 native CFTO destinations with fare-only
-labels and returns the stable selection to `DNT_TravelCoordinator.PurchaseFromOrigin`
-for revalidation. Its two
-scripts compile without warnings; the separate ESP/SEQ and both paid/free
-shared-voice INFO paths pass an independent xEdit audit. The map now distinguishes
+[`modules/carriage-parchment`](modules/carriage-parchment). The native flat
+catalogue owns the 28 destination IDs, direct-distance fare/hour quote, live
+availability check, and CFTO arrival-marker resolution. The adapter draws the
+available destinations with fare and approximate-hour labels, then returns the
+stable selection to `DNT_TravelCoordinator.PurchaseFromOrigin` for quote and
+marker revalidation, payment, and travel. Its two scripts compile without
+warnings; consolidated ESP/SEQ generation and both paid/free shared-voice INFO
+paths pass independent xEdit audits. The map now distinguishes
 nine verified destination-only stops from physical-driver, inn-request, and
 Hearthfire private-carriage return services. The ordinary destination dialogue
 is available only through the documented diagnostic compatibility global.
@@ -116,20 +118,18 @@ The five-pillar scope and reuse decisions are recorded in
 external dependency rather than enter a package.
 
 Dialogue hypotheses and their actual evidence level are tracked in
-[`docs/EVIDENCE_LEDGER.md`](docs/EVIDENCE_LEDGER.md). Commit `ed004f2` is the
-rollback checkpoint for the fully voiced three-node build. Commit `4dfb646`
-is the previous live-proven faculty-access checkpoint. The Solitude, Windhelm,
-and Markarth spokes are live-proven in the six-node checkpoint; Dawnstar is
-now live-proven and Morthal's replacement arrival is the current candidate.
+[`docs/EVIDENCE_LEDGER.md`](docs/EVIDENCE_LEDGER.md). That ledger retains the
+historical checkpoints; the consolidated release now includes all seven
+live-proven College spokes and the corrected Morthal arrival.
 
 ## Implementation status
 
-The carriage beta now contains a flat, reproducible CFTO manifest; 28 direct
-destinations; nine origin services; CFTO local/standard/extra fare lookup;
-Hearthfire destination gates; direct arrival-marker travel; and the parchment
-picker. No graph runtime, candidate paths, hazard sensors, generated hour
-globals, or route-derived prices enter the release package or repository
-product code.
+The carriage beta now contains a flat, reproducible 28-destination CFTO
+manifest; nine physical-driver origin services; seven WCI inn origins;
+configurable direct-distance fares and approximate hours; Hearthfire destination
+gates; direct arrival-marker travel; and the parchment picker. No graph runtime,
+candidate paths, hazard sensors, generated globals, or route-derived prices
+enter the release package or repository product code.
 
 ## Developer quick start
 

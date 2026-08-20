@@ -57,7 +57,7 @@ Papyrus index table.
 Map artwork remains external and is selected by provider configuration. The
 release includes project-owned/edited ferry markers plus Skyrim-derived and
 open-permission NORDIC UI symbols documented in `docs/ASSET_POLICY.md` and
-`docs/THIRD_PARTY_ASSETS.md`.
+`THIRD_PARTY_NOTICES.txt`.
 
 Runtime dependencies are SKSE, Address Library, Menu Framework, and the game
 runtime pinned by the native build. JContainers is not required.
@@ -68,8 +68,11 @@ runtime pinned by the native build. JContainers is not required.
 requires a game restart. It controls the carriage distance coefficients,
 minimum/rounding step, the flat College fare, optional local/regional/extra
 ferry overrides, and whether carriage-hour estimates are shown and marked as
-approximate. Ferry overrides feed both the map and the payment transaction.
-With no override, ferries follow CFTO's live fare globals by default.
+approximate. The public carriage defaults are `600.0` gold per normalized map
+unit, a `50`-gold minimum, and `50`-gold rounding; the resulting physical-driver
+fare envelope is 50–500 gold. Ferry overrides feed both the map and the payment
+transaction. With no override, ferries follow CFTO's live fare globals by
+default.
 
 The optional Baan Malur add-on is intentionally excluded: its external quest
 owns the fixed 30-gold transaction, so configuring only the displayed price

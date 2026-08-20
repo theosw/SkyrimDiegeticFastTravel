@@ -134,9 +134,9 @@ voice-asset audits pass. The monitored 2026-07-31 retest confirmed Ancano had no
 option, both new round trips completed with matching voices, both arrival
 markers were usable, and the Whiterun regression completed. Papyrus recorded
 five starts and five completions. Wuunferth's line was slightly cut off by the
-former one-second travel delay. The current candidate reserves 1.5 seconds for
-dialogue, then plays the payment sound with `PlayAndWait`, so neither audio cue
-masks or clips the other; further timing polish remains live-test gated.
+former one-second travel delay. The later sequential 1.5-second dialogue and
+`PlayAndWait` payment contract described below resolved that timing class and
+is live-proven.
 
 An initial `9B4545B8...` gameplay pass proved all five requested teleports but
 also allowed Ancano to select an identical court-wizard root and produced wrong

@@ -14,8 +14,9 @@ verifies it without launching Skyrim.
 - Carriage and Ferry Travel Overhaul - Fixes and Winterhold `3.0.0.0`
   (Nexus 40651), installed after the base mod; this supplies the pinned
   `CFTO.esp` master and record layout
-- RUSTIC MAPS `2.0.0.0` for the boat/carriage `battlemap01.dds`
-- Skyrim Paper Map by Caro Tuts for FWMF `1.72.0.0` for the wizard
+- RUSTIC MAPS `2.0.0.0` for boat-provider physical map textures, including
+  `battlemap01.dds`
+- Skyrim Paper Map by Caro Tuts for FWMF `1.72.0.0` for the wizard and carriage
   `textures/terrain/tamriel/skyrim.dds`
 - `DiegeticTravel.esp` as the consolidated ESL-flagged travel authority
 

@@ -1,7 +1,8 @@
 DNT Parchment Picker - development spike
 
-This payload contains no background map artwork. The College provider references the loose
-Skyrim Paper Map by Caro Tuts for FWMF texture already included in LoreRim:
+This payload contains no background map artwork. The College and carriage
+providers reference the separately installed Skyrim Paper Map by Caro Tuts for
+FWMF texture:
 
   Data/textures/terrain/tamriel/skyrim.dds
 
@@ -9,9 +10,8 @@ It displays the illustration crop (0.088379,0.187012)-(0.932129,0.783691) of
 that 8192-square texture at aspect 1.414075. If the file is
 absent, the picker shows a diagnostic fallback while keeping destination
 selection available. The core parchment flow has passed its first gameplay
-test. If the new dialogue prompt is missing on an existing save, save and
-reload once with this adapter installed. The existing dialogue destination
-menu remains an available fallback during development.
+test. The old dialogue destination menu is retained only behind the default-off
+diagnostic compatibility global.
 
 The current revision hides vanilla, TrueHUD, and common LoreRim widget movies
 while the parchment is open, restores each movie's previous visibility and
