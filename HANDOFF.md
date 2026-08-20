@@ -20,8 +20,26 @@ Updated: 2026-08-20
 - Core tests cover the fallback contract, calibration anchors, bounds, and
   transformed hitbox separation. Dependency and picker audits enforce the
   optional classification, identical formal profiles, archive bridge, and
-  renderer behavior. The full offline suite passes; live preferred/fallback
-  visual verification is still required for the release candidate.
+  renderer behavior. The full offline suite passes.
+- Runtime commit `518e90f` implements the archive bridge and calibrated formal
+  fallback; documentation commit `e27b28a` makes RUSTIC MAPS and Caro's chart
+  recommendations throughout the installer and Nexus copy.
+- Candidate identity: `0.1.0-beta-20260820T225249Z`. Archive SHA-256: main
+  `D29FB8DE6873261FE39D5D9785CC4E371767EEFFB6387E8876CEE2F0E11989CE`;
+  Baan Malur add-on
+  `39B495E017569D0D56494C8A6AC7BC26ED281B94DE68892439C504C81BE88675`;
+  LoreRim BCD coexistence
+  `D152E9BE570658146BEABF497C8B2523C2505B069C18B07C5E2060F1DAAC3FB1`.
+- All three hash-verified packages are active as new timestamped mods in
+  `UltraDiegeticTravel`; the `174647Z` set is retained but disabled. The
+  consolidated and timestamped-profile preflights pass. `plugins.txt` remains
+  byte-for-byte unchanged at SHA-256
+  `2D45918D7155137A26AFEB5685E8457A2F6E11C9A159F7598734F87355588D98`:
+  the complete BCD/WCI/CFTO chain stays enabled and both it and the three DNT
+  plugins retain their prior order. Rollback profile:
+  `D:\Lorerim\profiles\UltraDiegeticTravel\modlist.txt.pre-0.1.0-beta-20260820T225249Z.bak`.
+- The remaining release gate is live preferred/fallback visual verification.
+  Do not move the annotated beta tag until that test passes.
 
 ## 2026-08-16 selection-ring web-vector checkpoint
 
