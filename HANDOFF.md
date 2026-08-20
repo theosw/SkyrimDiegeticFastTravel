@@ -1354,3 +1354,38 @@ stable artifact checks.
   backup is `build/profile-backup-20260819-194957-UltraDiegeticTravel`. The
   remaining release gate is a new-game smoke test of the exact candidate;
   create the final release tag only after it passes.
+
+## 2026-08-19 Lake Honrich fare-label beta refresh
+
+- The Lake Honrich picker had no explicit payment-label position, so the native
+  renderer used its generic lower-left fallback. The provider now uses the
+  north-coast route's exact authored position, `(0.647846, 0.899624)`, in both
+  its Papyrus runtime setup and `config/network.json`.
+- `Audit-ParchmentPicker.ps1` now requires exactly one explicit payment-label
+  position for each of the four built-in boat networks, proves runtime/JSON
+  parity, and additionally requires Lake Honrich to match the north-coast
+  position. The corrected Lake Honrich script compiles with zero warnings.
+- The repository-scope manifest now classifies the Baan Malur voice audit,
+  release-identity helper, and LoreRim BCD compatibility build/inventory tools
+  added during the prior beta freeze. All 133 tracked tool files are accounted
+  for again. Commits `4fa73d0` and `f043c93` contain these two fixes.
+- Full offline checks, native Release build, 2/2 CTest, all Papyrus compiles,
+  headless xEdit generation/audits, voice audits, and all three package audits
+  pass. The consolidated ESP SHA-256 is
+  `37C302C50CE7C24208032F39B166AE48B970D06165D573C8C93806FF3008F0B0`.
+- Candidate identity: `0.1.0-beta-20260820T015340Z`. Archive SHA-256: main
+  `22BC5DE2BC357AD05532FE4339F1CDDAC1EC69674892BB77F3B3DAE54DCC533E`;
+  Baan Malur add-on
+  `5306843FBD1B11E1FD4CFC0CD7B23EE1388D86DF1AEAE073AB0F6A1B0CB20279`;
+  LoreRim BCD compatibility
+  `DB0A329B712522783888D8EF38FF3212999CCA0CA65DC5122F27FDDCBF3C95A5`.
+- All three artifacts are deployed as new timestamped mods in
+  `UltraDiegeticTravel`. The prior candidate remains installed but disabled,
+  the full BCD stack remains enabled, and `plugins.txt` is byte-for-byte
+  unchanged. The recoverable profile backup is
+  `D:\Lorerim\profiles\UltraDiegeticTravel\modlist.txt.pre-0.1.0-beta-20260820T015340Z.bak`.
+  The no-launch consolidated-profile preflight passes.
+- Remaining targeted gameplay gate: on a fresh/disposable game, open the Lake
+  Honrich parchment at Ivarstead, select Heartwood Mill, and confirm the route
+  caption appears at the same lower-map anchor as the north-coast route before
+  completing the trip.
