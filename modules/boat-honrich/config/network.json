@@ -12,6 +12,14 @@
     "selection_ring_scale": 2.0,
     "asset_policy": "base map is reference-only; route artwork is deferred until after beta"
   },
+  "ui_elements": [
+    {
+      "id": "fare_label",
+      "name": "Payment label",
+      "sample": "Ivarstead to Heartwood Mill    30 gold",
+      "map_position": [0.647846, 0.899624]
+    }
+  ],
   "stops": [
     {
       "id": "riften",

@@ -88,6 +88,7 @@ EndFunction
 
 Bool Function AddLaneDestinations()
     Bool AddedAll = DNT_ParchmentNative.SetSourceLabel(ActiveRequest, GetSourceLabel(ActiveSourceId))
+    AddedAll = DNT_ParchmentNative.SetPaymentLabelPosition(ActiveRequest, 0.647846, 0.899624) && AddedAll
     If !AddedAll
         Return False
     EndIf

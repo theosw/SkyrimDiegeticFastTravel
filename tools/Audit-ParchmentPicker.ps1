@@ -146,6 +146,64 @@ for ($index = 0; $index -lt $carriageStops.Count; $index += 1) {
     }
 }
 
+$boatProviderContracts = @(
+    @{
+        Name = "Lake Honrich"
+        Network = "modules\boat-honrich\config\network.json"
+        Picker = "modules\boat-honrich\mod\Scripts\Source\DNT_BoatParchmentPicker.psc"
+    },
+    @{
+        Name = "Lake Ilinalta"
+        Network = "modules\boat-ilinalta\config\network.json"
+        Picker = "modules\boat-ilinalta\mod\Scripts\Source\DNT_IlinaltaBoatParchmentPicker.psc"
+    },
+    @{
+        Name = "North coast"
+        Network = "modules\boat-north-coast\config\network.json"
+        Picker = "modules\boat-north-coast\mod\Scripts\Source\DNT_NorthCoastBoatParchmentPicker.psc"
+    },
+    @{
+        Name = "Solstheim"
+        Network = "modules\boat-solstheim\config\network.json"
+        Picker = "modules\boat-solstheim\mod\Scripts\Source\DNT_SolstheimBoatParchmentPicker.psc"
+    }
+)
+$boatPaymentPositions = @{}
+foreach ($contract in $boatProviderContracts) {
+    $networkPath = Join-Path $projectRoot $contract.Network
+    $pickerPath = Join-Path $projectRoot $contract.Picker
+    $network = Get-Content -LiteralPath $networkPath -Raw | ConvertFrom-Json
+    $fareLabels = @($network.ui_elements | Where-Object { $_.id -eq "fare_label" })
+    if ($fareLabels.Count -ne 1 -or @($fareLabels[0].map_position).Count -ne 2) {
+        throw "$($contract.Name) authoring data must define exactly one two-coordinate fare_label."
+    }
+
+    $picker = Get-Content -LiteralPath $pickerPath -Raw
+    $positionMatches = [regex]::Matches(
+        $picker,
+        'SetPaymentLabelPosition\(\s*ActiveRequest,\s*([0-9.]+),\s*([0-9.]+)\s*\)')
+    if ($positionMatches.Count -ne 1) {
+        throw "$($contract.Name) runtime must set exactly one explicit payment-label position."
+    }
+
+    $runtimeX = [double]::Parse($positionMatches[0].Groups[1].Value, [Globalization.CultureInfo]::InvariantCulture)
+    $runtimeY = [double]::Parse($positionMatches[0].Groups[2].Value, [Globalization.CultureInfo]::InvariantCulture)
+    $authoringX = [double]$fareLabels[0].map_position[0]
+    $authoringY = [double]$fareLabels[0].map_position[1]
+    if ([Math]::Abs($runtimeX - $authoringX) -gt 0.0000005 -or
+        [Math]::Abs($runtimeY - $authoringY) -gt 0.0000005) {
+        throw "$($contract.Name) runtime/authoring payment-label positions differ."
+    }
+    $boatPaymentPositions[$contract.Name] = @($authoringX, $authoringY)
+}
+
+$honrichPaymentPosition = $boatPaymentPositions["Lake Honrich"]
+$northCoastPaymentPosition = $boatPaymentPositions["North coast"]
+if ([Math]::Abs($honrichPaymentPosition[0] - $northCoastPaymentPosition[0]) -gt 0.0000005 -or
+    [Math]::Abs($honrichPaymentPosition[1] - $northCoastPaymentPosition[1]) -gt 0.0000005) {
+    throw "Lake Honrich payment-label position must match the north-coast route."
+}
+
 $forbiddenAssetExtensions = @(".png", ".jpg", ".jpeg", ".dds", ".svg", ".wav", ".xwm", ".fuz")
 $shippedAssets = Get-ChildItem -LiteralPath $modRoot -Recurse -File | Where-Object {
     $forbiddenAssetExtensions -contains $_.Extension.ToLowerInvariant()
