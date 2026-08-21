@@ -1,8 +1,8 @@
 # Diegetic Travel handoff
 
-Updated: 2026-08-20
+Updated: 2026-08-21
 
-## 2026-08-20 optional map-art fallback checkpoint
+## 2026-08-21 optional map-art fallback proof
 
 - RUSTIC MAPS and Skyrim Paper Map by Caro Tuts for FWMF are now visual
   recommendations rather than requirements for the main file. Their exact
@@ -23,23 +23,37 @@ Updated: 2026-08-20
   renderer behavior. The full offline suite passes.
 - Runtime commit `518e90f` implements the archive bridge and calibrated formal
   fallback; documentation commit `e27b28a` makes RUSTIC MAPS and Caro's chart
-  recommendations throughout the installer and Nexus copy.
-- Candidate identity: `0.1.0-beta-20260820T225249Z`. Archive SHA-256: main
-  `D29FB8DE6873261FE39D5D9785CC4E371767EEFFB6387E8876CEE2F0E11989CE`;
+  recommendations throughout the installer and Nexus copy. Commit `8870497`
+  adds the explicit `PreferFormalMapArtwork` setting, and `387f177` publishes
+  that choice in the release documentation.
+- Candidate identity: `0.1.0-beta-20260820T233726Z`. Archive SHA-256: main
+  `06A139A65372AE801D9945DB9CD73923BF13A1F0380FE7EFFD961C0165EC68A9`;
   Baan Malur add-on
   `39B495E017569D0D56494C8A6AC7BC26ED281B94DE68892439C504C81BE88675`;
   LoreRim BCD coexistence
-  `D152E9BE570658146BEABF497C8B2523C2505B069C18B07C5E2060F1DAAC3FB1`.
-- All three hash-verified packages are active as new timestamped mods in
-  `UltraDiegeticTravel`; the `174647Z` set is retained but disabled. The
-  consolidated and timestamped-profile preflights pass. `plugins.txt` remains
-  byte-for-byte unchanged at SHA-256
-  `2D45918D7155137A26AFEB5685E8457A2F6E11C9A159F7598734F87355588D98`:
-  the complete BCD/WCI/CFTO chain stays enabled and both it and the three DNT
-  plugins retain their prior order. Rollback profile:
-  `D:\Lorerim\profiles\UltraDiegeticTravel\modlist.txt.pre-0.1.0-beta-20260820T225249Z.bak`.
-- The remaining release gate is live preferred/fallback visual verification.
-  Do not move the annotated beta tag until that test passes.
+  `3846D799164344B3707C7464CADF82F7BEDD4ACF8E1043DBCE771C7F075FA71F`.
+- The fallback path is **Proven** in `UltraDiegeticTravel`. With
+  `PreferFormalMapArtwork=false` and the preferred loose artwork hidden, the
+  native log recorded the setting and archive materialization for Whiterun's
+  carriage sheet, the Dawnstar north-coast ferry sheet, Raven Rock's Solstheim
+  sheet, and the College sheet. The College trip to Markarth and ferry trip to
+  Windhelm completed with the correct 250- and 50-gold payments; the other
+  sheets cancelled cleanly. First-frame times were 133.954, 41.222, 24.115,
+  and 25.533 ms respectively. The separate Baan Malur sheet continued to use
+  its external FWMF artwork and opened in 56.560 ms. Every menu restored the
+  HUD, and the native log contained no warning, error, missing, or rejection.
+- All three `233726Z` packages are active in `UltraDiegeticTravel`; the
+  temporary fallback-test override and older candidate set are disabled.
+  RUSTIC's DDS files and `PreferFormalMapArtwork=true` are restored. Profile
+  validation passes, and comparison of normalized plugin entries proves that
+  the full BCD/WCI/CFTO chain and all DNT plugins retain their validated order;
+  MO2's current `plugins.txt` SHA-256 is
+  `61F6EFEF2BA7893A577B83432340658C63D19EA47199F94B95E71E9E811F750E`.
+  Restore rollback:
+  `D:\Lorerim\profiles\UltraDiegeticTravel\modlist.txt.pre-fallback-restore-20260821T023315Z.bak`.
+- The only remaining exact-candidate release gate is one normal preferred-art
+  College or carriage smoke after restoration. Do not move the annotated beta
+  tag until that passes.
 
 ## 2026-08-16 selection-ring web-vector checkpoint
 

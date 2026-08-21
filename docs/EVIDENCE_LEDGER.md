@@ -1,6 +1,6 @@
 # Diegetic Travel evidence ledger
 
-Updated: 2026-08-02
+Updated: 2026-08-21
 
 This ledger separates ideas that look valid in tooling from behavior that has
 actually been demonstrated in Skyrim. Update an entry whenever a test changes
@@ -16,6 +16,42 @@ monitored gameplay test on the `UltraDiegeticTravel` profile.
   evidence.
 - **Rejected:** contradicted by a live test or by the documented data contract.
 - **Deferred:** intentionally outside the current phase.
+
+## 2026-08-21: archived artwork fallback and preference proof
+
+**Proven:** candidate `0.1.0-beta-20260820T233726Z` loaded
+`PreferFormalMapArtwork=false` and successfully exercised the native archive
+bridge in the monitored `UltraDiegeticTravel` profile. With the preferred loose
+artwork hidden, the native runtime materialized Bethesda's archived
+`battlemap01.dds` for Whiterun's carriage sheet, the Dawnstar north-coast ferry
+sheet, and the College sheet, plus archived `dlc2mapsolstheim02.dds` for the
+Raven Rock Solstheim sheet. The transformed College and carriage layouts, ferry
+layout, selection, cancellation, payment, and travel paths all behaved as
+designed. The College-to-Markarth trip charged 250 gold and completed; the
+Dawnstar-to-Windhelm ferry trip charged 50 gold and completed. Whiterun and
+Solstheim cancellation via Escape restored the HUD cleanly.
+
+First-frame times were 133.954 ms for the first Whiterun archive/cache open,
+41.222 ms for the north-coast ferry, 24.115 ms for Solstheim, and 25.533 ms for
+the College. Baan Malur remained isolated from the fallback system: its sheet
+used its external FWMF `solstheim.dds`, opened in 56.560 ms, and cancelled
+cleanly. The native log contained no warning, error, missing, or rejection
+entry during the matrix.
+
+The exact main archive is SHA-256
+`06A139A65372AE801D9945DB9CD73923BF13A1F0380FE7EFFD961C0165EC68A9`;
+the Baan Malur add-on is
+`39B495E017569D0D56494C8A6AC7BC26ED281B94DE68892439C504C81BE88675`;
+and LoreRim BCD coexistence is
+`3846D799164344B3707C7464CADF82F7BEDD4ACF8E1043DBCE771C7F075FA71F`.
+Package/install comparison passed 74/74 main files, 9/9 add-on files, and 2/2
+compatibility files. The `233726Z` set remains active, while the test override
+and older candidate are disabled. RUSTIC's DDS files and
+`PreferFormalMapArtwork=true` have been restored. The functional plugin list
+and order are unchanged after MO2 normalized its generated header and line
+endings. The only remaining exact-candidate gate is one normal preferred-art
+College or carriage smoke; the existing `v0.1.0-beta` tag must not be moved
+before that check passes.
 
 ## Current decision
 
