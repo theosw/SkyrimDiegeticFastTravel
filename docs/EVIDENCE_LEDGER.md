@@ -48,6 +48,13 @@ source/free labels, one completed trip without a gold deduction, and clean
 acceptance/purchase/completion logs. Until then, the earlier `233726Z` release
 remains the fully proven baseline.
 
+The complete `170220Z` set is now active in `UltraDiegeticTravel`. Installed
+inventories compare exactly to the audited package roots at 74/74, 9/9, and
+2/2 files. The previous set remains installed but disabled, the BCD/WCI/CFTO
+chain remains enabled, the functional plugin list retains SHA-256
+`61F6EFEF2BA7893A577B83432340658C63D19EA47199F94B95E71E9E811F750E`, and the
+non-launching consolidated-profile preflight passes.
+
 ## 2026-08-21: archived artwork fallback and preference proof
 
 **Proven:** candidate `0.1.0-beta-20260820T233726Z` loaded

@@ -29,6 +29,14 @@ Updated: 2026-08-21
   `DEA28808CE671CE81CFFFF098ADB73D2A611EABFBAF148DD5DF7B7A8B1777094`;
   LoreRim BCD coexistence
   `F677C11810206AF9B230FCDEAFC664CAABEFF00CA843F8FA4385010AF764CFDC`.
+- All three `170220Z` packages are active in `UltraDiegeticTravel`; installed
+  comparisons pass 74/74 main files, 9/9 Baan Malur files, and 2/2 BCD
+  coexistence files. The proven `233726Z` set remains installed but disabled,
+  the complete BCD/WCI/CFTO chain remains enabled, and `plugins.txt` retains
+  its proven SHA-256
+  `61F6EFEF2BA7893A577B83432340658C63D19EA47199F94B95E71E9E811F750E`.
+  The non-launching consolidated-profile preflight passes. Restore rollback:
+  `D:\Lorerim\profiles\UltraDiegeticTravel\modlist.txt.pre-0.1.0-beta-20260821T170220Z-20260821T171704Z.bak`.
 - Evidence status is **Candidate**, not Proven. The remaining live gate is to
   open the carriage sheet from Gunjar, Engar, and Markus; confirm the correct
   source label and free labels; complete at least one trip with no gold
