@@ -51,9 +51,18 @@ Updated: 2026-08-21
   `61F6EFEF2BA7893A577B83432340658C63D19EA47199F94B95E71E9E811F750E`.
   Restore rollback:
   `D:\Lorerim\profiles\UltraDiegeticTravel\modlist.txt.pre-fallback-restore-20260821T023315Z.bak`.
-- The only remaining exact-candidate release gate is one normal preferred-art
-  College or carriage smoke after restoration. Do not move the annotated beta
-  tag until that passes.
+- The restored preferred-art release gate is **Proven**. With
+  `PreferFormalMapArtwork=true`, the exact candidate opened the preferred
+  north-coast ferry sheet and completed Dawnstar-to-Winterhold for 50 gold,
+  then opened the preferred College sheet and completed College-to-Morthal for
+  250 gold. First-frame times were 71.380 and 193.473 ms. Both menus restored
+  all 12 HUD layers, the native log recorded 107 info entries with zero
+  warnings, errors, or critical entries, and the Papyrus log recorded both
+  travel completions. Nearby Papyrus errors resolve to unrelated LoreRim
+  throwing-knife, Falmer-tracking, predator, critter, and ice-wraith scripts.
+  The candidate is approved for the timestamped annotated tag
+  `v0.1.0-beta-20260820T233726Z`; retain the earlier `v0.1.0-beta` tag as
+  immutable history.
 
 ## 2026-08-16 selection-ring web-vector checkpoint
 

@@ -49,9 +49,21 @@ compatibility files. The `233726Z` set remains active, while the test override
 and older candidate are disabled. RUSTIC's DDS files and
 `PreferFormalMapArtwork=true` have been restored. The functional plugin list
 and order are unchanged after MO2 normalized its generated header and line
-endings. The only remaining exact-candidate gate is one normal preferred-art
-College or carriage smoke; the existing `v0.1.0-beta` tag must not be moved
-before that check passes.
+endings.
+
+**Proven:** the final restored-preference smoke loaded
+`PreferFormalMapArtwork=true`, opened the north-coast ferry sheet from the
+preferred `battlemap01.dds`, and completed Dawnstar-to-Winterhold for 50 gold.
+It then opened the College sheet from the preferred `skyrim.dds` and completed
+College-to-Morthal for 250 gold. First-frame times were 71.380 and 193.473 ms;
+both requests restored all 12 HUD layers. The native picker log contains 107
+info entries and zero warnings, errors, or critical entries. Papyrus records
+both travel completions; errors adjacent to the travel events identify
+unrelated LoreRim throwing-knife, Falmer-tracking, predator, critter, and
+ice-wraith scripts rather than DNT. The exact candidate has now passed both
+artwork preferences and is approved for the timestamped annotated tag
+`v0.1.0-beta-20260820T233726Z`. Preserve the earlier `v0.1.0-beta` tag as
+immutable history.
 
 ## Current decision
 
