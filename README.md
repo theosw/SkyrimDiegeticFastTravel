@@ -136,6 +136,8 @@ paths pass independent xEdit audits. The map now distinguishes
 nine verified destination-only stops from physical-driver, inn-request, and
 Hearthfire private-carriage return services. The ordinary destination dialogue
 is available only through the documented diagnostic compatibility global.
+Gunjar, Engar, and Markus resolve to the existing Lakeview, Windstad, and
+Heljarchen source records and retain CFTO's free-carriage behavior.
 
 The five-pillar scope and reuse decisions are recorded in
 [`docs/PILLAR_RESEARCH.md`](docs/PILLAR_RESEARCH.md), and
@@ -151,10 +153,11 @@ live-proven College spokes and the corrected Morthal arrival.
 
 The carriage beta now contains a flat, reproducible 28-destination CFTO
 manifest; nine physical-driver origin services; seven WCI inn origins;
-configurable direct-distance fares and approximate hours; Hearthfire destination
-gates; direct arrival-marker travel; and the parchment picker. No graph runtime,
-candidate paths, hazard sensors, generated globals, or route-derived prices
-enter the release package or repository product code.
+three conditional private Hearthfire origins; configurable direct-distance
+fares and approximate hours; Hearthfire destination gates; direct
+arrival-marker travel; and the parchment picker. No graph runtime, candidate
+paths, hazard sensors, generated globals, or route-derived prices enter the
+release package or repository product code.
 
 ## Developer quick start
 

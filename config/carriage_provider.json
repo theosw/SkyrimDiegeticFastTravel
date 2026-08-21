@@ -15,5 +15,10 @@
     "whiterun": { "driver": "CFTO.esp|0x0BBF6D" },
     "windhelm": { "driver": "CFTO.esp|0x0BBF6E" },
     "winterhold": { "driver": "CFTO.esp|0x1C355D" }
+  },
+  "conditional_private_origins": {
+    "lakeview_manor": { "driver_base": "CFTO.esp|0x0CB329" },
+    "winstad_manor": { "driver_base": "CFTO.esp|0x0CB32A" },
+    "heljarchen_hall": { "driver_base": "CFTO.esp|0x0CB32B" }
   }
 }

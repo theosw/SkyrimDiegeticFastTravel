@@ -120,6 +120,23 @@ if ($travelCatalogLocations -notcontains $embassyRow) {
 
 $carriageNetworkPath = Join-Path $projectRoot "modules\carriage-parchment\config\network.json"
 $carriageNetwork = Get-Content -LiteralPath $carriageNetworkPath -Raw | ConvertFrom-Json
+$carriageProviderPath = Join-Path $projectRoot "config\carriage_provider.json"
+$carriageProvider = Get-Content -LiteralPath $carriageProviderPath -Raw | ConvertFrom-Json
+$expectedPrivateOrigins = [ordered]@{
+    lakeview_manor = "CFTO.esp|0x0CB329"
+    winstad_manor = "CFTO.esp|0x0CB32A"
+    heljarchen_hall = "CFTO.esp|0x0CB32B"
+}
+$privateOriginProperties = @($carriageProvider.conditional_private_origins.PSObject.Properties)
+if ($privateOriginProperties.Count -ne $expectedPrivateOrigins.Count) {
+    throw "Carriage provider must define exactly three conditional private origins."
+}
+foreach ($entry in $expectedPrivateOrigins.GetEnumerator()) {
+    $configured = $carriageProvider.conditional_private_origins.($entry.Key)
+    if ($null -eq $configured -or $configured.driver_base -ne $entry.Value) {
+        throw "Private carriage origin mapping differs for $($entry.Key)."
+    }
+}
 $carriageStops = @($carriageNetwork.stops)
 if ($carriageStops.Count -ne $travelCatalogLocations.Count) {
     throw "Carriage authoring/runtime stop counts differ: JSON=$($carriageStops.Count) TSV=$($travelCatalogLocations.Count)"
@@ -252,6 +269,30 @@ $settingsSource = Get-Content -Raw (Join-Path $moduleRoot "src\PricingConfig.cpp
 $runtimeSource = Get-Content -Raw (Join-Path $moduleRoot "src\TravelRuntime.cpp")
 $pricingIni = Get-Content -Raw (Join-Path $modRoot "SKSE\Plugins\DiegeticTravel.ini")
 $coordinatorScript = Get-Content -Raw (Join-Path $projectRoot "mod\Scripts\Source\DNT_TravelCoordinator.psc")
+$carriagePickerScript = Get-Content -Raw (Join-Path $projectRoot "modules\carriage-parchment\mod\Scripts\Source\DNT_CarriageParchmentPicker.psc")
+$privateOriginHex = [ordered]@{
+    lakeview_manor = "0x0CB329"
+    winstad_manor = "0x0CB32A"
+    heljarchen_hall = "0x0CB32B"
+}
+foreach ($entry in $privateOriginHex.GetEnumerator()) {
+    $mappingPattern = 'Game\.GetFormFromFile\(' + [regex]::Escape($entry.Value) +
+        ',\s*"CFTO\.esp"\)[\s\S]{0,100}?Return\s+"' + [regex]::Escape($entry.Key) + '"'
+    if ($coordinatorScript -notmatch $mappingPattern) {
+        throw "Coordinator is missing the audited private carriage mapping for $($entry.Key)."
+    }
+}
+if ($coordinatorScript -notmatch 'Function\s+GetPrivateCarriageOrigin\s*\(Actor\s+speaker\)' -or
+    $coordinatorScript -notmatch [regex]::Escape('!speaker || !IsFreeRideForSpeaker(speaker)')) {
+    throw "Private carriage lookup must require an exact free-faction speaker."
+}
+$privateLookupIndex = $carriagePickerScript.IndexOf("Coordinator.GetPrivateCarriageOrigin(Speaker)", [StringComparison]::Ordinal)
+$wciLookupIndex = $carriagePickerScript.IndexOf("Coordinator.GetWciInnOrigin(Speaker)", [StringComparison]::Ordinal)
+if ($privateLookupIndex -lt 0 -or $wciLookupIndex -lt 0 -or $privateLookupIndex -gt $wciLookupIndex -or
+    $carriagePickerScript -notmatch [regex]::Escape('CARRIAGE_PRIVATE_ORIGIN_ACCEPTED') -or
+    $carriagePickerScript -notmatch 'FreeRide\s*=\s*True') {
+    throw "Carriage picker must accept private free drivers before the WCI fallback."
+}
 foreach ($requiredToken in @("BuildWizardRequest", "ResolveCarriageDestinationMarker", "GetWizardFare", "ResolveFerryFare", "RequestDialogueClose", "BeginRequest", "SetSourceLabel", "SetPaymentLabelPosition", "SetMarkerTextures", "SetOriginMarkerTexture", "SetSelectionRingTexture", "SetRouteOrigin", "AddRouteLandmark", "AddDestination", "SetDestinationMarkerScale", "SetDestinationSelectionRingStyle", "SetDestinationSelectionRingTexture", "Show", "Cancel", "DNT_ParchmentResult")) {
     if ($nativeScript -notmatch [regex]::Escape($requiredToken) -and
         $providerScript -notmatch [regex]::Escape($requiredToken)) {

@@ -17,6 +17,37 @@ monitored gameplay test on the `UltraDiegeticTravel` profile.
 - **Rejected:** contradicted by a live test or by the documented data contract.
 - **Deferred:** intentionally outside the current phase.
 
+## 2026-08-21: Hearthfire private-carriage parity
+
+**Supported:** read-only inspection of LoreRim's installed `CFTO.esp` proves
+that Gunjar (`0x0CB329`), Engar (`0x0CB32A`), and Markus (`0x0CB32B`) are the
+distinct Lakeview, Windstad, and Heljarchen carriage-driver bases and that all
+three belong to `KmodCarriageFreeFaction` (`0x0DA68B`). CFTO's free dialogue
+root supplies the same shared voiced request used by DNT. The rejected behavior
+was downstream origin resolution: DNT played that response and then denied the
+speaker because it knew only public physical drivers and WCI actors.
+
+**Candidate:** the coordinator now requires the existing free-faction check
+and maps those exact three bases to their existing quest-locked catalogue
+origins. The picker checks this private path before WCI and passes a free-ride
+quote through the unchanged purchase/travel service. No new forms, quests,
+properties, dialogue, voice assets, or Papyrus scripts are introduced. Native
+tests cover the three source IDs, quest-locked classification, and zero-fare
+quotes; source/package audits cover the lookup order; and xEdit independently
+proves the installed driver records and faction. The full offline release suite
+passes with the same `0xAA5` next-object boundary.
+
+The exact unproven candidate is `0.1.0-beta-20260821T170220Z`: main SHA-256
+`B7BAA7AF9078977CB7139AB86B584591786F1B2AD2FD636F8C8926DA1EEED22E`,
+Baan Malur add-on
+`DEA28808CE671CE81CFFFF098ADB73D2A611EABFBAF148DD5DF7B7A8B1777094`, and
+LoreRim BCD coexistence
+`F677C11810206AF9B230FCDEAFC664CAABEFF00CA843F8FA4385010AF764CFDC`.
+Promotion requires monitored map opens from all three personal drivers, correct
+source/free labels, one completed trip without a gold deduction, and clean
+acceptance/purchase/completion logs. Until then, the earlier `233726Z` release
+remains the fully proven baseline.
+
 ## 2026-08-21: archived artwork fallback and preference proof
 
 **Proven:** candidate `0.1.0-beta-20260820T233726Z` loaded

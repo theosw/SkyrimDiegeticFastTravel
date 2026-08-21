@@ -751,6 +751,53 @@ begin
   ReportLines.Add('PASS parchment_infos_ungated=7');
 end;
 
+function HasFaction(NpcRecord, FactionRecord: IInterface): Boolean;
+var
+  Factions, Entry, Candidate: IInterface;
+  i: Integer;
+begin
+  Result := False;
+  Factions := ElementByPath(NpcRecord, 'Factions');
+  if not Assigned(Factions) then
+    Exit;
+  for i := 0 to Pred(ElementCount(Factions)) do begin
+    Entry := ElementByIndex(Factions, i);
+    Candidate := LinksTo(ElementByPath(Entry, 'Faction'));
+    if Assigned(Candidate) and (FormID(Candidate) = FormID(FactionRecord)) then begin
+      Result := True;
+      Exit;
+    end;
+  end;
+end;
+
+procedure AssertPrivateCarriageDriver(
+  ObjectID: Cardinal;
+  const ExpectedEditorID: string;
+  FreeFaction: IInterface
+);
+var
+  Driver: IInterface;
+begin
+  Driver := RequireRecord(CftoFile, ObjectID, 'NPC_');
+  if GetElementEditValues(Driver, 'EDID') <> ExpectedEditorID then
+    raise Exception.Create('Private carriage driver identity differs for ' +
+      IntToHex(ObjectID, 6));
+  if not HasFaction(Driver, FreeFaction) then
+    raise Exception.Create(ExpectedEditorID +
+      ' is no longer a member of KmodCarriageFreeFaction');
+end;
+
+procedure AuditPrivateCarriageDrivers;
+var
+  FreeFaction: IInterface;
+begin
+  FreeFaction := RequireRecord(CftoFile, $0DA68B, 'FACT');
+  AssertPrivateCarriageDriver($0CB329, 'KmodCarriageDriverLakeview', FreeFaction);
+  AssertPrivateCarriageDriver($0CB32A, 'KmodCarriageDriverWindstad', FreeFaction);
+  AssertPrivateCarriageDriver($0CB32B, 'KmodCarriageDriverHeljarchen', FreeFaction);
+  ReportLines.Add('PASS private_carriage_drivers=3 free_faction=true');
+end;
+
 function Initialize: Integer;
 begin
   Result := 1;
@@ -780,6 +827,9 @@ begin
     CftoFile := FileByPluginName('CFTO.esp');
     if not Assigned(CftoFile) then
       raise Exception.Create('CFTO is not loaded');
+    AuditStage := 'private carriage drivers';
+    AuditPrivateCarriageDrivers;
+    AuditStage := 'legacy dialogue gate';
     AuditLegacyDialogueGate;
     ReportLines.SaveToFile(ReportPath);
     WriteTextFile(StatusPath, 'success');

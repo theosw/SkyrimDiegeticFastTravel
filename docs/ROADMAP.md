@@ -33,6 +33,9 @@ BCD wizard-adapter, and split-plugin experiments are preserved in
 - [ ] Confirm the new carriage envelope in game: representative 150-, 200-,
   and 400-gold labels, exact one-time payment, insufficient-funds denial, and a
   CFTO-designated free driver.
+- [ ] Open the sheet from Gunjar, Engar, and Markus; verify Lakeview, Windstad,
+  and Heljarchen source labels, free destination labels, and one completed trip
+  with no gold deduction or unresolved-origin log.
 - [ ] Recheck a physical carriage, a WCI summoned carriage, Thalmor Embassy,
   and one conditional Hearthfire or Helgen endpoint after the pricing change.
 - [ ] Verify that the LoreRim BCD coexistence file hides only the three competing

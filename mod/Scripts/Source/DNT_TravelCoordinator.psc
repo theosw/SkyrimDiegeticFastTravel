@@ -93,6 +93,27 @@ Bool Function IsFreeRideForSpeaker(Actor speaker)
     Return WhiterunService && WhiterunService.IsFreeRideForSpeaker(speaker)
 EndFunction
 
+String Function GetPrivateCarriageOrigin(Actor speaker)
+    If !speaker || !IsFreeRideForSpeaker(speaker)
+        Return ""
+    EndIf
+
+    ; CFTO places one distinct free-driver base at each Hearthfire home. Resolve
+    ; those stable bases at runtime so existing saves gain support without new
+    ; quest forms or serialized script properties.
+    Form speakerBase = speaker.GetBaseObject()
+    If speakerBase == Game.GetFormFromFile(0x0CB329, "CFTO.esp")
+        Return "lakeview_manor"
+    ElseIf speakerBase == Game.GetFormFromFile(0x0CB32A, "CFTO.esp")
+        Return "winstad_manor"
+    ElseIf speakerBase == Game.GetFormFromFile(0x0CB32B, "CFTO.esp")
+        Return "heljarchen_hall"
+    EndIf
+
+    Debug.Trace("[DNT] PRIVATE_CARRIAGE_ORIGIN_LOOKUP_FAILED speaker=" + speaker + " base=" + speakerBase, 1)
+    Return ""
+EndFunction
+
 Bool Function PurchaseFromOrigin(String destinationId, ObjectReference speakerRef, String sourceOriginId)
     If sourceOriginId == "" || !WhiterunService
         Debug.Trace("[DNT] PURCHASE_BLOCKED origin=" + sourceOriginId + " reason=shared_service", 2)

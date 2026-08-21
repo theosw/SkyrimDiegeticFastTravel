@@ -205,6 +205,22 @@ namespace
             Require(location != nullptr, std::string("WCI inn origin missing from shipped catalogue: ") + id);
             Require(location->name == expectedName, std::string("WCI inn origin has wrong source label: ") + id);
         }
+        const std::array privateOrigins{
+            std::pair{ "lakeview_manor", "Lakeview Manor" },
+            std::pair{ "winstad_manor", "Windstad Manor" },
+            std::pair{ "heljarchen_hall", "Heljarchen Hall" }
+        };
+        for (const auto& [id, expectedName] : privateOrigins) {
+            const auto* location = catalog.FindLocation(id);
+            Require(location != nullptr, std::string("private carriage origin missing: ") + id);
+            Require(location->name == expectedName, std::string("private carriage origin has wrong source label: ") + id);
+            Require(location->availability == DNT::Travel::Availability::kQuestLocked,
+                std::string("private carriage origin must retain its live Hearthfire gate: ") + id);
+            const auto quote = catalog.EstimateQuote(
+                "carriage", id, "riften", { DNT::Travel::TravelMode::kTimed, true });
+            Require(quote && quote->fare == 0,
+                std::string("private carriage origin must retain zero-fare quotes: ") + id);
+        }
         Require(catalog.EstimateQuote("carriage", "morthal", "falkreath").has_value(),
             "shipped catalogue must quote a representative route");
 

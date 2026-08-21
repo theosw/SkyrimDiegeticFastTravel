@@ -152,10 +152,12 @@ $originServiceSourcePath = Join-Path $package "Scripts\Source\DNT_OriginService.
 $nativePapyrusSourcePath = Join-Path $package "Scripts\Source\DNT_ParchmentNative.psc"
 $wizardPickerSourcePath = Join-Path $package "Scripts\Source\DNT_WizardParchmentPicker.psc"
 $coordinatorSourcePath = Join-Path $package "Scripts\Source\DNT_TravelCoordinator.psc"
+$carriagePickerSourcePath = Join-Path $package "Scripts\Source\DNT_CarriageParchmentPicker.psc"
 $originServiceSource = Get-Content -LiteralPath $originServiceSourcePath -Raw
 $nativePapyrusSource = Get-Content -LiteralPath $nativePapyrusSourcePath -Raw
 $wizardPickerSource = Get-Content -LiteralPath $wizardPickerSourcePath -Raw
 $coordinatorSource = Get-Content -LiteralPath $coordinatorSourcePath -Raw
+$carriagePickerSource = Get-Content -LiteralPath $carriagePickerSourcePath -Raw
 if ($originServiceSource -notmatch [regex]::Escape("DNT_ParchmentNative.ResolveCarriageDestinationMarker(destinationId)")) {
     throw "Packaged carriage purchase does not use the native catalogue marker resolver"
 }
@@ -166,6 +168,23 @@ if ($originServiceSource -match "Function\s+GetCarriageDestinationMarker" -or
 if ($coordinatorSource -match 'Bool\s+Function\s+Purchase\s*\(' -or
     $originServiceSource -match 'Bool\s+Function\s+(CommitDestination|PurchaseDestination)\s*\(') {
     throw "Packaged carriage runtime contains retired purchase wrappers"
+}
+$privateOriginHex = [ordered]@{
+    lakeview_manor = "0x0CB329"
+    winstad_manor = "0x0CB32A"
+    heljarchen_hall = "0x0CB32B"
+}
+foreach ($entry in $privateOriginHex.GetEnumerator()) {
+    $mappingPattern = 'Game\.GetFormFromFile\(' + [regex]::Escape($entry.Value) +
+        ',\s*"CFTO\.esp"\)[\s\S]{0,100}?Return\s+"' + [regex]::Escape($entry.Key) + '"'
+    if ($coordinatorSource -notmatch $mappingPattern) {
+        throw "Packaged coordinator is missing private carriage mapping: $($entry.Key)"
+    }
+}
+if ($coordinatorSource -notmatch [regex]::Escape('!speaker || !IsFreeRideForSpeaker(speaker)') -or
+    $carriagePickerSource -notmatch [regex]::Escape('Coordinator.GetPrivateCarriageOrigin(Speaker)') -or
+    $carriagePickerSource -notmatch [regex]::Escape('CARRIAGE_PRIVATE_ORIGIN_ACCEPTED')) {
+    throw "Packaged carriage runtime does not enforce the private free-driver path"
 }
 if ($nativePapyrusSource -notmatch [regex]::Escape("ObjectReference Function ResolveCarriageDestinationMarker(String DestinationId) Global Native")) {
     throw "Packaged native Papyrus contract is missing its ObjectReference marker resolver"

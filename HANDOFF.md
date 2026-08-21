@@ -2,6 +2,40 @@
 
 Updated: 2026-08-21
 
+## 2026-08-21 Hearthfire private-carriage parity candidate
+
+- Static inspection of the installed `CFTO.esp` identified its three personal
+  Hearthfire carriage-driver bases: Gunjar/Lakeview `0x0CB329`, Engar/Windstad
+  `0x0CB32A`, and Markus/Heljarchen `0x0CB32B`. All three are members of
+  `KmodCarriageFreeFaction` (`0x0DA68B`). DNT previously reused CFTO's voiced
+  free request but rejected these speakers after the line because only the nine
+  public physical drivers and WCI actors could resolve an origin.
+- The coordinator now resolves those exact CFTO bases to the existing
+  `lakeview_manor`, `winstad_manor`, and `heljarchen_hall` catalogue IDs after
+  the existing free-faction check. The picker accepts that path before its WCI
+  fallback and explicitly carries `FreeRide=True` into the native quote and
+  Papyrus purchase flow. This adds no forms, quests, properties, dialogue,
+  voice assets, or new scripts; existing saves receive the fix through the two
+  replaced PEX files.
+- The full offline release pipeline passes: 2/2 native tests, all Papyrus
+  compilers with zero errors/warnings, 28-stop carriage and seven-destination
+  wizard parity, release/plugin/package audits, and independent xEdit proof of
+  all three driver identities plus their free faction. The generated plugin is
+  still ESL-flagged, has 17 quests, retains next object ID `0xAA5`, and has
+  SHA-256 `37C302C50CE7C24208032F39B166AE48B970D06165D573C8C93806FF3008F0B0`.
+- Candidate identity: `0.1.0-beta-20260821T170220Z`. Archive SHA-256: main
+  `B7BAA7AF9078977CB7139AB86B584591786F1B2AD2FD636F8C8926DA1EEED22E`;
+  Baan Malur add-on
+  `DEA28808CE671CE81CFFFF098ADB73D2A611EABFBAF148DD5DF7B7A8B1777094`;
+  LoreRim BCD coexistence
+  `F677C11810206AF9B230FCDEAFC664CAABEFF00CA843F8FA4385010AF764CFDC`.
+- Evidence status is **Candidate**, not Proven. The remaining live gate is to
+  open the carriage sheet from Gunjar, Engar, and Markus; confirm the correct
+  source label and free labels; complete at least one trip with no gold
+  deduction; and verify `CARRIAGE_PRIVATE_ORIGIN_ACCEPTED`, a zero-fare
+  purchase, and normal travel completion in the logs. Keep the proven
+  `233726Z` candidate and its immutable tag until this succeeds.
+
 ## 2026-08-21 optional map-art fallback proof
 
 - RUSTIC MAPS and Skyrim Paper Map by Caro Tuts for FWMF are now visual
@@ -1520,11 +1554,9 @@ stable artifact checks.
   selection, controller B cancellation, exact single payments, normal timed
   travel, and complete 12-layer HUD restoration with no DNT error or crash.
   That evidence transfers to behavior but not the newly deployed price values.
-- Static follow-up found that CFTO's personal Hearthfire carriage operators are
-  correctly detected through `KmodCarriageFreeFaction`, but the picker currently
-  maps only the nine public physical drivers and WCI drivers to an origin. The
-  personal Lakeview/Windstad/Heljarchen operators therefore cannot reach the
-  zero-fare path yet. Do not claim or test personal-carriage return service until
-  those three origin mappings and their live gates are implemented.
+- Static follow-up found that CFTO's personal Hearthfire carriage operators
+  could not yet reach the zero-fare path in this historical candidate. The
+  `20260821T170220Z` checkpoint above supersedes that defect with exact private
+  driver mappings; its new path remains gameplay-pending.
 - The annotated `v0.1.0-beta` tag remains on `bd6d15c`; do not move it until the
   `174647Z` price labels and exact deductions pass an in-game smoke test.

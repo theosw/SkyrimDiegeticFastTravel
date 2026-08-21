@@ -1,6 +1,6 @@
 # Release codebase audit
 
-Audit date: 2026-08-19
+Audit date: 2026-08-21
 Behavior fallback: `efc32bd` (`checkpoint: controller-proven release candidate`)
 
 ## Verdict
@@ -65,7 +65,10 @@ ordered stable IDs used to render the request and consumes the chosen ID.
 - bounded destination and landmark vectors. Route origins and inactive
   landmarks remain because ferries visibly use them; route edges do not.
 - scalar driver/service properties on the generated coordinator. Nine explicit
-  pairs are easier to inspect in xEdit and avoid runtime map dependencies.
+  public pairs are easier to inspect in xEdit and avoid runtime map
+  dependencies. Three conditional Hearthfire origins resolve exact CFTO base
+  forms at request time after the existing free-faction check, avoiding new
+  forms or save-persisted properties.
 
 ## Papyrus boundary
 

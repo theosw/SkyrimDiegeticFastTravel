@@ -14,13 +14,17 @@ or invent a return provider.
 | Honeyside ferry | CFTO owns the private placed ferryman's enable state. | Exact actor whitelist; provider/destination shown only while placed ref `014C8D` is enabled; local fare retained. |
 | Castle Volkihar / Icewater Jetty | CFTO exposes `KmodFerryVolkihar`, `KmodFerryCostExtra`, and the distinct Enthralled Ferryman. | Provider/destination shown at state >= 1; outbound fare is the live extra-fare global (100 fallback), return source is free, and dedicated companion markers are retained. |
 
-## CFTO: Hearthfire carriage destinations already present
+## CFTO: Hearthfire carriage destinations and private origins
 
 Lakeview Manor, Heljarchen Hall, and Windstad Manor are already present in the
 carriage parchment network. The current beta shows each only while its
-Hearthfire map marker is enabled. Before release, compare that marker gate with
-CFTO's complete dialogue conditions so the parchment never exposes a manor
-earlier than CFTO would.
+Hearthfire map marker is enabled. The private return path recognizes only
+CFTO's exact Gunjar, Engar, and Markus bases after confirming membership in
+`KmodCarriageFreeFaction`; it then reuses the existing quest-locked source IDs
+and zero-fare purchase path. Independent xEdit and package audits cover those
+records and mappings. Gameplay still needs to prove all three map opens and at
+least one free trip, and the marker gate still needs comparison with CFTO's
+complete destination dialogue conditions before publication.
 
 ## Journey to Baan Malur: faction-unlocked ports
 

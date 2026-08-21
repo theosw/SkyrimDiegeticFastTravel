@@ -19,13 +19,19 @@ Function OpenMap(ObjectReference SourceRef)
     String SourceOrigin = ""
     Bool FreeRide = False
     If Service == None
-        SourceOrigin = Coordinator.GetWciInnOrigin(Speaker)
-        If SourceOrigin == ""
-            Debug.Trace("[DNT] CARRIAGE_PARCHMENT_DENIED source=" + SourceRef + " reason=invalid_provider", 1)
-            Return
+        SourceOrigin = Coordinator.GetPrivateCarriageOrigin(Speaker)
+        If SourceOrigin != ""
+            FreeRide = True
+            Debug.Trace("[DNT] CARRIAGE_PRIVATE_ORIGIN_ACCEPTED source=" + SourceRef + " origin=" + SourceOrigin)
+        Else
+            SourceOrigin = Coordinator.GetWciInnOrigin(Speaker)
+            If SourceOrigin == ""
+                Debug.Trace("[DNT] CARRIAGE_PARCHMENT_DENIED source=" + SourceRef + " reason=invalid_provider", 1)
+                Return
+            EndIf
+            FreeRide = Coordinator.IsFreeRideForSpeaker(Speaker)
+            Debug.Trace("[DNT] CARRIAGE_WCI_ORIGIN_ACCEPTED source=" + SourceRef + " origin=" + SourceOrigin)
         EndIf
-        FreeRide = Coordinator.IsFreeRideForSpeaker(Speaker)
-        Debug.Trace("[DNT] CARRIAGE_WCI_ORIGIN_ACCEPTED source=" + SourceRef + " origin=" + SourceOrigin)
     Else
         SourceOrigin = Service.OriginId
         FreeRide = Service.IsFreeRideForSpeaker(Speaker)
