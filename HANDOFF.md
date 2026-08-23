@@ -1,8 +1,8 @@
 # Diegetic Travel handoff
 
-Updated: 2026-08-21
+Updated: 2026-08-22
 
-## 2026-08-21 Hearthfire private-carriage parity candidate
+## 2026-08-22 Hearthfire private-carriage parity proof
 
 - Static inspection of the installed `CFTO.esp` identified its three personal
   Hearthfire carriage-driver bases: Gunjar/Lakeview `0x0CB329`, Engar/Windstad
@@ -37,12 +37,24 @@ Updated: 2026-08-21
   `61F6EFEF2BA7893A577B83432340658C63D19EA47199F94B95E71E9E811F750E`.
   The non-launching consolidated-profile preflight passes. Restore rollback:
   `D:\Lorerim\profiles\UltraDiegeticTravel\modlist.txt.pre-0.1.0-beta-20260821T170220Z-20260821T171704Z.bak`.
-- Evidence status is **Candidate**, not Proven. The remaining live gate is to
-  open the carriage sheet from Gunjar, Engar, and Markus; confirm the correct
-  source label and free labels; complete at least one trip with no gold
-  deduction; and verify `CARRIAGE_PRIVATE_ORIGIN_ACCEPTED`, a zero-fare
-  purchase, and normal travel completion in the logs. Keep the proven
-  `233726Z` candidate and its immutable tag until this succeeds.
+- The DNT private-driver path is **Proven** in a monitored disposable-save
+  test using exact-base instances of all three installed CFTO drivers. Gunjar
+  opened Lakeview Manor and completed a free trip to Morthal; Engar opened
+  Windstad Manor and completed a free trip to Heljarchen Hall; Markus opened
+  Heljarchen Hall and completed a free trip to Windstad Manor. Every request
+  logged `CARRIAGE_PRIVATE_ORIGIN_ACCEPTED`, the correct source label,
+  `free=true`, `fare=0`, a normal marker handoff, and travel completion.
+- Native begin-to-first-frame times were 33.040, 34.308, and 34.444 ms. Each
+  selection restored all 12 HUD layers. The native log contains zero warnings,
+  errors, or critical entries; DNT Papyrus contains no denial, rejection,
+  unresolved origin, or failed purchase. The player confirmed the shared
+  voiced response in game, and the clean exit produced no new crash report.
+- The general Papyrus errors in the test window identify Ice Wraith particles,
+  Ysolda's carry package, Requiem stamina handling, and the base-game
+  `CarriageDriverScript`, not DNT stacks. The last is retained as a natural
+  Hearthfire-setup follow-up because this test deliberately bypassed house
+  construction with spawned exact-base actors. CFTO's ordinary buy/build/hire
+  activation chain remains **Supported**, not gameplay-proven by this run.
 
 ## 2026-08-21 optional map-art fallback proof
 

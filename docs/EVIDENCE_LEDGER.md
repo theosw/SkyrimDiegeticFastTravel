@@ -1,6 +1,6 @@
 # Diegetic Travel evidence ledger
 
-Updated: 2026-08-21
+Updated: 2026-08-22
 
 This ledger separates ideas that look valid in tooling from behavior that has
 actually been demonstrated in Skyrim. Update an entry whenever a test changes
@@ -17,7 +17,7 @@ monitored gameplay test on the `UltraDiegeticTravel` profile.
 - **Rejected:** contradicted by a live test or by the documented data contract.
 - **Deferred:** intentionally outside the current phase.
 
-## 2026-08-21: Hearthfire private-carriage parity
+## 2026-08-22: Hearthfire private-carriage parity
 
 **Supported:** read-only inspection of LoreRim's installed `CFTO.esp` proves
 that Gunjar (`0x0CB329`), Engar (`0x0CB32A`), and Markus (`0x0CB32B`) are the
@@ -27,9 +27,10 @@ root supplies the same shared voiced request used by DNT. The rejected behavior
 was downstream origin resolution: DNT played that response and then denied the
 speaker because it knew only public physical drivers and WCI actors.
 
-**Candidate:** the coordinator now requires the existing free-faction check
-and maps those exact three bases to their existing quest-locked catalogue
-origins. The picker checks this private path before WCI and passes a free-ride
+**Offline implementation evidence:** the coordinator requires the existing
+free-faction check and maps those exact three bases to their existing
+quest-locked catalogue origins. The picker checks this private path before WCI
+and passes a free-ride
 quote through the unchanged purchase/travel service. No new forms, quests,
 properties, dialogue, voice assets, or Papyrus scripts are introduced. Native
 tests cover the three source IDs, quest-locked classification, and zero-fare
@@ -37,16 +38,29 @@ quotes; source/package audits cover the lookup order; and xEdit independently
 proves the installed driver records and faction. The full offline release suite
 passes with the same `0xAA5` next-object boundary.
 
-The exact unproven candidate is `0.1.0-beta-20260821T170220Z`: main SHA-256
+**Proven — DNT private-driver path:** the exact monitored candidate is
+`0.1.0-beta-20260821T170220Z`: main SHA-256
 `B7BAA7AF9078977CB7139AB86B584591786F1B2AD2FD636F8C8926DA1EEED22E`,
 Baan Malur add-on
 `DEA28808CE671CE81CFFFF098ADB73D2A611EABFBAF148DD5DF7B7A8B1777094`, and
 LoreRim BCD coexistence
 `F677C11810206AF9B230FCDEAFC664CAABEFF00CA843F8FA4385010AF764CFDC`.
-Promotion requires monitored map opens from all three personal drivers, correct
-source/free labels, one completed trip without a gold deduction, and clean
-acceptance/purchase/completion logs. Until then, the earlier `233726Z` release
-remains the fully proven baseline.
+Exact-base instances of Gunjar, Engar, and Markus opened the Lakeview,
+Windstad, and Heljarchen sheets with correct source labels and free quotes.
+Lakeview-to-Morthal, Windstad-to-Heljarchen, and Heljarchen-to-Windstad all
+committed and completed at `fare=0 free=TRUE`. All three requests restored 12
+HUD layers and rendered their first frame in 33.040–34.444 ms. The native log
+has zero warning/error/critical entries, DNT Papyrus has no failed or rejected
+event, the shared voice was heard, and no new crash report was produced.
+
+**Supported — natural activation:** the disposable test intentionally spawned
+the exact bases and therefore does not prove CFTO's ordinary land purchase,
+house construction, steward, and carriage-hiring chain. That chain only
+controls when these same actors become available; DNT does not replace it. A
+base-game `CarriageDriverScript` None-property error after one destination load
+did not enter a DNT stack or interrupt travel, but should be compared against a
+naturally hired driver when convenient. Other nearby errors belong to Ice
+Wraith particles, Ysolda's carry package, and Requiem stamina handling.
 
 The complete `170220Z` set is now active in `UltraDiegeticTravel`. Installed
 inventories compare exactly to the audited package roots at 74/74, 9/9, and

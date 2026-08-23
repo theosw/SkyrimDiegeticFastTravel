@@ -28,12 +28,12 @@ BCD wizard-adapter, and split-plugin experiments are preserved in
 
 ## Final live checks before publishing this beta
 
-- [ ] Install the new timestamped three-archive set with the full LoreRim
+- [x] Install the new timestamped three-archive set with the full LoreRim
   BCD/CFTO/WCI chain still enabled and verify the intended plugin order.
 - [ ] Confirm the new carriage envelope in game: representative 150-, 200-,
   and 400-gold labels, exact one-time payment, insufficient-funds denial, and a
   CFTO-designated free driver.
-- [ ] Open the sheet from Gunjar, Engar, and Markus; verify Lakeview, Windstad,
+- [x] Open the sheet from Gunjar, Engar, and Markus; verify Lakeview, Windstad,
   and Heljarchen source labels, free destination labels, and one completed trip
   with no gold deduction or unresolved-origin log.
 - [ ] Recheck a physical carriage, a WCI summoned carriage, Thalmor Embassy,

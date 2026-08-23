@@ -22,9 +22,10 @@ Hearthfire map marker is enabled. The private return path recognizes only
 CFTO's exact Gunjar, Engar, and Markus bases after confirming membership in
 `KmodCarriageFreeFaction`; it then reuses the existing quest-locked source IDs
 and zero-fare purchase path. Independent xEdit and package audits cover those
-records and mappings. Gameplay still needs to prove all three map opens and at
-least one free trip, and the marker gate still needs comparison with CFTO's
-complete destination dialogue conditions before publication.
+records and mappings. A disposable exact-base test proved all three map opens,
+correct source/free presentation, and three zero-fare trips. Natural
+buy/build/hire activation and comparison of the marker gate with CFTO's
+complete destination dialogue conditions remain publication follow-ups.
 
 ## Journey to Baan Malur: faction-unlocked ports
 
