@@ -31,3 +31,6 @@ modules/parchment-picker/mod/Scripts/*.pas
 
 # Local gameplay/test watcher output is evidence for the current machine only.
 logs/
+
+# Local task handoff notes are not public project documentation.
+HANDOFF.md
