@@ -37,7 +37,7 @@ BCD wizard-adapter, and split-plugin experiments are preserved in
   and Heljarchen source labels, free destination labels, and one completed trip
   with no gold deduction or unresolved-origin log.
 - [ ] Recheck a physical carriage, a WCI summoned carriage, Thalmor Embassy,
-  and one conditional Hearthfire or Helgen endpoint after the pricing change.
+  and one conditional Hearthfire endpoint after the pricing change.
 - [ ] Verify that the LoreRim BCD coexistence file hides only the three competing
   selectors and that `DNT_ShowBcdTravelDialogue=1` restores them.
 - [ ] Run one controller selection/cancel trip with the release controller stack.

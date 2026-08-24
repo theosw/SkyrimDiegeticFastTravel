@@ -86,7 +86,6 @@
     "tools/Build-StylizedWizardMarkers.ps1",
     "tools/Build-VanillaHoldCapitalMarkers.ps1",
     "tools/Build-VanillaParchmentMarkers.ps1",
-    "tools/Build-WizardParchmentMarker.ps1",
     "tools/Export-FwmfMeshJson.ps1",
     "tools/Extract-OneWaySelectionRing.py",
     "tools/Extract-TransparentComponent.py",

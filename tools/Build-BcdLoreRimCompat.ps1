@@ -206,9 +206,14 @@ $metaPath = Write-DntMo2ArchiveMeta `
     -ArchivePath $archive `
     -DisplayName $mo2DisplayName `
     -Identity $releaseIdentity
+$archiveHash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash
+$checksumPath = Write-DntReleaseChecksums `
+    -ProjectRoot $projectRoot `
+    -Identity $releaseIdentity
 
 Get-Content -LiteralPath $auditReport
 Write-Host "LoreRim BCD compatibility package: $archive"
 Write-Host "MO2 sidecar metadata: $metaPath"
 Write-Host "MO2 suggested name: $mo2DisplayName"
-Write-Host "SHA-256: $((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash)"
+Write-Host "Release checksums: $checksumPath"
+Write-Host "SHA-256: $archiveHash"

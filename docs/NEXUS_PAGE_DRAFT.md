@@ -11,10 +11,8 @@ Diegetic Fast Travel
 
 **Short description**
 
-Morrowind-inspired fast travel through physical route maps. Ask carriage
-drivers, ferrymen, and wizard guides where they travel, choose a destination,
-pay the fare, and learn a connected network built around Skyrim's existing
-services.
+Physical route maps for CFTO carriages and ferries, plus College wizard travel.
+Choose a destination, pay the fare, and learn Skyrim's travel network.
 
 **Game**
 
@@ -31,174 +29,122 @@ Immersion
 ## Long description
 
 [center]
-[size=7][b]DIEGETIC FAST TRAVEL[/b][/size]
-[size=4][i]Learn the network. Plan the journey. Travel through the world.[/i][/size]
+[img]https://staticdelivery.nexusmods.com/mods/1704/images/188221/188221-1786766424-389268771.png[/img]
 [/center]
 
-[line]
+[b]Diegetic Fast Travel[/b] replaces CFTO destination lists with physical route
+maps. Ask a carriage driver, ferryman, or wizard guide where they travel. Pick a
+marked destination and pay the fare.
 
-[b]Diegetic Fast Travel[/b] replaces destination lists with physical route maps.
-Ask a carriage driver, ferryman, or wizard guide where they travel, choose a
-destination on their map, and pay their fare.
+Each service has its own routes and limits. A trip out may not include a trip
+back.
 
-There is no universal menu: every service keeps its own destinations, prices,
-and limitations. Learning those connections is part of travelling Skyrim.
-
-[size=5][color=#d8b46a][b]THE NETWORKS[/b][/color][/size]
+[size=5][color=#d8b46a][b]What it adds[/b][/color][/size]
 
 [list]
-[*][b]Carriages:[/b] all 28 executable CFTO destinations, using configurable
-distance-based fares and estimates plus CFTO's arrival markers and availability
-rules.
-[*][b]Ferries:[/b] Lake Honrich, Lake Ilinalta, the northern coast, and
-Solstheim—including supported private and one-way landings.
-[*][b]Wizard guides:[/b] a College of Winterhold hub connected to seven court
-wizards and their hold capitals.
+[*]The CFTO carriage network with distance based fares from 50 to 400 gold.
+[*]Ferries on Lake Honrich, Lake Ilinalta, the northern coast, and Solstheim.
+[*]Wizard travel between the College of Winterhold and seven hold capitals.
+[*]Mouse and controller support. Click or A confirms. Escape or B cancels.
+[*]Separate markers for return service and one way destinations.
+[*]Live CFTO support for private ferries and Hearthfire carriage drivers.
 [/list]
 
-[size=5][color=#d8b46a][b]FEATURES[/b][/color][/size]
+[center]
+[img]https://staticdelivery.nexusmods.com/mods/1704/images/188221/188221-1787085681-997650187.png[/img]
+[/center]
 
-[list]
-[*]Interactive physical maps with mouse and controller support.
-[*]Click/A to travel; Escape/B to cancel without being charged.
-[*]Distinct indicators for return service and one-way destinations.
-[*]Fares and availability rechecked before payment.
-[*]Live CFTO private-ferry and Hearthfire availability.
-[*]Optional Wait Carriage in Inns and Apparition Travel integration.
-[*]One ESL-flagged ESP, one native SKSE plugin, and no JContainers dependency.
-[/list]
+[spoiler=More route maps]
+[b]Carriages[/b]
+[img]https://staticdelivery.nexusmods.com/mods/1704/images/188221/188221-1786742699-1278707588.jpg[/img]
 
-[i]Speak to a supported provider, ask to see their route map, then select a
-destination. Not every trip promises a ride back.[/i]
+[b]Wizard guides[/b]
+[img]https://staticdelivery.nexusmods.com/mods/1704/images/188221/188221-1786742715-462209272.jpg[/img]
 
-[size=5][color=#d8b46a][b]PRICING[/b][/color][/size]
+[b]Mainland ferries[/b]
+[img]https://staticdelivery.nexusmods.com/mods/1704/images/188221/188221-1786742780-258136289.jpg[/img]
 
-[list]
-[*][b]Carriages:[/b] direct-distance pricing from 50 to 400 gold with the public
-defaults. Nearby trips are inexpensive; cross-country trips remain meaningful.
-[*][b]Wizard guides:[/b] 250 gold per trip to or from the College hub.
-[*][b]Ferries:[/b] CFTO's live local/regional/extra prices by default—normally
-30/50/100 gold—with the return trip from Icewater Jetty free.
-[*][b]Baan Malur optional file:[/b] its external service owns a fixed 30-gold
-fare.
-[/list]
+[b]Solstheim ferries[/b]
+[img]https://staticdelivery.nexusmods.com/mods/1704/images/188221/188221-1786742803-1336878116.jpg[/img]
 
-Carriage coefficients, wizard fare, ferry overrides, estimate display, and the
-preferred formal-versus-physical College/carriage artwork can be changed in
-[b]SKSE/Plugins/DiegeticTravel.ini[/b]. Set
-[b]PreferFormalMapArtwork=false[/b] to prefer the calibrated physical map
-without changing your normal FWMF world map. Restart Skyrim after editing it.
+[b]Baan Malur optional file[/b]
+[img]https://staticdelivery.nexusmods.com/mods/1704/images/188221/188221-1786742816-1439779460.jpg[/img]
+[/spoiler]
 
 [line]
 
-[size=5][color=#d8b46a][b]REQUIREMENTS[/b][/color][/size]
+[size=5][color=#d8b46a][b]Requirements[/b][/color][/size]
 
 [list]
-[*][url=https://skse.silverlock.org/]SKSE64[/url] — built and tested with 2.2.6
-for Skyrim 1.6.1170.
-[*][url=https://www.nexusmods.com/skyrimspecialedition/mods/32444]Address Library
-for SKSE Plugins[/url].
-[*][url=https://www.nexusmods.com/skyrimspecialedition/mods/120352]SKSE Menu
-Framework[/url].
-[*][url=https://www.nexusmods.com/skyrimspecialedition/mods/8379]Carriage and
-Ferry Travel Overhaul (CFTO)[/url].
-[*][url=https://www.nexusmods.com/skyrimspecialedition/mods/40651]Carriage and
-Ferry Travel Overhaul - Fixes and Winterhold[/url] 3.0 — install after the base
-mod; this supplies the supported CFTO.esp record layout.
+[*]Skyrim 1.6.1170
+[*][url=https://skse.silverlock.org/]SKSE64 2.2.6[/url]
+[*][url=https://www.nexusmods.com/skyrimspecialedition/mods/32444]Address Library for SKSE Plugins[/url]
+[*][url=https://www.nexusmods.com/skyrimspecialedition/mods/120352]SKSE Menu Framework[/url]
+[*][url=https://www.nexusmods.com/skyrimspecialedition/mods/8379]Carriage and Ferry Travel Overhaul[/url]
+[*][url=https://www.nexusmods.com/skyrimspecialedition/mods/40651]CFTO Fixes and Winterhold 3.0[/url]
 [/list]
 
-[b]Initial beta target:[/b] Skyrim 1.6.1170 / SKSE 2.2.6.
+[size=5][color=#d8b46a][b]Recommended maps[/b][/color][/size]
 
-[size=5][color=#d8b46a][b]RECOMMENDED MAP STYLE[/b][/color][/size]
-
-The screenshots and my personal setup use these two map mods, but neither is
-required:
+These are the maps shown in the screenshots. They are not required.
 
 [list]
-[*][url=https://www.nexusmods.com/skyrimspecialedition/mods/42614]RUSTIC
-MAPS[/url] — recommended physical ferry-map artwork.
-[*][url=https://www.nexusmods.com/skyrimspecialedition/mods/62705]Skyrim Paper
-Map by Caro Tuts for FWMF[/url] — preferred wizard and carriage chart.
+[*][url=https://www.nexusmods.com/skyrimspecialedition/mods/42614]RUSTIC MAPS[/url] for ferry maps.
+[*][url=https://www.nexusmods.com/skyrimspecialedition/mods/62705]Skyrim Paper Map by Caro Tuts for FWMF[/url] for carriage and wizard maps.
 [/list]
 
-Without them, ferry sheets use Bethesda's archived physical maps and wizard /
-carriage sheets use a separately calibrated Bethesda battle-map layout. No map
-DDS is redistributed by Diegetic Travel.
+Without them, the menus use calibrated maps from Skyrim's archives. Diegetic
+Fast Travel does not include either map texture.
 
-[size=5][color=#d8b46a][b]OPTIONAL INTEGRATIONS[/b][/color][/size]
+[size=5][color=#d8b46a][b]Optional support[/b][/color][/size]
 
 [list]
-[*][url=https://www.nexusmods.com/skyrimspecialedition/mods/83044]Wait Carriage
-in Inns[/url] — summoned drivers use the normal carriage parchment without a
-compatibility ESP.
-[*][url=https://www.nexusmods.com/skyrimspecialedition/mods/124125]Wizarding
-Traversal Magic[/url] — Apparition Travel is soft-detected and supported
-without making the mod a master.
-[*][b]Baan Malur Merchant Ferries — separate optional file.[/b] Adds the Raven
-Rock, Baan Malur, and Cormaris triangle plus one-way Sunmul service. Requires
-[url=https://www.nexusmods.com/skyrimspecialedition/mods/114518]Journey to Baan
-Malur and Morrowind[/url] and
-[url=https://www.nexusmods.com/skyrimspecialedition/mods/137315]Solstheim and
-Baan Malur Paper Map for FWMF[/url]. The main file does not require either.
-For those three public captains, this file replaces Journey's parallel native
-destination prompt; all other Journey captains keep their original dialogue.
+[*][url=https://www.nexusmods.com/skyrimspecialedition/mods/83044]Wait Carriage in Inns[/url]
+[*][url=https://www.nexusmods.com/skyrimspecialedition/mods/124125]Wizarding Traversal Magic[/url]
+[*][b]Baan Malur Merchant Ferries[/b]. The separate optional file requires
+[url=https://www.nexusmods.com/skyrimspecialedition/mods/114518]Journey to Baan Malur and Morrowind[/url] and
+[url=https://www.nexusmods.com/skyrimspecialedition/mods/137315]Solstheim and Baan Malur Paper Map for FWMF[/url].
 [/list]
 
-[line]
-
-[size=5][color=#d8b46a][b]INSTALLATION AND COMPATIBILITY[/b][/color][/size]
+[size=5][color=#d8b46a][b]Installation[/b][/color][/size]
 
 [list=1]
-[*]Install the requirements with your mod manager.
-[*]Install Diegetic Fast Travel.
-[*]Enable [b]DiegeticTravel.esp[/b] after [b]CFTO.esp[/b]. It is ESP-FE.
-[*]Start a new game for the initial beta.
+[*]Install the requirements.
+[*]Install the main Diegetic Fast Travel ZIP with your mod manager.
+[*]Load [b]DiegeticTravel.esp[/b] after [b]CFTO.esp[/b].
+[*]Start a new game for the beta.
 [/list]
 
-Do not install old standalone Diegetic Travel development plugins beside the
-consolidated release. Better Carriage Destinations intercepts the same selector
-flow. LoreRim users should keep its complete BCD chain enabled and install the
-separate [b]Diegetic Travel - LoreRim BCD Coexistence[/b] optional file after
-the main plugin. Do not disable and re-enable BCD in the curated profile.
+[size=5][color=#d8b46a][b]Compatibility[/b][/color][/size]
 
-The coexistence patch suppresses BCD's competing carriage, ferry, and WCI
-dialogue entries; it does not add BCD's broad map-marker destination universe
-to Diegetic Travel.
+LoreRim users should keep Better Carriage Destinations enabled and install the
+[b]LoreRim BCD Coexistence[/b] optional file after the main file. Do not disable
+BCD in the curated profile.
 
-Legacy travel dialogue is hidden by default. For conflict diagnosis, restore
-it with:
+The coexistence file hides the three BCD prompts that compete with these route
+maps. It does not add BCD's unrestricted destination list.
+
+To restore the original travel dialogue for testing, enter:
 
 [code]set DNT_ShowLegacyTravelDialogue to 1[/code]
 
-[line]
-
-[spoiler=Credits and asset disclosure]
-
+[spoiler=Credits and asset notes]
 [list]
-[*]Bethesda Game Studios; the SKSE team; meh321; Thiago / SkyrimThiago; Kinaga.
-[*]Gamwich — RUSTIC MAPS; Caro Tuts and Caites — Skyrim Paper Map for FWMF.
-The recommended map textures are referenced, not redistributed.
-[*]outobugi — [url=https://www.nexusmods.com/skyrimspecialedition/mods/49881]NORDIC UI[/url]
-marker artwork; the SkyUI and SkyHUD teams are also credited in accordance with
-its author instructions.
-[*]Nithog — [url=https://www.nexusmods.com/skyrimspecialedition/mods/166086]Norden UI[/url]
-round-trip selection symbol, used with direct permission.
-[*]Sluia; Kittytail; shazdeh.
-[*]pancake0723 and the Journey to Baan Malur team; Caites and Limon for the
-optional add-on's source service and separately installed chart.
+[*]Bethesda Game Studios, the SKSE team, meh321, Thiago and SkyrimThiago, Kinaga, Sluia, Kittytail, and shazdeh.
+[*]outobugi for [url=https://www.nexusmods.com/skyrimspecialedition/mods/49881]NORDIC UI[/url] marker artwork. The SkyUI and SkyHUD teams receive upstream credit.
+[*]Nithog for the [url=https://www.nexusmods.com/skyrimspecialedition/mods/166086]Norden UI[/url] selection symbol, used with direct permission.
 [/list]
 
-Some bundled ferry marker artwork began as AI-assisted concepts and was
-manually edited by the mod author in Krita. Third-party map artwork, Bethesda
-voice files, and dependency binaries are not redistributed by this mod.
+Some ferry markers began as AI assisted concepts and were edited by the mod
+author in Krita. External map textures, voice files, and dependency binaries
+are not included. Full notices are in [b]THIRD_PARTY_NOTICES.txt[/b].
 [/spoiler]
 
-[size=5][color=#d8b46a][b]BUG REPORTS[/b][/color][/size]
+[size=5][color=#d8b46a][b]Bug reports[/b][/color][/size]
 
-Please include your runtime/SKSE versions, provider and destination, mouse or
-controller input, whether it reproduces on a new game, and
-[b]Documents/My Games/Skyrim Special Edition/SKSE/DNTParchmentPicker.log[/b].
-Include a crash log for crashes.
+Include your Skyrim and SKSE versions, the provider and destination, your input
+method, and [b]DNTParchmentPicker.log[/b]. Include the crash log if Skyrim
+crashed.
 
 ## Suggested file-page copy
 

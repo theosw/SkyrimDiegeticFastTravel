@@ -59,7 +59,7 @@ redistributed. Because Menu Framework only opens filesystem files, the native
 wrapper materializes an archived Bethesda DDS through Skyrim's resource stream
 into a bounded operating-system cache when no loose override exists. Bundled
 marker provenance and permissions are recorded in `ASSET_POLICY.md` and
-`THIRD_PARTY_ASSETS.md`.
+`../THIRD_PARTY_NOTICES.txt`.
 
 Formal wizard/carriage maps use the calibrated FWMF paper-map crop and Norden
 symbols by default. If that preferred chart is missing, the complete request

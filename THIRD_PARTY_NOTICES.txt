@@ -5,24 +5,6 @@ This file covers code linked into the native DLL and credited third-party source
 retained for provenance. Runtime dependencies and referenced assets that are not
 redistributed are documented in docs/ASSET_POLICY.md.
 
-Dragonborn Reskin - Wheeler: Apparition Travel icon
----------------------------------------------------
-
-Original asset: KWD_DBWR_ApparitionTravel.svg
-Original creator: borokoshow
-Source: https://www.nexusmods.com/skyrimspecialedition/mods/100043
-Retained learning source: assets/third-party/dragonborn-wheeler-reskin/apparition-travel.svg
-Current bundled derivative: none
-
-The Nexus permissions published by the creator allow asset use and modification
-without additional permission when the original creator is credited. Use in
-mods or files that are sold for money is prohibited. Donation Points are
-allowed. An earlier development build converted the artwork to BC7 for the
-parchment renderer; the current build replaces it with user-directed artwork and
-does not ship that derivative.
-
-This project credits borokoshow as the original creator of the icon.
-
 Solstheim and Baan Malur Paper Map for FWMF (external optional dependency)
 ---------------------------------------------------------------------------
 

@@ -34,8 +34,15 @@ The tested profile also includes Wait Carriage in Inns `1.3.0.0` (Nexus
 local FormIDs are version-sensitive; other versions are not covered by the
 current compatibility claim.
 
-Every installed payload above is pinned by SHA-256. The lock describes the
-isolated `UltraDiegeticTravel` test profile, not the complete LoreRim modlist.
+Wizarding Traversal Magic `1.43.0.0` (Nexus 124125) is also an optional,
+soft-detected compatibility target. When present, Diegetic Travel recognizes
+its active Apparition speed override and uses zero-time `MoveTo` travel. It is
+not a plugin master, and its absence retains ordinary time-passing travel.
+
+Every installed payload above is pinned by SHA-256. Optional integration and
+artwork hashes are verified when those files are present; their absence does
+not fail the dependency audit. The lock describes the isolated
+`UltraDiegeticTravel` test profile, not the complete LoreRim modlist.
 
 ## Optional Baan Malur add-on target
 
@@ -63,17 +70,6 @@ The CommonLib checkout is outside this repository. CMake uses the
 the same name as its initial value, and retains the existing local checkout as
 a development-machine default. The pre-build audit verifies its repository URL
 and commit, so a path that happens to contain a different checkout cannot pass.
-
-## Retained credited learning source
-
-- The wizard parchment marker derives from borokoshow's
-  `KWD_DBWR_ApparitionTravel.svg` in Dragonborn Reskin - Wheeler `1.9.1`.
-- The exact source SVG is pinned by SHA-256 in `dependencies.lock.json`.
-- Its published permissions allow reuse and modification with credit, prohibit
-  sale, and allow Donation Points. `THIRD_PARTY_NOTICES.txt` travels with the
-  package.
-- The current release does not contain the converted derivative; the source is
-  retained for provenance and rollback research only.
 
 ## Required verification
 

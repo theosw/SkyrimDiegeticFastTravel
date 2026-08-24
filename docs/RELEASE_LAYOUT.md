@@ -96,6 +96,12 @@ and `version` fields. Keep that sidecar beside the ZIP when opening the archive
 in MO2; it is what makes Quick Install suggest the complete timestamped name
 instead of MO2's shortened filename guess.
 
+Every archive builder also rewrites
+`dist\DiegeticTravel-<version>-<UTC timestamp>-SHA256SUMS.txt`. The manifest
+contains every main, add-on, and compatibility ZIP built with that shared
+identity, sorted by filename. Build the main archive first and the optional
+archives afterward so the final manifest covers the complete published set.
+
 When Skyrim and MO2 are both closed, the recoverable deployment command is:
 
 ```powershell

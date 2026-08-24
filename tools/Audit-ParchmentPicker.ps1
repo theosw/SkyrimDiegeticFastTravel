@@ -636,6 +636,15 @@ foreach ($presentationToken in @(
         throw "Parchment presentation lifecycle is missing token: $presentationToken"
     }
 }
+foreach ($destinationRingLifecycleToken in @(
+    "for (const auto& [path, texture] : loadedDestinationSelectionRingTextures)",
+    "loadedDestinationSelectionRingTextures.clear();",
+    "destinationSelectionRingTextureLoadAttempts.clear();"
+)) {
+    if ($menuSource -notmatch [regex]::Escape($destinationRingLifecycleToken)) {
+        throw "Destination-specific selection-ring cache lifecycle is missing token: $destinationRingLifecycleToken"
+    }
+}
 if ($menuSource -match [regex]::Escape("DrawDestinationHighlight")) {
     throw "Target-style X marker must not remain in the parchment presentation."
 }

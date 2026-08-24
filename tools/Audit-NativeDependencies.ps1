@@ -31,7 +31,7 @@ function Assert-Hash([string]$Label, [pscustomobject]$Entry) {
 function Assert-OptionalHash([string]$Label, [pscustomobject]$Entry) {
     $path = Resolve-LoreRimPath $Entry.path
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
-        Write-Host "$Label is not installed; the native fallback will be used."
+        Write-Host "$Label is not installed; continuing without it."
         return $null
     }
     return Assert-Hash $Label $Entry
@@ -55,27 +55,16 @@ if ($runtime.artwork.dependencyType -notmatch "optional visual recommendation" -
 }
 $null = Assert-Hash "CFTO base" $runtime.cftoBase
 $null = Assert-Hash "CFTO Fixes and Winterhold" $runtime.cftoFixesAndWinterhold
-$null = Assert-Hash "optional Wait Carriage in Inns" $runtime.optionalWaitCarriageInInns
+$optionalWaitCarriagePath = Assert-OptionalHash `
+    "optional Wait Carriage in Inns" $runtime.optionalWaitCarriageInInns
 if ($runtime.optionalWaitCarriageInInns.dependencyType -notmatch "optional soft lookup") {
     throw "Wait Carriage in Inns compatibility must remain an optional soft lookup."
 }
-$null = Assert-Hash "optional Wizarding Traversal" $runtime.optionalApparitionTravel
+$optionalApparitionPath = Assert-OptionalHash `
+    "optional Wizarding Traversal" $runtime.optionalApparitionTravel
 if ($runtime.optionalApparitionTravel.dependencyType -notmatch "optional soft lookup" -or
     $runtime.optionalApparitionTravel.holderMagicEffectLocalFormId -ne "000808") {
     throw "Wizarding Traversal compatibility must remain a soft lookup of holder effect 000808."
-}
-
-$wizardMarkerSource = $lock.assetSources.wizardTravelMarker
-$wizardMarkerSourcePath = [System.IO.Path]::GetFullPath((Join-Path `
-    $projectRoot `
-    ($wizardMarkerSource.repositoryPath -replace '/', '\')))
-if (-not (Test-Path -LiteralPath $wizardMarkerSourcePath -PathType Leaf)) {
-    throw "Credited wizard-marker source was not found: $wizardMarkerSourcePath"
-}
-$wizardMarkerSourceHash = (Get-FileHash -LiteralPath `
-    $wizardMarkerSourcePath -Algorithm SHA256).Hash
-if ($wizardMarkerSourceHash -ne $wizardMarkerSource.sha256) {
-    throw "Credited wizard-marker source hash mismatch. Expected $($wizardMarkerSource.sha256), found $wizardMarkerSourceHash"
 }
 
 if (-not (Test-Path -LiteralPath $CommonLibRoot -PathType Container)) {
@@ -97,6 +86,6 @@ if ($vcpkg.'builtin-baseline' -ne $lock.buildDependencies.vcpkgBaseline) {
 
 Write-Host "Native dependency audit passed."
 Write-Host "Skyrim runtime: $skyrimVersion"
-Write-Host "Optional Apparition compatibility: Wizarding Traversal $($runtime.optionalApparitionTravel.version), holder effect 000808"
+Write-Host "Optional Wait Carriage in Inns target: $($runtime.optionalWaitCarriageInInns.version), installed=$($null -ne $optionalWaitCarriagePath)"
+Write-Host "Optional Apparition target: Wizarding Traversal $($runtime.optionalApparitionTravel.version), holder effect 000808, installed=$($null -ne $optionalApparitionPath)"
 Write-Host "CommonLib commit: $commonLibCommit"
-Write-Host "Credited wizard marker source: $($wizardMarkerSource.name) $($wizardMarkerSource.version) ($wizardMarkerSourceHash)"

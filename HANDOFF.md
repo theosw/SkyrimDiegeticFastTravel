@@ -1,6 +1,48 @@
 # Diegetic Travel handoff
 
-Updated: 2026-08-22
+Updated: 2026-08-23
+
+## 2026-08-23 pre-beta audit hardening candidate
+
+- The retired Dragonborn Reskin - Wheeler Apparition SVG, its obsolete builder,
+  dependency-lock entry, and maintained-tool classification were removed. No
+  converted derivative was present in the live 22-texture release inventory,
+  and the new main ZIP contains no SVG or retired wizard-marker asset.
+- Wait Carriage in Inns and Wizarding Traversal remain optional soft-lookup
+  integrations. `Audit-NativeDependencies.ps1` now verifies their pinned hashes
+  when installed and continues cleanly when either is absent; neither plugin is
+  a new master or public dependency.
+- Destination-specific selection-ring textures and failed-load attempts are now
+  disposed and cleared when the native request changes. The source audit pins
+  that lifecycle contract. The unused `rapidcsv` manifest dependency was
+  removed, and a clean AE configure removed it without affecting the build.
+- Every main/add-on/compatibility builder now rewrites one sorted
+  `SHA256SUMS.txt` for the shared release identity. The helper passed an isolated
+  two-archive test, and the final three recorded hashes were independently
+  recomputed from disk.
+- Full release verification passes: dependency lock, native AE build, 2/2 native
+  tests, source/data parity, 22 zero-warning Papyrus compilations, consolidated
+  ESP/SEQ generation, voice assets, xEdit semantic audit, and exact package
+  inventories. The generated ESP remains byte-identical at SHA-256
+  `37C302C50CE7C24208032F39B166AE48B970D06165D573C8C93806FF3008F0B0`.
+- Candidate identity: `0.1.0-beta-20260823T041440Z`. Archive SHA-256: main
+  `ACFF318A9073002494AD36AC6E67CD7563A88F2038EF7A93FFFA79A7150F5830`;
+  Baan Malur add-on
+  `5463C2613DF7B7EF3CE706F32467CAF8D03398D9FDD0918F97D1478B6E0047DF`;
+  LoreRim BCD coexistence
+  `88273A2287D295B3A6D6AFB9345865F86A309B241A18159A61C19EB4B53E95B7`.
+  The machine-readable manifest is
+  `dist\DiegeticTravel-0.1.0-beta-20260823T041440Z-SHA256SUMS.txt`.
+- All three packages are active in `UltraDiegeticTravel`; installed comparisons
+  pass 74/74 main files, 9/9 Baan Malur files, and 2/2 BCD files. The prior
+  `20260821T170220Z` folders remain installed but disabled. The consolidated
+  non-launching preflight passes, and `plugins.txt` retains the proven SHA-256
+  `61F6EFEF2BA7893A577B83432340658C63D19EA47199F94B95E71E9E811F750E`.
+  Restore rollback:
+  `D:\Lorerim\profiles\UltraDiegeticTravel\modlist.txt.pre-0.1.0-beta-20260823T041440Z-20260823T042247Z.bak`.
+- **Runtime status:** Static-approved, gameplay pending. The native DLL changed,
+  so complete the final map-open/cancel/travel smoke test on a fresh/disposable
+  release save before promoting this candidate.
 
 ## 2026-08-22 Hearthfire private-carriage parity proof
 

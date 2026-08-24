@@ -39,10 +39,6 @@ permission.
 - The earlier Skyrim-derived Docks and Shipwreck vectors remain in
   `assets/vanilla-interface/` as rollback sources, but are not bundled by the
   current build.
-- The earlier Dragonborn Reskin - Wheeler apparition marker remains under
-  `assets/third-party/` as a credited learning/rollback source, but the current
-  build no longer converts or bundles it.
-
 ## Referenced, not bundled
 
 - Boat providers use Bethesda physical-map paths such as

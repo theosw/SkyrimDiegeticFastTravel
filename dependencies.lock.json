@@ -96,16 +96,6 @@
     "vcpkgBaseline": "1dc5ee30eb1032221d29f281f4a94b73f06b4284"
   },
   "assetSources": {
-    "wizardTravelMarker": {
-      "name": "Dragonborn Reskin - Wheeler",
-      "version": "1.9.1.0",
-      "author": "borokoshow",
-      "url": "https://www.nexusmods.com/skyrimspecialedition/mods/100043",
-      "originalFile": "KWD_DBWR_ApparitionTravel.svg",
-      "repositoryPath": "assets/third-party/dragonborn-wheeler-reskin/apparition-travel.svg",
-      "sha256": "CC4197AA9772BBFE2EC37D612EEE3EEA51EB4D2937439995776B5C7A923ECE5C",
-      "permission": "Asset use and modification allowed with credit; sale prohibited; Donation Points allowed"
-    },
     "nordenMapMarkers": {
       "name": "NORDIC UI - Interface Overhaul",
       "version": "2.4.1",

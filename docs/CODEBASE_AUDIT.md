@@ -78,9 +78,10 @@ catalogue enumeration, quote calculation, request construction, selection
 mapping, layout, hit testing, controller navigation, and texture lifetime are
 native.
 
-Apparition is authoritative only when `fFastTravelSpeedMult` differs from the
-normal value. The holder spell is logged diagnostically but is not used as an
-active-state signal because it can persist after the effect is removed.
+Apparition is authoritative only when `fFastTravelSpeedMult` is at least
+`99999` (the tested Wizarding Traversal override is `100000`). The holder spell
+is logged diagnostically but is not used as an active-state signal because it
+can persist after the effect is removed.
 
 ## Release inventory and save behavior
 

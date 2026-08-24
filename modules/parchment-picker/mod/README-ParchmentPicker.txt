@@ -49,6 +49,5 @@ vanilla-derived neutral town marker. It also includes fourteen exact NORDIC UI
 discovered-map symbols for carriage destinations under outobugi's published
 open-art permission, plus the exact Norden UI round-trip
 loading symbol used as the formal-map selection ring. The
-previously evaluated custom wizard markers and Dragonborn Reskin - Wheeler icon
-are not bundled. The package includes no background map artwork, voice asset,
-or dependency binary.
+previously evaluated custom wizard markers are not bundled. The package
+includes no background map artwork, voice asset, or dependency binary.

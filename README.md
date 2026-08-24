@@ -192,6 +192,8 @@ main package build adds a fresh compact UTC timestamp and records the resulting
 identity in `build\release-identity.json`. The optional Baan Malur and LoreRim
 BCD builders reuse that identity, so every archive belonging to one candidate
 has the same version/timestamp in its filename and MO2 install name.
+Each builder also refreshes the candidate's `SHA256SUMS.txt`; after the optional
+builders run, that file covers the complete archive set sharing the identity.
 
 Stock xEdit 4.1.x does not offer a truly headless `-script` mode: `-script`
 selects Script mode, while `-autoload` and `-autoexit` are parsed only in Edit

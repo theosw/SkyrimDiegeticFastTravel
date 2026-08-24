@@ -127,3 +127,43 @@ function Write-DntMo2ArchiveMeta {
     )
     return $metaPath
 }
+
+function Write-DntReleaseChecksums {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ProjectRoot,
+        [Parameter(Mandatory = $true)]
+        [psobject]$Identity
+    )
+
+    $distRoot = Join-Path $ProjectRoot "dist"
+    if (-not (Test-Path -LiteralPath $distRoot -PathType Container)) {
+        throw "Release distribution directory was not found: $distRoot"
+    }
+
+    $archiveSuffix = "-$($Identity.buildId).zip"
+    $archives = @(Get-ChildItem -LiteralPath $distRoot -File -Filter "*.zip" |
+        Where-Object {
+            $_.Name.EndsWith(
+                $archiveSuffix,
+                [StringComparison]::OrdinalIgnoreCase
+            )
+        } |
+        Sort-Object Name)
+    if ($archives.Count -eq 0) {
+        throw "No release archives match identity $($Identity.buildId) in $distRoot"
+    }
+
+    $checksumPath = Join-Path $distRoot `
+        "DiegeticTravel-$($Identity.buildId)-SHA256SUMS.txt"
+    $lines = @($archives | ForEach-Object {
+        $hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash
+        "$hash  $($_.Name)"
+    })
+    [IO.File]::WriteAllLines(
+        $checksumPath,
+        $lines,
+        [Text.UTF8Encoding]::new($false)
+    )
+    return $checksumPath
+}

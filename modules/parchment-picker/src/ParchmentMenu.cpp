@@ -632,6 +632,13 @@ namespace
                 }
                 loadedDestinationMarkerTextures.clear();
                 destinationMarkerTextureLoadAttempts.clear();
+                for (const auto& [path, texture] : loadedDestinationSelectionRingTextures) {
+                    if (texture && !path.empty()) {
+                        framework.DisposeTexture(path);
+                    }
+                }
+                loadedDestinationSelectionRingTextures.clear();
+                destinationSelectionRingTextureLoadAttempts.clear();
                 loadedRequestId = snapshot.request.requestId;
                 loadedArtworkVariant = ArtworkVariant::kUnresolved;
             }

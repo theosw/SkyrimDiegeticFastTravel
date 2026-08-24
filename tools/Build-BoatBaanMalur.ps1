@@ -101,8 +101,12 @@ $metaPath = Write-DntMo2ArchiveMeta `
     -Identity $releaseIdentity
 
 $hash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash
+$checksumPath = Write-DntReleaseChecksums `
+    -ProjectRoot $projectRoot `
+    -Identity $releaseIdentity
 Write-Host "Packaged optional Baan Malur add-on: $archive"
 Write-Host "MO2 sidecar metadata: $metaPath"
 Write-Host "MO2 suggested name: $mo2DisplayName"
 Write-Host "Bundled artwork/audio assets: 0"
+Write-Host "Release checksums: $checksumPath"
 Write-Host "SHA-256: $hash"

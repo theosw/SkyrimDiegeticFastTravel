@@ -228,7 +228,11 @@ $metaPath = Write-DntMo2ArchiveMeta `
     -Identity $releaseIdentity
 Write-DntReleaseIdentity -Identity $releaseIdentity -Path $identityPath
 $archiveHash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash
+$checksumPath = Write-DntReleaseChecksums `
+    -ProjectRoot $projectRoot `
+    -Identity $releaseIdentity
 Write-Host "Consolidated release package: $archive"
 Write-Host "MO2 sidecar metadata: $metaPath"
 Write-Host "MO2 suggested name: $mo2DisplayName"
+Write-Host "Release checksums: $checksumPath"
 Write-Host "SHA-256: $archiveHash"
